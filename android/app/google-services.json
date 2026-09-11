@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "505635070098",
+    "project_id": "dashgrocer-9f448",
+    "storage_bucket": "dashgrocer-9f448.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:505635070098:android:92632d08e4a7c0d4f8464b",
+        "android_client_info": {
+          "package_name": "com.example.dashgrocer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQyKYg0gEQN05CfRl1KULh2joZ2PIx6rY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

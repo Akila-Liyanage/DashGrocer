@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'models/user_model.dart';
 import 'services/auth_service.dart';
@@ -7,8 +9,15 @@ import 'views/auth/auth_screen.dart';
 import 'views/customer/customer_dashboard.dart';
 import 'views/shop_owner/shop_owner_dashboard.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint('Firebase initialization notice: $e');
+  }
   runApp(const DashGrocerApp());
 }
 
