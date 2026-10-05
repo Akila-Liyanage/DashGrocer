@@ -101,7 +101,7 @@ void main() {
 
     // Verify customer greeting, categories and pickup card
     expect(find.text('Hi, Kasun 👋'), findsOneWidget);
-    expect(find.text('READY FOR PICKUP'), findsOneWidget);
+    expect(find.text('Categories'), findsOneWidget);
     expect(find.text('Nearby Pickup Shops'), findsOneWidget);
   });
 
