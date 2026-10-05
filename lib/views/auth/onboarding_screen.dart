@@ -87,11 +87,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         color: const Color(0xFFF9FAFB),
                         child: Image.asset(
                           item.imagePath,
-                          fit: BoxFit.contain,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
                           alignment: Alignment.center,
                           errorBuilder: (context, err, _) => Image.network(
                             item.fallbackNetworkUrl,
                             fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
                           ),
                         ),
                       ),

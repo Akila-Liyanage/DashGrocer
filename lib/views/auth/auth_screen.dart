@@ -4,6 +4,7 @@ import 'forgot_password_flow.dart';
 import 'login_screen.dart';
 import 'onboarding_screen.dart';
 import 'signup_screen.dart';
+import 'splash_screen.dart';
 import 'welcome_screen.dart';
 
 enum AuthScreenStep {
@@ -37,7 +38,7 @@ class _AuthScreenState extends State<AuthScreen> {
     if (widget.initialStep != null) {
       _currentStep = widget.initialStep!;
     } else {
-      _currentStep = AuthScreenStep.onboarding;
+      _currentStep = AuthScreenStep.splash;
     }
   }
 
@@ -72,6 +73,11 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget _buildCurrentScreen() {
     switch (_currentStep) {
       case AuthScreenStep.splash:
+        return SplashScreen(
+          key: const ValueKey('splash_screen'),
+          onFinish: () => _goTo(AuthScreenStep.onboarding),
+        );
+
       case AuthScreenStep.onboarding:
         // Figma ONBOARDING1, ONBOARDING2, ONBOARDING3 (Screens 1, 2, 3)
         return OnboardingScreen(
