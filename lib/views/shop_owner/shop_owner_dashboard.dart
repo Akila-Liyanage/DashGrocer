@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/theme/app_colors.dart';
 import '../../models/grocery_item_model.dart';
 import '../../models/seller_order_model.dart';
 import '../../models/user_model.dart';
@@ -49,7 +48,7 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
   Widget build(BuildContext context) {
     final authService = AuthService();
     final shopTitle = widget.user.shopName ?? 'GreenLeaf Fresh Mart';
-    final shopLoc = widget.user.shopAddress ?? 'No. 42, High Level Road, Maharagama';
+    final shopLoc = widget.user.shopAddress ?? 'High Level Road, Maharagama';
 
     return ListenableBuilder(
       listenable: Listenable.merge([GroceryService(), authService]),
@@ -60,199 +59,188 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
         final unreadNotifs = groceryService.unreadNotificationsCount;
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF8FAFC),
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            titleSpacing: 16,
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _isOpenForPickup ? AppColors.success : AppColors.error,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _isOpenForPickup ? 'Open for Pickup' : 'Store Closed',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: _isOpenForPickup ? AppColors.success : AppColors.error,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  shopTitle,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              // Store Open/Close Toggle
-              IconButton(
-                tooltip: _isOpenForPickup ? 'Set Closed' : 'Set Open',
-                icon: Icon(
-                  _isOpenForPickup ? Icons.store_rounded : Icons.store_mall_directory_outlined,
-                  color: _isOpenForPickup ? AppColors.brandGreen : Colors.grey,
-                  size: 22,
-                ),
-                onPressed: () {
-                  setState(() => _isOpenForPickup = !_isOpenForPickup);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        _isOpenForPickup ? 'Store is now OPEN for pickup' : 'Store marked as CLOSED',
-                        style: GoogleFonts.plusJakartaSans(),
-                      ),
-                      duration: const Duration(seconds: 2),
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: _isOpenForPickup ? AppColors.brandGreen : const Color(0xFF475569),
-                    ),
-                  );
-                },
-              ),
-
-              // Notification Bell with dynamic badge
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  IconButton(
-                    tooltip: 'Store Notifications',
-                    icon: const Icon(Icons.notifications_outlined, color: Color(0xFF1E293B), size: 22),
-                    onPressed: _openNotificationsSheet,
-                  ),
-                  if (unreadNotifs > 0)
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFEF4444),
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                        child: Text(
-                          '$unreadNotifs',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-
-              // Logout Button
-              IconButton(
-                tooltip: 'Log Out',
-                icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary, size: 20),
-                onPressed: () => authService.logout(),
-              ),
-              const SizedBox(width: 4),
-            ],
-          ),
+          backgroundColor: const Color(0xFFF9FAFB),
+          appBar: _buildAppBar(shopTitle, shopLoc, unreadNotifs, authService),
           body: IndexedStack(
             index: _currentTabIndex,
             children: [
-              _buildOrdersTab(groceryService, orders, pendingCount, shopLoc),
+              _buildOrdersTab(groceryService, orders, pendingCount),
               _buildProductsTab(groceryService),
               _buildAnalyticsTab(orders),
             ],
           ),
-          bottomNavigationBar: Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
-            ),
-            child: BottomNavigationBar(
-              currentIndex: _currentTabIndex,
-              onTap: (index) => setState(() => _currentTabIndex = index),
-              elevation: 0,
-              backgroundColor: Colors.white,
-              selectedItemColor: AppColors.brandGreen,
-              unselectedItemColor: const Color(0xFF94A3B8),
-              selectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700),
-              unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w500),
-              type: BottomNavigationBarType.fixed,
-              items: [
-                BottomNavigationBarItem(
-                  icon: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      const Icon(Icons.receipt_long_rounded),
-                      if (pendingCount > 0)
-                        Positioned(
-                          right: -4,
-                          top: -2,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: AppColors.brandGreen,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  label: 'Orders',
-                ),
-                const BottomNavigationBarItem(
-                  icon: Icon(Icons.inventory_2_outlined),
-                  activeIcon: Icon(Icons.inventory_2_rounded),
-                  label: 'Products',
-                ),
-                const BottomNavigationBarItem(
-                  icon: Icon(Icons.bar_chart_rounded),
-                  label: 'Analytics',
-                ),
-              ],
-            ),
-          ),
-          floatingActionButton: _currentTabIndex == 1
-              ? FloatingActionButton.extended(
-                  onPressed: _openAddProduct,
-                  backgroundColor: AppColors.brandGreen,
-                  foregroundColor: Colors.white,
-                  icon: const Icon(Icons.add_rounded),
-                  label: Text(
-                    'Add Product',
-                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
-                  ),
-                )
-              : null,
+          bottomNavigationBar: _buildBottomNav(pendingCount),
         );
       },
     );
   }
 
   // ==========================================
-  // TAB 1: ORDERS & STORE OVERVIEW
+  // MODERN CLEAN APP BAR
+  // ==========================================
+  PreferredSizeWidget _buildAppBar(
+    String shopTitle,
+    String shopLoc,
+    int unreadNotifs,
+    AuthService authService,
+  ) {
+    return AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      toolbarHeight: 70,
+      titleSpacing: 16,
+      title: Row(
+        children: [
+          // Store Avatar Icon
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F5E9),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.storefront_rounded,
+              color: Color(0xFF2EB844),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Store Name & Status
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  shopTitle,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF111827),
+                    letterSpacing: -0.3,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                GestureDetector(
+                  onTap: () {
+                    setState(() => _isOpenForPickup = !_isOpenForPickup);
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          _isOpenForPickup
+                              ? 'Store is now open for pickup'
+                              : 'Store marked as closed',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: _isOpenForPickup
+                              ? const Color(0xFF2EB844)
+                              : const Color(0xFFEF4444),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        _isOpenForPickup ? 'Open for Pickup' : 'Store Closed',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: _isOpenForPickup
+                              ? const Color(0xFF2EB844)
+                              : const Color(0xFF9CA3AF),
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 14,
+                        color: Color(0xFF9CA3AF),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        // Notification bell with clean badge
+        IconButton(
+          tooltip: 'Notifications',
+          icon: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(
+                Icons.notifications_outlined,
+                color: Color(0xFF374151),
+                size: 24,
+              ),
+              if (unreadNotifs > 0)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEF4444),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          onPressed: _openNotificationsSheet,
+        ),
+        // Logout button
+        IconButton(
+          tooltip: 'Log out',
+          icon: const Icon(
+            Icons.logout_rounded,
+            color: Color(0xFF9CA3AF),
+            size: 20,
+          ),
+          onPressed: () => authService.logout(),
+        ),
+        const SizedBox(width: 8),
+      ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(
+          color: const Color(0xFFF3F4F6),
+          height: 1,
+        ),
+      ),
+    );
+  }
+
+  // ==========================================
+  // TAB 1: CLEAN ORDERS TAB
   // ==========================================
   Widget _buildOrdersTab(
     GroceryService groceryService,
     List<StoreOrder> orders,
     int pendingCount,
-    String shopLoc,
   ) {
-    // Filter orders
     final filteredOrders = orders.where((o) {
       if (_selectedOrderFilter == 'Pending') return o.status == 'Pending';
       if (_selectedOrderFilter == 'Ready') return o.status == 'Ready for Pickup';
@@ -260,68 +248,39 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
       return true;
     }).toList();
 
-    final totalRevenue = orders.fold<double>(0, (sum, o) => sum + o.totalAmount);
+    final totalRev = orders.fold<double>(0, (sum, o) => sum + o.totalAmount);
 
     return ListView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
-        // Store Pickup Location Banner
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.location_on_outlined, color: AppColors.brandGreen, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  shopLoc,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF475569),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 14),
-
-        // 3 Key Stats Cards
+        // ─── Metrics Overview Strip ───
         Row(
           children: [
             Expanded(
-              child: _buildMetricCard(
-                title: "Today's Orders",
+              child: _buildMetricTile(
+                label: 'Total Orders',
                 value: '${orders.length}',
-                icon: Icons.shopping_bag_outlined,
-                color: const Color(0xFF3B82F6),
+                color: const Color(0xFF2563EB),
+                bg: const Color(0xFFEFF6FF),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _buildMetricCard(
-                title: 'Pending Pickups',
+              child: _buildMetricTile(
+                label: 'Pending',
                 value: '$pendingCount',
-                icon: Icons.timelapse_rounded,
-                color: const Color(0xFFF59E0B),
+                color: const Color(0xFFD97706),
+                bg: const Color(0xFFFFFBEB),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _buildMetricCard(
-                title: "Total Revenue",
-                value: 'Rs. ${(totalRevenue / 1000).toStringAsFixed(1)}k',
-                icon: Icons.payments_outlined,
-                color: AppColors.brandGreen,
+              child: _buildMetricTile(
+                label: 'Revenue',
+                value: 'Rs. ${(totalRev / 1000).toStringAsFixed(1)}k',
+                color: const Color(0xFF16A34A),
+                bg: const Color(0xFFF0FDF4),
               ),
             ),
           ],
@@ -329,7 +288,7 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
 
         const SizedBox(height: 20),
 
-        // Section Title
+        // ─── Filter Pills ───
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -338,16 +297,16 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFF1E293B),
-                letterSpacing: -0.2,
+                color: const Color(0xFF111827),
+                letterSpacing: -0.3,
               ),
             ),
             Text(
-              '${filteredOrders.length} orders',
+              '${filteredOrders.length} total',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF94A3B8),
+                color: const Color(0xFF9CA3AF),
               ),
             ),
           ],
@@ -355,40 +314,58 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
 
         const SizedBox(height: 12),
 
-        // Filter Pills [All] [Pending] [Ready] [Completed]
-        SizedBox(
-          height: 34,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
+        // Clean Filter Chips
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
             children: [
-              _buildOrderFilterChip('All'),
+              _buildFilterChip('All', orders.length),
               const SizedBox(width: 8),
-              _buildOrderFilterChip('Pending'),
+              _buildFilterChip(
+                'Pending',
+                orders.where((o) => o.status == 'Pending').length,
+              ),
               const SizedBox(width: 8),
-              _buildOrderFilterChip('Ready'),
+              _buildFilterChip(
+                'Ready',
+                orders.where((o) => o.status == 'Ready for Pickup').length,
+              ),
               const SizedBox(width: 8),
-              _buildOrderFilterChip('Completed'),
+              _buildFilterChip(
+                'Completed',
+                orders.where((o) => o.status == 'Completed').length,
+              ),
             ],
           ),
         ),
 
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
 
-        // Orders List
+        // ─── Order Cards ───
         if (filteredOrders.isEmpty)
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 40),
+            padding: const EdgeInsets.symmetric(vertical: 48),
             alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
             child: Column(
               children: [
-                Icon(Icons.inbox_outlined, size: 44, color: Colors.grey.shade400),
-                const SizedBox(height: 8),
+                Icon(
+                  Icons.inbox_outlined,
+                  size: 40,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 10),
                 Text(
-                  'No orders in this category',
+                  'No orders in this status',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
-                    color: Colors.grey.shade600,
                     fontWeight: FontWeight.w600,
+                    color: const Color(0xFF6B7280),
                   ),
                 ),
               ],
@@ -396,46 +373,111 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
           )
         else
           ...filteredOrders.map((order) {
-            return _buildStoreOrderCard(order, groceryService);
+            return _buildCleanOrderCard(order, groceryService);
           }),
-
-        const SizedBox(height: 30),
       ],
     );
   }
 
-  Widget _buildOrderFilterChip(String label) {
+  Widget _buildMetricTile({
+    required String label,
+    required String value,
+    required Color color,
+    required Color bg,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF6B7280),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: color,
+              letterSpacing: -0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, int count) {
     final isSelected = _selectedOrderFilter == label;
     return InkWell(
       onTap: () => setState(() => _selectedOrderFilter = label),
-      borderRadius: BorderRadius.circular(17),
+      borderRadius: BorderRadius.circular(20),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.brandGreen : Colors.white,
-          borderRadius: BorderRadius.circular(17),
+          color: isSelected ? const Color(0xFF2EB844) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.brandGreen : const Color(0xFFE2E8F0),
+            color: isSelected ? const Color(0xFF2EB844) : const Color(0xFFE5E7EB),
           ),
         ),
-        child: Center(
-          child: Text(
-            label,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? Colors.white : const Color(0xFF475569),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? Colors.white : const Color(0xFF4B5563),
+              ),
             ),
-          ),
+            const SizedBox(width: 5),
+            Text(
+              '$count',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: isSelected
+                    ? Colors.white.withValues(alpha: 0.85)
+                    : const Color(0xFF9CA3AF),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildStoreOrderCard(StoreOrder order, GroceryService service) {
+  Widget _buildCleanOrderCard(StoreOrder order, GroceryService service) {
     final isPending = order.status == 'Pending';
     final isReady = order.status == 'Ready for Pickup';
+    final isCompleted = order.status == 'Completed';
+
+    Color statusColor;
+    Color statusBg;
+    if (isReady) {
+      statusColor = const Color(0xFF16A34A);
+      statusBg = const Color(0xFFDCFCE7);
+    } else if (isPending) {
+      statusColor = const Color(0xFFD97706);
+      statusBg = const Color(0xFFFEF3C7);
+    } else {
+      statusColor = const Color(0xFF4B5563);
+      statusBg = const Color(0xFFF3F4F6);
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -445,13 +487,13 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isReady
-              ? AppColors.brandGreen.withValues(alpha: 0.4)
-              : const Color(0xFFE2E8F0),
+              ? const Color(0xFF2EB844).withValues(alpha: 0.3)
+              : const Color(0xFFE5E7EB),
         ),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x06000000),
-            blurRadius: 10,
+            color: Color(0x04000000),
+            blurRadius: 8,
             offset: Offset(0, 2),
           ),
         ],
@@ -459,83 +501,61 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Order ID & Status Badge
+          // Header: Order ID + Status Chip
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      order.id,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF1E293B),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    order.formattedTotal,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.brandGreenDark,
-                    ),
-                  ),
-                ],
+              Text(
+                order.id,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF111827),
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isReady
-                      ? AppColors.brandGreenSoft
-                      : (isPending ? const Color(0xFFFEF3C7) : const Color(0xFFF1F5F9)),
-                  borderRadius: BorderRadius.circular(20),
+                  color: statusBg,
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   order.status,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: isReady
-                        ? AppColors.brandGreenDark
-                        : (isPending ? const Color(0xFFD97706) : const Color(0xFF475569)),
+                    color: statusColor,
                   ),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
-          // Customer details
+          // Customer Name & Phone
           Row(
             children: [
-              const Icon(Icons.person_outline_rounded, size: 15, color: Color(0xFF64748B)),
+              const Icon(
+                Icons.person_outline_rounded,
+                size: 15,
+                color: Color(0xFF9CA3AF),
+              ),
               const SizedBox(width: 6),
               Text(
                 order.customerName,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E293B),
+                  color: const Color(0xFF1F2937),
                 ),
               ),
-              const SizedBox(width: 10),
-              const Icon(Icons.phone_outlined, size: 14, color: Color(0xFF94A3B8)),
-              const SizedBox(width: 4),
+              const SizedBox(width: 8),
               Text(
-                order.customerPhone,
+                '• ${order.customerPhone}',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
-                  color: const Color(0xFF64748B),
+                  color: const Color(0xFF6B7280),
                 ),
               ),
             ],
@@ -546,15 +566,21 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
           // Items summary
           Row(
             children: [
-              const Icon(Icons.shopping_basket_outlined, size: 15, color: Color(0xFF64748B)),
+              const Icon(
+                Icons.shopping_bag_outlined,
+                size: 15,
+                color: Color(0xFF9CA3AF),
+              ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   order.itemsSummary,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
-                    color: const Color(0xFF475569),
+                    color: const Color(0xFF4B5563),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -565,88 +591,87 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
           // Pickup slot
           Row(
             children: [
-              const Icon(Icons.access_time_rounded, size: 15, color: AppColors.brandGreen),
+              const Icon(
+                Icons.schedule_rounded,
+                size: 15,
+                color: Color(0xFF2EB844),
+              ),
               const SizedBox(width: 6),
               Text(
-                'Pickup Slot: ${order.pickupSlot}',
+                order.pickupSlot,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF0F172A),
+                  color: const Color(0xFF111827),
                 ),
               ),
             ],
           ),
 
+          const SizedBox(height: 14),
+          const Divider(height: 1, color: Color(0xFFF3F4F6)),
           const SizedBox(height: 12),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
-          const SizedBox(height: 10),
 
-          // Action Buttons
+          // Bottom Bar: Price + Action Button
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (isPending) ...[
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Order Total',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF9CA3AF),
+                    ),
+                  ),
+                  Text(
+                    order.formattedTotal,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF2EB844),
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ],
+              ),
+
+              // Action button
+              if (!isCompleted)
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isReady
+                        ? const Color(0xFF1F2937)
+                        : const Color(0xFF2EB844),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                   ),
                   onPressed: () {
-                    service.updateOrderStatus(order.id, 'Preparing');
+                    if (isReady) {
+                      service.updateOrderStatus(order.id, 'Completed');
+                    } else {
+                      service.updateOrderStatus(order.id, 'Ready for Pickup');
+                    }
                   },
                   child: Text(
-                    'Preparing',
+                    isReady ? 'Mark Completed' : 'Mark Ready for Pickup',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF475569),
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-              ],
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isReady ? const Color(0xFF334155) : AppColors.brandGreen,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                ),
-                onPressed: () {
-                  if (isReady) {
-                    service.updateOrderStatus(order.id, 'Completed');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Order ${order.id} marked as Completed.'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  } else {
-                    service.updateOrderStatus(order.id, 'Ready for Pickup');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Order ${order.id} marked as Ready for Pickup!'),
-                        backgroundColor: AppColors.brandGreen,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                },
-                icon: Icon(
-                  isReady ? Icons.check_circle_outline_rounded : Icons.check_rounded,
-                  size: 16,
-                ),
-                label: Text(
-                  isReady ? 'Mark Completed' : 'Mark Ready for Pickup',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
             ],
           ),
         ],
@@ -655,75 +680,105 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
   }
 
   // ==========================================
-  // TAB 2: PRODUCTS & INVENTORY MANAGEMENT
+  // TAB 2: CLEAN PRODUCTS TAB
   // ==========================================
   Widget _buildProductsTab(GroceryService groceryService) {
     final allItems = groceryService.allItems;
     final filteredItems = allItems.where((it) {
       if (_productSearchQuery.isEmpty) return true;
       final q = _productSearchQuery.toLowerCase();
-      return it.name.toLowerCase().contains(q) || it.category.toLowerCase().contains(q);
+      return it.name.toLowerCase().contains(q) ||
+          it.category.toLowerCase().contains(q);
     }).toList();
 
     return Column(
       children: [
-        // Top Action Bar with live sync badge
+        // Top Bar: Search + Add Product Button
         Container(
           color: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: Column(
             children: [
               Row(
                 children: [
+                  // Search box
                   Expanded(
                     child: Container(
                       height: 42,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(10),
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: TextField(
-                        onChanged: (val) => setState(() => _productSearchQuery = val),
-                        style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                        onChanged: (val) =>
+                            setState(() => _productSearchQuery = val),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          color: const Color(0xFF111827),
+                        ),
                         decoration: InputDecoration(
-                          hintText: 'Search products by name or category...',
-                          hintStyle: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFF94A3B8)),
-                          prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
+                          hintText: 'Search products or category...',
+                          hintStyle: GoogleFonts.plusJakartaSans(
+                            fontSize: 12.5,
+                            color: const Color(0xFF9CA3AF),
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.search_rounded,
+                            size: 18,
+                            color: Color(0xFF9CA3AF),
+                          ),
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 11),
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 10),
+
+                  // Add Product Button
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brandGreen,
+                      backgroundColor: const Color(0xFF2EB844),
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                     ),
                     onPressed: _openAddProduct,
                     icon: const Icon(Icons.add_rounded, size: 18),
                     label: Text(
-                      'Add',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700),
+                      'Add Product',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
+
+              // Direct sync status row (required by tests & informative for user)
               Row(
                 children: [
-                  const Icon(Icons.sync_rounded, size: 14, color: AppColors.brandGreen),
+                  const Icon(
+                    Icons.sync_rounded,
+                    size: 14,
+                    color: Color(0xFF2EB844),
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     'Direct Sync: All products appear live on Customer DashGrocer',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.brandGreenDark,
+                      color: const Color(0xFF16A34A),
                     ),
                   ),
                 ],
@@ -732,25 +787,32 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
           ),
         ),
 
-        const Divider(height: 1, color: Color(0xFFE2E8F0)),
+        const Divider(height: 1, color: Color(0xFFE5E7EB)),
 
-        // Product Catalog Grid / List
+        // Product Catalog List
         Expanded(
           child: filteredItems.isEmpty
               ? Center(
                   child: Text(
                     'No products found matching "$_productSearchQuery"',
-                    style: GoogleFonts.plusJakartaSans(color: Colors.grey),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      color: const Color(0xFF9CA3AF),
+                    ),
                   ),
                 )
               : ListView.separated(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   itemCount: filteredItems.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 10),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final item = filteredItems[index];
-                    return _buildProductRow(item, groceryService);
+                    return _buildCleanProductCard(item, groceryService);
                   },
                 ),
         ),
@@ -758,130 +820,84 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
     );
   }
 
-  Widget _buildProductRow(GroceryItem item, GroceryService service) {
+  Widget _buildCleanProductCard(GroceryItem item, GroceryService service) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Row(
         children: [
-          // Image thumbnail
+          // Thumbnail
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: SizedBox(
-              width: 58,
-              height: 58,
+            child: Container(
+              width: 54,
+              height: 54,
+              color: const Color(0xFFF9FAFB),
               child: Image.network(
                 item.imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: const Color(0xFFF1F5F9),
-                  child: const Icon(Icons.fastfood_rounded, color: Colors.grey),
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.fastfood_rounded,
+                  color: Color(0xFFD1D5DB),
                 ),
               ),
             ),
           ),
           const SizedBox(width: 12),
 
-          // Title, category, price
+          // Information
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        item.name,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1E293B),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (item.isNew)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFECE5),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'NEW',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFFFF5722),
-                          ),
-                        ),
-                      ),
-                  ],
+                Text(
+                  item.name,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF111827),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${item.category} • ${item.unit} • Stock: ${item.stockQuantity}',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    color: const Color(0xFF6B7280),
+                  ),
                 ),
                 const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        item.category,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF475569),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '• ${item.unit}',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        color: const Color(0xFF94A3B8),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Stock: ${item.stockQuantity}',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: item.stockQuantity < 10 ? const Color(0xFFEF4444) : const Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
                 Text(
                   item.formattedPrice,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.brandGreenDark,
+                    color: const Color(0xFF2EB844),
                   ),
                 ),
               ],
             ),
           ),
 
-          // Delete option
+          // Delete action
           IconButton(
-            tooltip: 'Remove product',
-            icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFF94A3B8), size: 20),
+            tooltip: 'Remove',
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              color: Color(0xFF9CA3AF),
+              size: 20,
+            ),
             onPressed: () {
               service.deleteProduct(item.id);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('"${item.name}" removed from catalog.'),
+                  content: Text('"${item.name}" removed from catalog'),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -893,30 +909,19 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
   }
 
   // ==========================================
-  // TAB 3: RICH ANALYTICS DASHBOARD
+  // TAB 3: CLEAN MODERN ANALYTICS
   // ==========================================
   Widget _buildAnalyticsTab(List<StoreOrder> orders) {
     return ListView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
       children: [
-        // Revenue Hero Card (Gradient)
+        // ─── Clean Revenue Banner ───
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF2E7D32), Color(0xFF48B02C)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x2848B02C),
-                blurRadius: 16,
-                offset: Offset(0, 6),
-              ),
-            ],
+            color: const Color(0xFF111827),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -928,52 +933,48 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
                     'TOTAL GROSS REVENUE',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white70,
-                      letterSpacing: 1.0,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF9CA3AF),
+                      letterSpacing: 0.8,
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.25),
+                      color: const Color(0xFF2EB844).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.trending_up_rounded, color: Colors.white, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          '+18.4% vs last week',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      '+18.4% this week',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF4ADE80),
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
                 'Rs. 48,250.00',
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: -0.5,
                 ),
               ),
+              const SizedBox(height: 16),
+              const Divider(height: 1, color: Color(0xFF374151)),
               const SizedBox(height: 14),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildSubStat(label: 'Avg Order', val: 'Rs. 1,650'),
-                  const SizedBox(width: 20),
-                  _buildSubStat(label: 'Fulfilled', val: '98.2%'),
-                  const SizedBox(width: 20),
-                  _buildSubStat(label: 'Return Customers', val: '84%'),
+                  _buildCleanStat('Avg Order', 'Rs. 1,650'),
+                  _buildCleanStat('Fulfilled', '98.2%'),
+                  _buildCleanStat('Repeat Buyers', '84%'),
                 ],
               ),
             ],
@@ -982,25 +983,24 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
 
         const SizedBox(height: 20),
 
-        // Section Title: Weekly Sales Trend
+        // ─── Weekly Velocity Card ───
         Text(
           'Weekly Sales Velocity',
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF1E293B),
-            letterSpacing: -0.2,
+            color: const Color(0xFF111827),
+            letterSpacing: -0.3,
           ),
         ),
         const SizedBox(height: 10),
 
-        // Bar Chart Visualizer
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
           ),
           child: Column(
             children: [
@@ -1011,32 +1011,32 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
                     'Daily Pickups (Last 7 Days)',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF6B7280),
                     ),
                   ),
                   Text(
-                    'Peak: Saturday (24 orders)',
+                    'Peak: Saturday',
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.brandGreen,
+                      color: const Color(0xFF2EB844),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _buildBar('Mon', 12, 24),
-                  _buildBar('Tue', 15, 24),
-                  _buildBar('Wed', 8, 24),
-                  _buildBar('Thu', 18, 24),
-                  _buildBar('Fri', 20, 24),
-                  _buildBar('Sat', 24, 24, isHighlight: true),
-                  _buildBar('Sun', 16, 24),
+                  _buildModernBar('Mon', 12, 24),
+                  _buildModernBar('Tue', 15, 24),
+                  _buildModernBar('Wed', 8, 24),
+                  _buildModernBar('Thu', 18, 24),
+                  _buildModernBar('Fri', 20, 24),
+                  _buildModernBar('Sat', 24, 24, isHighlight: true),
+                  _buildModernBar('Sun', 16, 24),
                 ],
               ),
             ],
@@ -1045,70 +1045,53 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
 
         const SizedBox(height: 20),
 
-        // Top Selling Leaderboard
+        // ─── Top Selling Products ───
         Text(
           'Top Selling Products',
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF1E293B),
+            color: const Color(0xFF111827),
+            letterSpacing: -0.3,
           ),
         ),
         const SizedBox(height: 10),
 
-        _buildLeaderboardItem(rank: '1', name: 'Fresh Broccoli', sales: '84 sold', revenue: 'Rs. 63,000'),
-        _buildLeaderboardItem(rank: '2', name: 'Nadu Rice 5kg', sales: '62 sold', revenue: 'Rs. 91,760'),
-        _buildLeaderboardItem(rank: '3', name: 'Chicken Breast 1KG', sales: '45 sold', revenue: 'Rs. 65,250'),
-        _buildLeaderboardItem(rank: '4', name: 'Fresh Butter Avocado', sales: '38 sold', revenue: 'Rs. 26,600'),
-
-        const SizedBox(height: 20),
-
-        // Low Stock Inventory Warnings
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFFBEB),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFFDE68A)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Inventory Alerts (Low Stock)',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF92400E),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '• Vine Tomatoes: Only 4 units remaining\n• Red Onions (250g): Only 6 units remaining',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  color: const Color(0xFFB45309),
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 30),
+        _buildCleanLeaderboardItem('1', 'Fresh Broccoli', '84 sold', 'Rs. 63,000'),
+        _buildCleanLeaderboardItem('2', 'Nadu Rice 5kg', '62 sold', 'Rs. 91,760'),
+        _buildCleanLeaderboardItem('3', 'Chicken Breast 1KG', '45 sold', 'Rs. 65,250'),
+        _buildCleanLeaderboardItem('4', 'Fresh Butter Avocado', '38 sold', 'Rs. 26,600'),
       ],
     );
   }
 
-  Widget _buildBar(String day, int count, int max, {bool isHighlight = false}) {
-    final heightRatio = count / max;
-    final barHeight = 80.0 * heightRatio;
+  Widget _buildCleanStat(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 11,
+            color: const Color(0xFF9CA3AF),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModernBar(String day, int count, int max, {bool isHighlight = false}) {
+    final ratio = count / max;
+    final barHeight = 72.0 * ratio;
 
     return Column(
       children: [
@@ -1117,16 +1100,20 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
           style: GoogleFonts.plusJakartaSans(
             fontSize: 10,
             fontWeight: FontWeight.w700,
-            color: isHighlight ? AppColors.brandGreen : const Color(0xFF64748B),
+            color: isHighlight
+                ? const Color(0xFF2EB844)
+                : const Color(0xFF9CA3AF),
           ),
         ),
         const SizedBox(height: 6),
         Container(
-          width: 18,
+          width: 14,
           height: barHeight,
           decoration: BoxDecoration(
-            color: isHighlight ? AppColors.brandGreen : const Color(0xFFCBD5E1),
-            borderRadius: BorderRadius.circular(6),
+            color: isHighlight
+                ? const Color(0xFF2EB844)
+                : const Color(0xFFE5E7EB),
+            borderRadius: BorderRadius.circular(4),
           ),
         ),
         const SizedBox(height: 6),
@@ -1134,27 +1121,29 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
           day,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 11,
-            fontWeight: isHighlight ? FontWeight.w800 : FontWeight.w500,
-            color: isHighlight ? const Color(0xFF1E293B) : const Color(0xFF94A3B8),
+            fontWeight: isHighlight ? FontWeight.w700 : FontWeight.w500,
+            color: isHighlight
+                ? const Color(0xFF111827)
+                : const Color(0xFF6B7280),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildLeaderboardItem({
-    required String rank,
-    required String name,
-    required String sales,
-    required String revenue,
-  }) {
+  Widget _buildCleanLeaderboardItem(
+    String rank,
+    String name,
+    String sales,
+    String revenue,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Row(
         children: [
@@ -1163,8 +1152,8 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
             height: 24,
             decoration: BoxDecoration(
               color: rank == '1'
-                  ? const Color(0xFFFEF3C7)
-                  : (rank == '2' ? const Color(0xFFF1F5F9) : const Color(0xFFFFF7ED)),
+                  ? const Color(0xFFDCFCE7)
+                  : const Color(0xFFF3F4F6),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -1173,7 +1162,9 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
-                  color: rank == '1' ? const Color(0xFFD97706) : const Color(0xFF475569),
+                  color: rank == '1'
+                      ? const Color(0xFF16A34A)
+                      : const Color(0xFF6B7280),
                 ),
               ),
             ),
@@ -1188,14 +1179,14 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
+                    color: const Color(0xFF111827),
                   ),
                 ),
                 Text(
                   sales,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
-                    color: const Color(0xFF94A3B8),
+                    color: const Color(0xFF9CA3AF),
                   ),
                 ),
               ],
@@ -1206,7 +1197,7 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
             style: GoogleFonts.plusJakartaSans(
               fontSize: 13,
               fontWeight: FontWeight.w800,
-              color: AppColors.brandGreenDark,
+              color: const Color(0xFF2EB844),
             ),
           ),
         ],
@@ -1214,67 +1205,62 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
     );
   }
 
-  Widget _buildSubStat({required String label, required String val}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 10,
-            color: Colors.white70,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          val,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMetricCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
+  // ==========================================
+  // BOTTOM NAVIGATION BAR
+  // ==========================================
+  Widget _buildBottomNav(int pendingCount) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border(top: BorderSide(color: Color(0xFFF3F4F6))),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: const Color(0xFF1E293B),
+      child: BottomNavigationBar(
+        currentIndex: _currentTabIndex,
+        onTap: (index) => setState(() => _currentTabIndex = index),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        selectedItemColor: const Color(0xFF2EB844),
+        unselectedItemColor: const Color(0xFF9CA3AF),
+        selectedLabelStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w500,
+        ),
+        type: BottomNavigationBarType.fixed,
+        items: [
+          BottomNavigationBarItem(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.receipt_long_rounded),
+                if (pendingCount > 0)
+                  Positioned(
+                    right: -3,
+                    top: -1,
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF2EB844),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
             ),
+            label: 'Orders',
           ),
-          const SizedBox(height: 2),
-          Text(
-            title,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF64748B),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_2_outlined),
+            activeIcon: Icon(Icons.inventory_2_rounded),
+            label: 'Products',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart_rounded),
+            label: 'Analytics',
           ),
         ],
       ),
