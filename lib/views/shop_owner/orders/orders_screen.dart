@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/shop_owner_theme.dart';
-import '../../models/shop_order.dart';
-import '../../services/shop_store.dart';
-import '../dashboard/shop_actions.dart';
-import '../dashboard/widgets/filter_pill.dart';
-import '../dashboard/widgets/info_card.dart';
-import '../dashboard/widgets/shop_owner_app_bar.dart';
+import '../../../core/theme/shop_owner_theme.dart';
+import '../../../models/shop_order.dart';
+import '../../../services/shop_store.dart';
+import '../shop_actions.dart';
+import '../widgets/filter_pill.dart';
+import '../widgets/info_card.dart';
+import '../widgets/shop_owner_app_bar.dart';
 import 'order_card.dart';
 
 enum OrderSort {

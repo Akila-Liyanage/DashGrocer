@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/shop_owner_theme.dart';
-import '../../core/formatters.dart';
-import '../../models/shop_order.dart';
-import '../dashboard/widgets/button_spinner.dart';
-import '../dashboard/widgets/status_pill.dart';
+import '../../../core/theme/shop_owner_theme.dart';
+import '../../../core/formatters.dart';
+import '../../../models/shop_order.dart';
+import '../widgets/button_spinner.dart';
+import '../widgets/status_pill.dart';
 
 /// The next step for an order, or null when nothing is left to do.
 /// Used by the Order Queue cards and the Order Details screen so the wording
