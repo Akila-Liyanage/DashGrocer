@@ -150,8 +150,6 @@ class CustomerHomeTab extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-
-
                   // Promotional Banner (Figma: "20% off on your first purchase")
                   Container(
                     width: double.infinity,

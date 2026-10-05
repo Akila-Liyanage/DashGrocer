@@ -143,20 +143,14 @@ class _ProfileTabState extends State<ProfileTab> {
     final groceryService = GroceryService();
     final currentUser = widget.user ?? authService.currentUser;
 
-    // Retrieve user orders from GroceryService
     final allStoreOrders = groceryService.sellerOrders;
-    List<StoreOrder> userOrders = allStoreOrders.where((o) {
+    final userOrders = allStoreOrders.where((o) {
       if (currentUser != null && currentUser.fullName.isNotEmpty) {
         return o.customerName.toLowerCase() == currentUser.fullName.toLowerCase() ||
-               o.customerPhone == currentUser.phoneNumber;
+               (currentUser.phoneNumber.isNotEmpty && o.customerPhone == currentUser.phoneNumber);
       }
-      return true;
+      return false;
     }).toList();
-
-    // Fallback if none matched
-    if (userOrders.isEmpty) {
-      userOrders = allStoreOrders;
-    }
 
     final activeOrders = userOrders.where((o) => o.status != 'Completed' && o.status != 'Cancelled').toList();
     final initial = (currentUser?.fullName.isNotEmpty == true)

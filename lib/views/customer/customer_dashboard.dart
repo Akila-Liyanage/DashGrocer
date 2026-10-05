@@ -66,51 +66,30 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Home Tab Icon
-                    IconButton(
-                      icon: Icon(
-                        _currentTabIndex == 0 ? Icons.home_rounded : Icons.home_outlined,
-                        size: 26,
-                        color: _currentTabIndex == 0
-                            ? const Color(0xFF1A1A1A)
-                            : const Color(0xFF868889),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _currentTabIndex = 0;
-                        });
-                      },
+                    _buildNavItem(
+                      index: 0,
+                      activeIcon: Icons.home_rounded,
+                      inactiveIcon: Icons.home_outlined,
+                      activeColor: const Color(0xFF2EB844),
+                      onTap: () => setState(() => _currentTabIndex = 0),
                     ),
 
                     // Profile Tab Icon
-                    IconButton(
-                      icon: Icon(
-                        _currentTabIndex == 1 ? Icons.person_rounded : Icons.person_outline_rounded,
-                        size: 26,
-                        color: _currentTabIndex == 1
-                            ? const Color(0xFF1A1A1A)
-                            : const Color(0xFF868889),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _currentTabIndex = 1;
-                        });
-                      },
+                    _buildNavItem(
+                      index: 1,
+                      activeIcon: Icons.person_rounded,
+                      inactiveIcon: Icons.person_outline_rounded,
+                      activeColor: const Color(0xFF2EB844),
+                      onTap: () => setState(() => _currentTabIndex = 1),
                     ),
 
                     // Favorites Tab Icon
-                    IconButton(
-                      icon: Icon(
-                        _currentTabIndex == 2 ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        size: 24,
-                        color: _currentTabIndex == 2
-                            ? const Color(0xFFFE5858)
-                            : const Color(0xFF868889),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _currentTabIndex = 2;
-                        });
-                      },
+                    _buildNavItem(
+                      index: 2,
+                      activeIcon: Icons.favorite_rounded,
+                      inactiveIcon: Icons.favorite_border_rounded,
+                      activeColor: const Color(0xFFFE5858),
+                      onTap: () => setState(() => _currentTabIndex = 2),
                     ),
 
                     // Circular Green Cart Button (Figma design floating green cart button)
@@ -178,6 +157,44 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildNavItem({
+    required int index,
+    required IconData activeIcon,
+    required IconData inactiveIcon,
+    required Color activeColor,
+    required VoidCallback onTap,
+  }) {
+    final isSelected = _currentTabIndex == index;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isSelected ? activeIcon : inactiveIcon,
+              size: 24,
+              color: isSelected ? activeColor : const Color(0xFF9CA3AF),
+            ),
+            const SizedBox(height: 3),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: isSelected ? 4 : 0,
+              height: isSelected ? 4 : 0,
+              decoration: BoxDecoration(
+                color: activeColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
