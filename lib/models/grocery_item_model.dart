@@ -18,6 +18,11 @@ class GroceryItem {
   final int inCartQuantity;
   final String? sellerId;
   final String? sellerName;
+  final String? sellerShopName;
+  final String? sellerPhone;
+  final String? sellerAddress;
+  final double? sellerRating;
+  final String? sellerResponseTime;
   final int stockQuantity;
 
   const GroceryItem({
@@ -38,8 +43,37 @@ class GroceryItem {
     this.inCartQuantity = 0,
     this.sellerId,
     this.sellerName,
+    this.sellerShopName,
+    this.sellerPhone,
+    this.sellerAddress,
+    this.sellerRating,
+    this.sellerResponseTime,
     this.stockQuantity = 50,
   });
+
+  String get displaySellerShopName =>
+      (sellerShopName != null && sellerShopName!.trim().isNotEmpty)
+          ? sellerShopName!
+          : 'GreenLeaf Fresh Mart';
+
+  String get displaySellerName =>
+      (sellerName != null && sellerName!.trim().isNotEmpty)
+          ? sellerName!
+          : 'Sunil Weerasinghe';
+
+  String get displaySellerPhone =>
+      (sellerPhone != null && sellerPhone!.trim().isNotEmpty)
+          ? sellerPhone!
+          : '+94 71 987 6543';
+
+  String get displaySellerAddress =>
+      (sellerAddress != null && sellerAddress!.trim().isNotEmpty)
+          ? sellerAddress!
+          : 'No. 42, High Level Road, Maharagama';
+
+  double get displaySellerRating => sellerRating ?? 4.9;
+
+  String get displaySellerResponseTime => sellerResponseTime ?? 'Within 5 mins';
 
   GroceryItem copyWith({
     String? id,
@@ -59,6 +93,11 @@ class GroceryItem {
     int? inCartQuantity,
     String? sellerId,
     String? sellerName,
+    String? sellerShopName,
+    String? sellerPhone,
+    String? sellerAddress,
+    double? sellerRating,
+    String? sellerResponseTime,
     int? stockQuantity,
   }) {
     return GroceryItem(
@@ -79,6 +118,11 @@ class GroceryItem {
       inCartQuantity: inCartQuantity ?? this.inCartQuantity,
       sellerId: sellerId ?? this.sellerId,
       sellerName: sellerName ?? this.sellerName,
+      sellerShopName: sellerShopName ?? this.sellerShopName,
+      sellerPhone: sellerPhone ?? this.sellerPhone,
+      sellerAddress: sellerAddress ?? this.sellerAddress,
+      sellerRating: sellerRating ?? this.sellerRating,
+      sellerResponseTime: sellerResponseTime ?? this.sellerResponseTime,
       stockQuantity: stockQuantity ?? this.stockQuantity,
     );
   }
@@ -99,6 +143,11 @@ class GroceryItem {
       'imageUrl': imageUrl,
       'sellerId': sellerId,
       'sellerName': sellerName,
+      'sellerShopName': sellerShopName,
+      'sellerPhone': sellerPhone,
+      'sellerAddress': sellerAddress,
+      'sellerRating': sellerRating,
+      'sellerResponseTime': sellerResponseTime,
       'stockQuantity': stockQuantity,
     };
   }
@@ -119,6 +168,11 @@ class GroceryItem {
       imageUrl: map['imageUrl'] as String? ?? 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80',
       sellerId: map['sellerId'] as String?,
       sellerName: map['sellerName'] as String?,
+      sellerShopName: map['sellerShopName'] as String?,
+      sellerPhone: map['sellerPhone'] as String?,
+      sellerAddress: map['sellerAddress'] as String?,
+      sellerRating: (map['sellerRating'] as num?)?.toDouble(),
+      sellerResponseTime: map['sellerResponseTime'] as String?,
       stockQuantity: (map['stockQuantity'] as num?)?.toInt() ?? 50,
     );
   }

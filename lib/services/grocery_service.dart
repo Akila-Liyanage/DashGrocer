@@ -469,6 +469,23 @@ class GroceryService extends ChangeNotifier {
     return generatedId;
   }
 
+  void addSellerNotification({
+    required String title,
+    required String message,
+    String? orderId,
+  }) {
+    final notification = SellerNotification(
+      id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
+      title: title,
+      message: message,
+      time: DateTime.now(),
+      orderId: orderId,
+      isRead: false,
+    );
+    _sellerNotifications.insert(0, notification);
+    notifyListeners();
+  }
+
   void toggleOrderReady(String orderId) {
     final index = _sellerOrders.indexWhere((o) => o.id == orderId);
     if (index != -1) {
