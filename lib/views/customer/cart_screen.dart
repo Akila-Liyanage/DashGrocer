@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/grocery_item_model.dart';
 import '../../services/grocery_service.dart';
+import '../common/app_image_view.dart';
 import 'pickup_time_screen.dart';
 
 class CartScreen extends StatelessWidget {
@@ -316,14 +317,9 @@ class _CartItemTile extends StatelessWidget {
               child: ClipOval(
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Image.network(
-                    item.imageUrl,
+                  child: AppImageView(
+                    imageUrl: item.imageUrl,
                     fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.shopping_bag_outlined,
-                      color: AppColors.brandGreen,
-                      size: 24,
-                    ),
                   ),
                 ),
               ),

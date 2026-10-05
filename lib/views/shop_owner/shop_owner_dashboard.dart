@@ -5,6 +5,7 @@ import '../../models/seller_order_model.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/grocery_service.dart';
+import '../common/app_image_view.dart';
 import 'add_product_screen.dart';
 import 'seller_notifications_sheet.dart';
 
@@ -837,13 +838,9 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
               width: 54,
               height: 54,
               color: const Color(0xFFF9FAFB),
-              child: Image.network(
-                item.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                  Icons.fastfood_rounded,
-                  color: Color(0xFFD1D5DB),
-                ),
+              child: AppImageView(
+                imageUrl: item.imageUrl,
+                fit: BoxFit.contain,
               ),
             ),
           ),

@@ -38,7 +38,7 @@ void main() {
   group('Complete End-to-End System & Flow Verification', () {
     testWidgets('Flow 1: Customer Cart Checkout -> Pickup Time Selection -> Order Confirmed -> Track Order', (WidgetTester tester) async {
       final groceryService = GroceryService();
-      groceryService.addToCart('chicken_breast', 2);
+      groceryService.addToCart('pumpkin', 2);
 
       await tester.pumpWidget(
         const MaterialApp(

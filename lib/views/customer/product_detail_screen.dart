@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/theme/app_colors.dart';
 import '../../models/grocery_item_model.dart';
 import '../../services/grocery_service.dart';
+import '../common/app_image_view.dart';
 import 'cart_screen.dart';
 import 'reviews_screen.dart';
 
@@ -33,27 +33,48 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Map<String, String> _getNutritionInfo(GroceryItem item) {
-    final cat = item.category.toLowerCase();
-    if (cat.contains('meat') || item.name.toLowerCase().contains('chicken')) {
+    final id = item.id.toLowerCase();
+    if (id == 'pumpkin') {
       return {
-        'Protein': '31g',
-        'Calories': '165 kcal',
-        'Fat': '3.6g',
-        'Iron': '6% DV',
+        'Vitamin A': '245% DV',
+        'Calories': '26 kcal',
+        'Fiber': '2.7g',
+        'Potassium': '340mg',
       };
-    } else if (cat.contains('veg') || cat.contains('fruit')) {
+    } else if (id == 'tomato') {
+      return {
+        'Lycopene': '3.0mg',
+        'Vitamin C': '28% DV',
+        'Calories': '18 kcal',
+        'Water': '95%',
+      };
+    } else if (id == 'red_onion') {
+      return {
+        'Quercetin': 'High',
+        'Antioxidants': '92%',
+        'Calories': '40 kcal',
+        'Fiber': '1.7g',
+      };
+    } else if (id == 'beans') {
+      return {
+        'Vitamin K': '43% DV',
+        'Folate': '15% DV',
+        'Fiber': '2.7g',
+        'Protein': '1.8g',
+      };
+    } else if (id == 'carrot') {
+      return {
+        'Beta-Carotene': '8,285 mcg',
+        'Vitamin A': '334% DV',
+        'Fiber': '2.8g',
+        'Calories': '41 kcal',
+      };
+    } else {
       return {
         'Fiber': '2.8g',
         'Calories': '48 kcal',
         'Vitamin C': '18%',
         'Water': '88%',
-      };
-    } else {
-      return {
-        'Energy': '350 kcal',
-        'Protein': '7.5g',
-        'Carbs': '78g',
-        'Fiber': '3.2g',
       };
     }
   }
@@ -311,18 +332,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             bottom: 24,
             child: Hero(
               tag: 'product_image_${item.id}',
-              child: Image.network(
-                item.imageUrl,
+              child: AppImageView(
+                imageUrl: item.imageUrl,
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Center(
-                    child: Icon(
-                      Icons.lunch_dining_rounded,
-                      size: 90,
-                      color: AppColors.brandGreen.withValues(alpha: 0.6),
-                    ),
-                  );
-                },
               ),
             ),
           ),
@@ -842,13 +854,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     children: [
                       Expanded(
                         child: Center(
-                          child: Image.network(
-                            simItem.imageUrl,
+                          child: AppImageView(
+                            imageUrl: simItem.imageUrl,
                             fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => const Icon(
-                              Icons.shopping_bag_outlined,
-                              color: Color(0xFFCCCCCC),
-                            ),
                           ),
                         ),
                       ),

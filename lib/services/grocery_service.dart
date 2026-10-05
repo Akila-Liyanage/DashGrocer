@@ -172,177 +172,86 @@ class GroceryService extends ChangeNotifier {
 
     _items = [
       const GroceryItem(
-        id: 'nadu_rice',
-        name: 'Nadu Rice',
-        unit: '5 kg',
-        price: 1480.00,
-        circleColor: Color(0xFFF7EFE5),
-        imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=500&q=80',
-        category: 'Grocery',
-        rating: 4.8,
-        reviewsCount: 92,
-        description: 'Authentic Nadu Rice selected from supreme crop harvests. Perfect long grains, naturally aromatic and cleaned with modern optical sorters.',
-      ),
-      const GroceryItem(
-        id: 'avocado',
-        name: 'Avacodo',
-        unit: '500g',
-        price: 700.00,
-        isNew: true,
-        circleColor: Color(0xFFEBF6EC),
-        imageUrl: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?auto=format&fit=crop&w=500&q=80',
-        category: 'Fruits',
-        rating: 4.7,
-        reviewsCount: 48,
-        description: 'Fresh butter avocado harvested at peak ripeness. Loaded with heart-healthy monounsaturated fatty acids and dietary potassium.',
-      ),
-      const GroceryItem(
-        id: 'pineapple',
-        name: 'Pineapple',
-        unit: '250g',
-        price: 300.00,
-        isFavorite: true,
-        circleColor: Color(0xFFFFF8E5),
-        imageUrl: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?auto=format&fit=crop&w=500&q=80',
-        category: 'Fruits',
-        rating: 4.6,
-        reviewsCount: 34,
-        description: 'Sweet, tropical pineapple cubes freshly sliced and sealed for hygiene. Packed with natural bromelain enzyme and immune boosting vitamin C.',
-      ),
-      const GroceryItem(
-        id: 'fresh_fish',
-        name: 'Fresh Fish',
-        unit: '250g',
-        price: 850.00,
-        originalPrice: 1010.00,
-        discountPercent: 16,
-        circleColor: Color(0xFFFDECEC),
-        imageUrl: 'https://images.unsplash.com/photo-1534948216015-843149f72be3?auto=format&fit=crop&w=500&q=80',
-        category: 'Meat',
-        rating: 4.5,
-        reviewsCount: 56,
-        description: 'Daily fresh catch from coastal fisheries. De-scaled, cleaned, and chilled to 2°C to ensure unparalleled freshness and flavor for curries or baking.',
-      ),
-      const GroceryItem(
-        id: 'fresh_milk',
-        name: 'Fresh Milk',
-        unit: '1 l',
-        price: 1500.00,
-        isNew: true,
-        circleColor: Color(0xFFEEF3FA),
-        imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=500&q=80',
-        category: 'Dairy',
-        rating: 4.9,
-        reviewsCount: 112,
-        description: 'Pasteurized whole milk from local dairy farms. Wholesome nutrition for the entire family without any synthetic additives.',
-      ),
-      const GroceryItem(
-        id: 'fresh_broccoli',
-        name: 'Fresh Broccoli',
+        id: 'pumpkin',
+        name: 'Fresh Pumpkin',
         unit: '1 kg',
-        price: 750.00,
+        price: 420.00,
+        originalPrice: 480.00,
+        discountPercent: 12,
         isFavorite: true,
-        circleColor: Color(0xFFE8F6EB),
-        imageUrl: 'https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?auto=format&fit=crop&w=500&q=80',
-        category: 'Vegetables',
-        rating: 4.7,
-        reviewsCount: 68,
-        description: 'Crunchy farm broccoli crowns with dense, tender florets. Sourced directly from highland farms, rich in sulforaphane, iron, and fiber.',
-      ),
-      const GroceryItem(
-        id: 'chicken_breast',
-        name: 'Chicken Breast 1KG',
-        unit: '1.50 lbs',
-        price: 1450.00,
-        circleColor: Color(0xFFEAF5E4),
-        imageUrl: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=600&q=80',
-        category: 'Meat',
-        rating: 4.5,
-        reviewsCount: 85,
-        description: 'Fresh chicken breast is carefully selected from quality poultry and prepared for your convenience. It is a clean and tender cut of chicken with a mild flavour, making it suitable for a wide variety of dishes. Chicken breast is perfect for grilling, frying, baking, curries, salads, sandwiches, and healthy meal preparations. It is freshly packed to help maintain its quality and freshness.',
-      ),
-      const GroceryItem(
-        id: 'red_onion',
-        name: 'Red Onion',
-        unit: '250 g',
-        price: 300.00,
-        circleColor: Color(0xFFFBECEC),
-        imageUrl: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?auto=format&fit=crop&w=500&q=80',
-        category: 'Vegetables',
-        rating: 4.6,
-        reviewsCount: 78,
-        description: 'Firm and pungent red onions with crisp outer skins and aromatic layers. The backbone of traditional cooking and salad garnishes.',
-      ),
-      const GroceryItem(
-        id: 'carrot',
-        name: 'Carrot',
-        unit: '250 g',
-        price: 400.00,
-        isNew: true,
-        circleColor: Color(0xFFEBF7ED),
-        imageUrl: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?auto=format&fit=crop&w=500&q=80',
+        circleColor: Color(0xFFFFF3E0),
+        imageUrl: 'assets/images/pumpkin.png',
         category: 'Vegetables',
         rating: 4.8,
-        reviewsCount: 62,
-        description: 'Sweet and crunchy orange carrots freshly dug and washed. High in beta-carotene for eye health and culinary vibrancy.',
-      ),
-      const GroceryItem(
-        id: 'beans',
-        name: 'Beans',
-        unit: '250 g',
-        price: 750.00,
-        isFavorite: true,
-        circleColor: Color(0xFFEAF6EC),
-        imageUrl: 'https://images.unsplash.com/photo-1567375698348-5d9d5ae99de0?auto=format&fit=crop&w=500&q=80',
-        category: 'Vegetables',
-        rating: 4.7,
-        reviewsCount: 41,
-        description: 'Tender stringless snap green beans harvested fresh at dawn. Crisp snap, delicate flavor, and zero stringiness.',
+        reviewsCount: 64,
+        description: 'Farm-fresh golden pumpkin with rich, velvety orange flesh and natural sweetness. Cut fresh upon order with firm rind and intact seeds. Packed with Vitamin A, beta-carotene, and dietary fiber, perfect for traditional Sri Lankan coconut curries, roasted wedges, and velvety soups.',
       ),
       const GroceryItem(
         id: 'tomato',
-        name: 'Tomato',
-        unit: '250 g',
-        price: 150.00,
-        discountPercent: 17,
+        name: 'Ripe Tomatoes',
+        unit: '500 g',
+        price: 280.00,
+        originalPrice: 320.00,
+        discountPercent: 12,
+        isNew: true,
         circleColor: Color(0xFFFDECEB),
-        imageUrl: 'https://images.unsplash.com/photo-1546470427-0d4db154ceb7?auto=format&fit=crop&w=500&q=80',
+        imageUrl: 'assets/images/tomato.png',
         category: 'Vegetables',
-        rating: 4.5,
-        reviewsCount: 94,
-        description: 'Juicy, plump vine-ripened tomatoes rich in lycopene. Imparts rich flavor and luscious red color to curries, sauces, and salads.',
+        rating: 4.9,
+        reviewsCount: 98,
+        description: 'Sun-ripened, succulent red tomatoes picked at peak maturity. Plump, juicy, and packed with natural sweetness and vibrant acidity. Rich in lycopene, Vitamin C, and antioxidants. Essential for everyday curries, lunu miris, fresh salads, and homemade sauces.',
       ),
       const GroceryItem(
-        id: 'pumpkin',
-        name: 'Pumpkin',
+        id: 'red_onion',
+        name: 'Crisp Red Onions',
+        unit: '500 g',
+        price: 380.00,
+        originalPrice: 420.00,
+        discountPercent: 10,
+        circleColor: Color(0xFFF6ECFB),
+        imageUrl: 'assets/images/red_onion.png',
+        category: 'Vegetables',
+        rating: 4.7,
+        reviewsCount: 82,
+        description: 'Premium pungent red onions with crisp outer skins and deep purplish layers. Delivers a sharp, aromatic punch when raw and a rich, sweet caramelization when sautéed. Rich in quercetin and antioxidants. The indispensable base for traditional tempering, curries, and garnishes.',
+      ),
+      const GroceryItem(
+        id: 'beans',
+        name: 'Fresh Green Beans',
         unit: '250 g',
-        price: 620.00,
-        circleColor: Color(0xFFFFF6E6),
-        imageUrl: 'https://images.unsplash.com/photo-1570586437263-ab629fccc818?auto=format&fit=crop&w=500&q=80',
+        price: 240.00,
+        originalPrice: 280.00,
+        discountPercent: 14,
+        isFavorite: true,
+        circleColor: Color(0xFFE8F6EB),
+        imageUrl: 'assets/images/beans.png',
         category: 'Vegetables',
-        rating: 4.6,
-        reviewsCount: 39,
-        description: 'Rich, golden-fleshed local pumpkin chunk. Velvety sweet texture when steamed, stewed, or pureed into comforting soup.',
+        rating: 4.8,
+        reviewsCount: 56,
+        description: 'Crisp, tender stringless snap green beans harvested fresh at dawn from highland gardens. Vibrant emerald color with a refreshing crunch and sweet vegetable flavor. High in dietary fiber, Vitamin K, and folate. Ideal for Sri Lankan coconut bean curries, garlic stir-fries, and quick steaming.',
       ),
       const GroceryItem(
-        id: 'black_grapes',
-        name: 'Black Grapes',
-        unit: '250g',
-        price: 450.00,
-        circleColor: Color(0xFFF2EAF8),
-        imageUrl: 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?auto=format&fit=crop&w=500&q=80',
-        category: 'Fruits',
-        rating: 4.8,
-        reviewsCount: 52,
-        description: 'Seedless dark purple black grapes bursting with sweet-tart natural juice. High in resveratrol and flavonoids.',
+        id: 'carrot',
+        name: 'Highland Carrots',
+        unit: '500 g',
+        price: 340.00,
+        originalPrice: 390.00,
+        discountPercent: 13,
+        isNew: true,
+        circleColor: Color(0xFFFFF0E6),
+        imageUrl: 'assets/images/carrot.png',
+        category: 'Vegetables',
+        rating: 4.9,
+        reviewsCount: 110,
+        description: 'Sweet, crunchy highland farm carrots freshly pulled and washed with green tops. Vibrant orange hue packed with beta-carotene, lutein, and essential minerals for radiant health and vision. Delicious raw as crunchy snack sticks, or slow-cooked in curries, hearty stews, and fresh juices.',
       ),
     ];
 
-    // Seed default cart matching Figma design exactly:
-    _cartQuantities['fresh_broccoli'] = 5;
-    _cartQuantities['black_grapes'] = 5;
-    _cartQuantities['avocado'] = 3;
-    _cartQuantities['chicken_breast'] = 1;
+    // Seed default cart with the new fresh products:
+    _cartQuantities['carrot'] = 2;
+    _cartQuantities['tomato'] = 3;
+    _cartQuantities['beans'] = 1;
+    _cartQuantities['pumpkin'] = 1;
   }
 
   // Cart operations
@@ -427,12 +336,18 @@ class GroceryService extends ChangeNotifier {
     try {
       return _items.firstWhere((element) => element.id == id);
     } catch (_) {
+      if (_items.isNotEmpty) return _items.first;
       return null;
     }
   }
 
   List<GroceryItem> getCategoryItems(String category) {
-    return _items.where((item) => item.category.toLowerCase() == category.toLowerCase()).toList();
+    final cat = category.toLowerCase().trim();
+    if (cat.isEmpty || cat == 'all' || cat == 'vegetables') {
+      return _items;
+    }
+    final filtered = _items.where((item) => item.category.toLowerCase() == cat).toList();
+    return filtered.isNotEmpty ? filtered : _items;
   }
 
   // Search

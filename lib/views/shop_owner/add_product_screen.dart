@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/grocery_item_model.dart';
 import '../../models/user_model.dart';
 import '../../services/grocery_service.dart';
+import '../common/app_image_view.dart';
 
 class AddProductScreen extends StatefulWidget {
   final UserModel seller;
@@ -29,7 +30,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   String _selectedCategory = 'Vegetables';
   bool _isNewItem = true;
-  String _selectedPresetImage = 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?auto=format&fit=crop&w=500&q=80';
+  String _selectedPresetImage = 'assets/images/carrot.png';
 
   final List<String> _categories = [
     'Vegetables',
@@ -45,35 +46,23 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final List<Map<String, String>> _presetImages = [
     {
       'label': 'Carrot',
-      'url': 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?auto=format&fit=crop&w=500&q=80',
+      'url': 'assets/images/carrot.png',
     },
     {
-      'label': 'Avocado',
-      'url': 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?auto=format&fit=crop&w=500&q=80',
-    },
-    {
-      'label': 'Broccoli',
-      'url': 'https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?auto=format&fit=crop&w=500&q=80',
+      'label': 'Pumpkin',
+      'url': 'assets/images/pumpkin.png',
     },
     {
       'label': 'Tomato',
-      'url': 'https://images.unsplash.com/photo-1546470427-0d4db154ceb7?auto=format&fit=crop&w=500&q=80',
+      'url': 'assets/images/tomato.png',
     },
     {
-      'label': 'Onion',
-      'url': 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?auto=format&fit=crop&w=500&q=80',
+      'label': 'Red Onion',
+      'url': 'assets/images/red_onion.png',
     },
     {
-      'label': 'Milk',
-      'url': 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=500&q=80',
-    },
-    {
-      'label': 'Rice',
-      'url': 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=500&q=80',
-    },
-    {
-      'label': 'Chicken',
-      'url': 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=500&q=80',
+      'label': 'Green Beans',
+      'url': 'assets/images/beans.png',
     },
   ];
 
@@ -410,13 +399,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            Image.network(
-                              preset['url']!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: const Color(0xFFF1F5F9),
-                                child: const Icon(Icons.eco_rounded, color: AppColors.brandGreen, size: 24),
-                              ),
+                            AppImageView(
+                              imageUrl: preset['url']!,
+                              fit: BoxFit.contain,
                             ),
                             if (isSelected)
                               Container(

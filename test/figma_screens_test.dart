@@ -35,9 +35,9 @@ void main() {
       expect(find.text('Vegetables'), findsOneWidget);
     });
 
-    testWidgets('2. Product Detail Screen: renders Chicken Breast 1KG with price, rating, quantity stepper & add to cart', (tester) async {
+    testWidgets('2. Product Detail Screen: renders Fresh Pumpkin with price, rating, quantity stepper & add to cart', (tester) async {
       final groceryService = GroceryService();
-      final item = groceryService.getItemById('chicken_breast')!;
+      final item = groceryService.getItemById('pumpkin')!;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -46,9 +46,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Chicken Breast 1KG'), findsOneWidget);
-      expect(find.text('Rs. 1450.00'), findsOneWidget);
-      expect(find.text('1.50 lbs'), findsOneWidget);
+      expect(find.text('Fresh Pumpkin'), findsOneWidget);
+      expect(find.text('Rs. 420.00'), findsOneWidget);
+      expect(find.text('1 kg'), findsOneWidget);
       expect(find.text('Quantity'), findsOneWidget);
       expect(find.text('Add to cart'), findsOneWidget);
     });
@@ -63,8 +63,8 @@ void main() {
 
       expect(find.text('Vegetables'), findsOneWidget);
       expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
-      expect(find.text('Fresh Broccoli'), findsOneWidget);
-      expect(find.text('Red Onion'), findsOneWidget);
+      expect(find.text('Fresh Pumpkin'), findsOneWidget);
+      expect(find.text('Ripe Tomatoes'), findsOneWidget);
     });
 
     testWidgets('4. Cart Screen: renders items, calculations and Checkout button', (tester) async {

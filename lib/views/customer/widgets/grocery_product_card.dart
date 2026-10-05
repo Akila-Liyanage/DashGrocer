@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../models/grocery_item_model.dart';
 import '../../../services/grocery_service.dart';
+import '../../common/app_image_view.dart';
 import '../product_detail_screen.dart';
 
 class GroceryProductCard extends StatelessWidget {
@@ -124,31 +125,9 @@ class GroceryProductCard extends StatelessWidget {
                   child: ClipOval(
                     child: Padding(
                       padding: const EdgeInsets.all(10.0),
-                      child: Image.network(
-                        item.imageUrl,
+                      child: AppImageView(
+                        imageUrl: item.imageUrl,
                         fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Icon(
-                              Icons.shopping_basket_rounded,
-                              size: 42,
-                              color: AppColors.brandGreen.withValues(alpha: 0.7),
-                            ),
-                          );
-                        },
-                        loadingBuilder: (context, child, progress) {
-                          if (progress == null) return child;
-                          return Center(
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.brandGreen.withValues(alpha: 0.5),
-                              ),
-                            ),
-                          );
-                        },
                       ),
                     ),
                   ),
