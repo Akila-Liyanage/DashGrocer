@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/shop_owner_theme.dart';
-import '../../core/formatters.dart';
-import '../../models/shop_order.dart';
-import '../../services/shop_store.dart';
-import '../dashboard/shop_actions.dart';
-import '../dashboard/widgets/button_spinner.dart';
-import '../dashboard/widgets/info_card.dart';
-import '../dashboard/widgets/shop_owner_app_bar.dart';
-import '../dashboard/widgets/status_pill.dart';
+import '../../../core/theme/shop_owner_theme.dart';
+import '../../../core/formatters.dart';
+import '../../../models/shop_order.dart';
+import '../../../services/shop_store.dart';
+import '../shop_actions.dart';
+import '../widgets/button_spinner.dart';
+import '../widgets/info_card.dart';
+import '../widgets/shop_owner_app_bar.dart';
+import '../widgets/status_pill.dart';
 
 /// Shop Order Details & Status Update.
 ///
