@@ -1,35 +1,97 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dashgrocer/main.dart';
 import 'package:dashgrocer/services/auth_service.dart';
-import 'package:dashgrocer/views/auth/widgets/animated_role_selector.dart';
+import 'package:dashgrocer/views/auth/welcome_screen.dart';
+import 'package:dashgrocer/views/auth/login_screen.dart';
+import 'package:dashgrocer/views/auth/signup_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   setUp(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
     AuthService.simulatedDelay = Duration.zero;
     AuthService().logout();
   });
 
-  testWidgets('DashGrocer auth screen renders successfully with all controls', (WidgetTester tester) async {
-    await tester.pumpWidget(const DashGrocerApp());
-    await tester.pump(const Duration(milliseconds: 400));
+  testWidgets('Welcome screen renders with direct Sign in with Email and Register buttons', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WelcomeScreen(
+          onGoToLogin: () {},
+          onGoToRegister: () {},
+          onGoogleSignIn: () {},
+        ),
+      ),
+    );
+    await tester.pump();
 
-    // Verify brand typography and auth components are present
-    expect(find.text('Dash'), findsOneWidget);
-    expect(find.text('Grocer'), findsOneWidget);
-    expect(find.text('Sign In'), findsOneWidget);
-    expect(find.text('Create Account'), findsOneWidget);
+    // Verify Welcome screen text & direct action buttons
+    expect(find.text('Welcome'), findsOneWidget);
+    expect(find.text('Sign In with Email'), findsOneWidget);
+    expect(find.text('Create an account'), findsOneWidget);
 
-    // Verify demo quick-fill buttons exist
+    // Verify Google sign-in is optional at the bottom
+    expect(find.text('Or optional sign in'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
+  });
+
+  testWidgets('Login screen asks directly for Email and Password with optional Google button at bottom', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          onGoToRegister: () {},
+          onGoToForgotPassword: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Direct email and password input fields
+    expect(find.text('Welcome back !'), findsOneWidget);
+    expect(find.text('Email Address'), findsOneWidget);
+    expect(find.text('Remember me'), findsOneWidget);
+    expect(find.text('Forgot password'), findsOneWidget);
+
+    // Role switcher chips
     expect(find.text('Customer'), findsOneWidget);
     expect(find.text('Shop Owner'), findsOneWidget);
-    expect(find.text('Admin'), findsOneWidget);
+
+    // Google login is optional at the bottom
+    expect(find.text('Or continue with'), findsOneWidget);
+    expect(find.text('Google'), findsOneWidget);
+  });
+
+  testWidgets('Signup screen renders role selector and dynamically shows shop fields for Shop Owner', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SignupScreen(
+          onGoToLogin: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Create account'), findsOneWidget);
+    expect(find.text('Full name'), findsOneWidget);
+    expect(find.text('Email address'), findsOneWidget);
+
+    // Initially Customer is selected, shop fields are not visible
+    expect(find.text('Shop name'), findsNothing);
+
+    // Switch role to Shop Owner
+    await tester.tap(find.text('Shop Owner'));
+    await tester.pumpAndSettle();
+
+    // Shop fields should now be visible
+    expect(find.text('Shop name'), findsOneWidget);
+    expect(find.text('Shop address'), findsOneWidget);
   });
 
   testWidgets('Role-Based Access Control: Customer login shows Customer Dashboard', (WidgetTester tester) async {
     await tester.pumpWidget(const DashGrocerApp());
     await tester.pump(const Duration(milliseconds: 400));
 
-    // Fill customer credentials and submit
     final authService = AuthService();
     await authService.login(
       email: 'customer@dashgrocer.com',
@@ -37,15 +99,10 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 500));
 
-    // Verify customer dashboard is rendered
-    expect(find.text('DashGrocer Customer'), findsOneWidget);
-    expect(find.text('CUSTOMER ROLE'), findsOneWidget);
-    expect(find.text('Active Pre-Orders'), findsOneWidget);
-
-    // Verify logout returns to Auth Screen
-    await tester.tap(find.byTooltip('Sign Out'));
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Sign In to DashGrocer'), findsOneWidget);
+    // Verify customer greeting, categories and pickup card
+    expect(find.text('Hi, Kasun 👋'), findsOneWidget);
+    expect(find.text('READY FOR PICKUP'), findsOneWidget);
+    expect(find.text('Nearby Pickup Shops'), findsOneWidget);
   });
 
   testWidgets('Role-Based Access Control: Shop Owner login shows Shop Owner Dashboard', (WidgetTester tester) async {
@@ -60,38 +117,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     // Verify shop owner dashboard is rendered
-    expect(find.text('Shop Owner Portal'), findsOneWidget);
-    expect(find.text('SHOP OWNER ROLE'), findsOneWidget);
     expect(find.text('GreenLeaf Fresh Mart'), findsOneWidget);
-    expect(find.text('Ready for Pickup'), findsOneWidget);
-  });
-
-  testWidgets('Dynamic Motion: Switch to Register tab and toggle Shop Owner role reveals store fields', (WidgetTester tester) async {
-    await tester.pumpWidget(const DashGrocerApp());
-    await tester.pump(const Duration(milliseconds: 400));
-
-    // Tap Create Account tab
-    await tester.tap(find.text('Create Account'));
-    await tester.pump(const Duration(milliseconds: 400));
-
-    expect(find.text('Register as:'), findsOneWidget);
-    expect(find.text('Full Name'), findsOneWidget);
-
-    // Initially Customer is selected, so store details shouldn't be visible
-    expect(find.text('Grocery / Store Name'), findsNothing);
-
-    // Tap Shop Owner in role selector
-    await tester.tap(
-      find.descendant(
-        of: find.byType(AnimatedRoleSelector),
-        matching: find.text('Shop Owner'),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 500));
-
-    // Store details should now dynamically expand
-    expect(find.text('Store Details (Shop Owner)'), findsOneWidget);
-    expect(find.text('Grocery / Store Name'), findsOneWidget);
-    expect(find.text('Pickup Store Address'), findsOneWidget);
+    expect(find.text('Open for Pickup'), findsOneWidget);
+    expect(find.text('Incoming Pickup Orders'), findsOneWidget);
   });
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
-import 'widgets/animated_auth_button.dart';
 import 'widgets/animated_role_selector.dart';
 import 'widgets/dynamic_text_field.dart';
 
@@ -75,7 +75,7 @@ class _RegisterFormState extends State<RegisterForm> {
   Color _getStrengthColor() {
     if (_passwordStrength < 0.4) return AppColors.error;
     if (_passwordStrength < 0.75) return AppColors.warning;
-    return AppColors.success;
+    return const Color(0xFF00C265);
   }
 
   Future<void> _submit() async {
@@ -105,18 +105,100 @@ class _RegisterFormState extends State<RegisterForm> {
         return Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Role Segmented Selector with Dynamic Pill Motion
-              const Text(
-                'Register as:',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+              // Modern Fresh Produce Banner Image
+              Container(
+                height: 118,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Image.asset(
+                          'assets/images/fresh_groceries.jpg',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, _, error) => Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFF064E3B), Color(0xFF047857)],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.75),
+                                Colors.black.withValues(alpha: 0.35),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF00C265),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                'Fresh Daily Guarantee',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Join DashGrocer Market',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              'Pre-order fresh local items for zero-wait pickup',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withValues(alpha: 0.85),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
+
+              // Role Selector Pill
               AnimatedRoleSelector(
                 selectedRole: _selectedRole,
                 onRoleChanged: (newRole) {
@@ -127,41 +209,7 @@ class _RegisterFormState extends State<RegisterForm> {
                 },
               ),
 
-              const SizedBox(height: 12),
-
-              // Animated Role Description Chip
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isShopOwner
-                      ? AppColors.roleShopOwnerSoft
-                      : AppColors.roleCustomerSoft,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isShopOwner ? Icons.store_mall_directory_outlined : Icons.shopping_basket_outlined,
-                      size: 16,
-                      color: isShopOwner ? AppColors.roleShopOwner : AppColors.roleCustomer,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _selectedRole.description,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isShopOwner ? AppColors.roleShopOwner : AppColors.roleCustomer,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
 
               // Animated Error Banner
               AnimatedSize(
@@ -169,29 +217,20 @@ class _RegisterFormState extends State<RegisterForm> {
                 child: errorMsg != null
                     ? Container(
                         margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
                           color: AppColors.errorSoft,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.error.withValues(alpha: 0.3),
-                          ),
+                          border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.error_outline_rounded,
-                              color: AppColors.error,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 10),
+                            const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 18),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 errorMsg,
-                                style: const TextStyle(
+                                style: GoogleFonts.plusJakartaSans(
                                   color: AppColors.error,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
@@ -204,11 +243,11 @@ class _RegisterFormState extends State<RegisterForm> {
                     : const SizedBox.shrink(),
               ),
 
-              // Full Name Input
+              // Full Name
               DynamicTextField(
                 controller: _nameController,
                 label: 'Full Name',
-                hint: 'e.g. Kasun Perera',
+                hint: 'Kasun Perera',
                 prefixIcon: Icons.person_outline_rounded,
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
@@ -220,7 +259,24 @@ class _RegisterFormState extends State<RegisterForm> {
 
               const SizedBox(height: 14),
 
-              // Email Input
+              // Contact / Phone Number with Phone Icon
+              DynamicTextField(
+                controller: _phoneController,
+                label: 'Contact Number',
+                hint: '+94 77 123 4567',
+                prefixIcon: Icons.phone_outlined,
+                keyboardType: TextInputType.phone,
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Please enter your contact phone number';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 14),
+
+              // Email Address
               DynamicTextField(
                 controller: _emailController,
                 label: 'Email Address',
@@ -238,61 +294,23 @@ class _RegisterFormState extends State<RegisterForm> {
                 },
               ),
 
-              const SizedBox(height: 14),
-
-              // Phone Number Input
-              DynamicTextField(
-                controller: _phoneController,
-                label: 'Phone Number',
-                hint: '+94 7X XXX XXXX',
-                prefixIcon: Icons.phone_outlined,
-                keyboardType: TextInputType.phone,
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Please enter your mobile phone number';
-                  }
-                  return null;
-                },
-              ),
-
-              // Dynamic Motion Expandable Section for Shop Owner Fields
+              // Dynamic Store Details if Shop Owner
               AnimatedSize(
-                duration: const Duration(milliseconds: 350),
+                duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOutCubic,
                 child: isShopOwner
                     ? Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 14),
-                          const Divider(color: AppColors.border, height: 1),
-                          const SizedBox(height: 14),
-                          const Row(
-                            children: [
-                              Icon(
-                                Icons.storefront_rounded,
-                                size: 16,
-                                color: AppColors.accentOrange,
-                              ),
-                              SizedBox(width: 6),
-                              Text(
-                                'Store Details (Shop Owner)',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.accentOrange,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
                           DynamicTextField(
                             controller: _shopNameController,
-                            label: 'Grocery / Store Name',
-                            hint: 'e.g. Fresh Direct Express',
-                            prefixIcon: Icons.business_outlined,
+                            label: 'Store Name',
+                            hint: 'GreenMart Colombo',
+                            prefixIcon: Icons.storefront_outlined,
                             validator: (val) {
                               if (isShopOwner && (val == null || val.trim().isEmpty)) {
-                                return 'Please enter your shop or grocery name';
+                                return 'Please enter your grocery shop name';
                               }
                               return null;
                             },
@@ -300,18 +318,16 @@ class _RegisterFormState extends State<RegisterForm> {
                           const SizedBox(height: 14),
                           DynamicTextField(
                             controller: _shopAddressController,
-                            label: 'Pickup Store Address',
-                            hint: 'e.g. 102 High Street, Kandy',
+                            label: 'Pickup Address',
+                            hint: 'No. 42, High Level Road',
                             prefixIcon: Icons.location_on_outlined,
                             validator: (val) {
                               if (isShopOwner && (val == null || val.trim().isEmpty)) {
-                                return 'Please specify the customer pickup location';
+                                return 'Please specify the store pickup address';
                               }
                               return null;
                             },
                           ),
-                          const SizedBox(height: 14),
-                          const Divider(color: AppColors.border, height: 1),
                         ],
                       )
                     : const SizedBox.shrink(),
@@ -319,11 +335,11 @@ class _RegisterFormState extends State<RegisterForm> {
 
               const SizedBox(height: 14),
 
-              // Password Input
+              // Password
               DynamicTextField(
                 controller: _passwordController,
                 label: 'Password',
-                hint: 'Minimum 6 characters',
+                hint: '••••••••',
                 prefixIcon: Icons.lock_outline_rounded,
                 isPassword: true,
                 onChanged: () => _calculatePasswordStrength(_passwordController.text),
@@ -332,7 +348,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     return 'Please enter a password';
                   }
                   if (val.length < 6) {
-                    return 'Password must be at least 6 characters';
+                    return 'Minimum 6 characters required';
                   }
                   return null;
                 },
@@ -340,49 +356,43 @@ class _RegisterFormState extends State<RegisterForm> {
 
               // Password Strength Indicator
               if (_strengthLabel.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: TweenAnimationBuilder<double>(
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOut,
-                          tween: Tween<double>(begin: 0, end: _passwordStrength),
-                          builder: (context, value, _) {
-                            return LinearProgressIndicator(
-                              value: value,
-                              backgroundColor: AppColors.border,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                _getStrengthColor(),
-                              ),
-                              minHeight: 4,
-                            );
-                          },
+                const SizedBox(height: 6),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: _passwordStrength,
+                            backgroundColor: const Color(0xFFF1F5F9),
+                            valueColor: AlwaysStoppedAnimation<Color>(_getStrengthColor()),
+                            minHeight: 4,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      _strengthLabel,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: _getStrengthColor(),
+                      const SizedBox(width: 8),
+                      Text(
+                        _strengthLabel,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: _getStrengthColor(),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
 
               const SizedBox(height: 14),
 
-              // Confirm Password Input
+              // Confirm Password
               DynamicTextField(
                 controller: _confirmPasswordController,
                 label: 'Confirm Password',
-                hint: 'Re-enter your password',
+                hint: '••••••••',
                 prefixIcon: Icons.lock_reset_rounded,
                 isPassword: true,
                 textInputAction: TextInputAction.done,
@@ -397,42 +407,66 @@ class _RegisterFormState extends State<RegisterForm> {
                 },
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 22),
 
-              // Submit Button
-              AnimatedAuthButton(
-                text: isShopOwner
-                    ? 'Register as Shop Owner'
-                    : 'Create Customer Account',
-                icon: Icons.check_circle_outline_rounded,
-                color: isShopOwner ? AppColors.accentOrange : AppColors.primary,
-                isLoading: isLoading,
-                onPressed: _submit,
+              // Solid Emerald Pill Submit Button
+              SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00C265),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(26),
+                    ),
+                    shadowColor: const Color(0xFF00C265).withValues(alpha: 0.35),
+                  ),
+                  onPressed: isLoading ? null : _submit,
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          isShopOwner ? 'Create Store Account' : 'Create Account',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
 
-              // Switch to Login Row
+              // Footer: Already have an account? Sign In
               Center(
                 child: Wrap(
                   alignment: WrapAlignment.center,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    const Text(
-                      'Already registered? ',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
+                    Text(
+                      'Already have an account? ',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: const Color(0xFF64748B),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     GestureDetector(
                       onTap: widget.onSwitchToLogin,
-                      child: const Text(
+                      child: Text(
                         'Sign In',
-                        style: TextStyle(
-                          color: AppColors.primary,
+                        style: GoogleFonts.plusJakartaSans(
+                          color: const Color(0xFF00C265),
                           fontWeight: FontWeight.w700,
-                          fontSize: 14,
+                          fontSize: 13,
                         ),
                       ),
                     ),

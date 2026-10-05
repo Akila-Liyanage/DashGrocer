@@ -70,4 +70,38 @@ class UserModel {
       shopAddress: shopAddress ?? this.shopAddress,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'email': email,
+      'fullName': fullName,
+      'phoneNumber': phoneNumber,
+      'role': role.name,
+      'shopName': shopName,
+      'shopAddress': shopAddress,
+    };
+  }
+
+  factory UserModel.fromMap(Map<String, dynamic> map, [String? id]) {
+    final roleStr = (map['role'] as String? ?? 'customer').toLowerCase();
+    UserRole role;
+    if (roleStr.contains('owner') || roleStr.contains('seller') || roleStr.contains('shop')) {
+      role = UserRole.shopOwner;
+    } else if (roleStr.contains('admin')) {
+      role = UserRole.admin;
+    } else {
+      role = UserRole.customer;
+    }
+
+    return UserModel(
+      id: id ?? (map['id'] as String? ?? 'user_${DateTime.now().millisecondsSinceEpoch}'),
+      email: map['email'] as String? ?? '',
+      fullName: map['fullName'] as String? ?? '',
+      phoneNumber: map['phoneNumber'] as String? ?? '',
+      role: role,
+      shopName: map['shopName'] as String?,
+      shopAddress: map['shopAddress'] as String?,
+    );
+  }
 }

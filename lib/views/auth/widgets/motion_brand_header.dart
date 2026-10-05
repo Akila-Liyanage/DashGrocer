@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 
 class MotionBrandHeader extends StatefulWidget {
@@ -28,7 +29,7 @@ class _MotionBrandHeaderState extends State<MotionBrandHeader>
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
 
-    _floatingAnimation = Tween<double>(begin: 0, end: -8).animate(
+    _floatingAnimation = Tween<double>(begin: 0, end: -6).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -41,8 +42,6 @@ class _MotionBrandHeaderState extends State<MotionBrandHeader>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Column(
       children: [
         AnimatedBuilder(
@@ -54,75 +53,51 @@ class _MotionBrandHeaderState extends State<MotionBrandHeader>
             );
           },
           child: Container(
-            width: 80,
-            height: 80,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [AppColors.primary, AppColors.primaryLight],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(22),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.primary.withValues(alpha: 0.28),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
-            child: const Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(
-                  Icons.shopping_basket_rounded,
-                  size: 40,
-                  color: Colors.white,
-                ),
-                Positioned(
-                  top: 14,
-                  right: 14,
-                  child: Icon(
-                    Icons.eco_rounded,
-                    size: 16,
-                    color: AppColors.accentAmber,
-                  ),
-                ),
-              ],
+            child: const Center(
+              child: Icon(
+                Icons.shopping_bag_rounded,
+                color: Colors.white,
+                size: 36,
+              ),
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Dash',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            Text(
-              'Grocer',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: AppColors.primary,
-              ),
-            ),
-          ],
+        const SizedBox(height: 18),
+        Text(
+          widget.title,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 26,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+            letterSpacing: -0.5,
+          ),
         ),
         const SizedBox(height: 6),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: Text(
-            widget.subtitle,
-            key: ValueKey(widget.subtitle),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-              fontSize: 13.5,
-            ),
+        Text(
+          widget.subtitle,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+            height: 1.4,
           ),
         ),
       ],

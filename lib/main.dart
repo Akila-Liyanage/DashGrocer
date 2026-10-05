@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
-import 'models/user_model.dart';
+import 'package:dashgrocer/models/user_model.dart';
 import 'services/auth_service.dart';
+import 'services/database_seeder.dart';
 import 'views/admin/admin_dashboard.dart';
 import 'views/auth/auth_screen.dart';
 import 'views/customer/customer_dashboard.dart';
@@ -15,6 +16,8 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    // Seed initial Firestore catalog and demo users if needed
+    DatabaseSeeder.seedInitialDataIfNeeded();
   } catch (e) {
     debugPrint('Firebase initialization notice: $e');
   }
