@@ -691,13 +691,19 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.brandGreen,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(3, (i) {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: AppColors.brandGreen.withValues(alpha: 0.5 + (i * 0.2)),
+                        shape: BoxShape.circle,
+                      ),
+                    );
+                  }),
                 ),
               ],
             ),
