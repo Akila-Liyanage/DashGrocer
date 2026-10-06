@@ -30,7 +30,18 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _passwordController.addListener(_onPasswordChanged);
+  }
+
+  void _onPasswordChanged() {
+    setState(() {});
+  }
+
+  @override
   void dispose() {
+    _passwordController.removeListener(_onPasswordChanged);
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
@@ -298,6 +309,10 @@ class _SignupScreenState extends State<SignupScreen> {
                             },
                           ),
 
+                          // Live Password Strength Indicator
+                          if (_passwordController.text.isNotEmpty)
+                            _buildPasswordStrengthIndicator(),
+
                           const SizedBox(height: 18),
 
                           // Sign up Button (Green, matching Figma)
@@ -476,6 +491,63 @@ class _SignupScreenState extends State<SignupScreen> {
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         ),
+      ),
+    );
+  }
+
+  int _calculatePasswordStrength(String password) {
+    if (password.isEmpty) return 0;
+    int strength = 0;
+    if (password.length >= 6) strength++;
+    if (password.contains(RegExp(r'[0-9]'))) strength++;
+    if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) strength++;
+    return strength;
+  }
+
+  Widget _buildPasswordStrengthIndicator() {
+    final strength = _calculatePasswordStrength(_passwordController.text);
+    Color color;
+    String label;
+    if (strength <= 1) {
+      color = AppColors.error;
+      label = 'Weak password (add numbers & symbols)';
+    } else if (strength == 2) {
+      color = const Color(0xFFF59E0B);
+      label = 'Moderate (add special characters like ! or @)';
+    } else {
+      color = const Color(0xFF10B981);
+      label = 'Strong & secure password';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: List.generate(3, (index) {
+              return Expanded(
+                child: Container(
+                  height: 4,
+                  margin: EdgeInsets.only(right: index < 2 ? 4 : 0),
+                  decoration: BoxDecoration(
+                    color: index < strength ? color : const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }
