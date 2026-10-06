@@ -8,13 +8,20 @@ import 'category_products_screen.dart';
 import 'search_screen.dart';
 import 'widgets/grocery_product_card.dart';
 
-class CustomerHomeTab extends StatelessWidget {
+class CustomerHomeTab extends StatefulWidget {
   final UserModel? user;
 
   const CustomerHomeTab({
     super.key,
     this.user,
   });
+
+  @override
+  State<CustomerHomeTab> createState() => _CustomerHomeTabState();
+}
+
+class _CustomerHomeTabState extends State<CustomerHomeTab> {
+  String _selectedCategory = 'All';
 
   static const List<Map<String, dynamic>> _popularShops = [
     {
@@ -31,19 +38,23 @@ class CustomerHomeTab extends StatelessWidget {
     },
   ];
 
-
-
   @override
   Widget build(BuildContext context) {
     final groceryService = GroceryService();
     final authService = AuthService();
-    final userName = user?.fullName.split(' ').first ?? 'Kasun';
+    final userName = widget.user?.fullName.split(' ').first ?? 'Kasun';
 
     return ListenableBuilder(
       listenable: groceryService,
       builder: (context, _) {
         final categories = groceryService.categories;
-        final featuredProducts = groceryService.allItems.take(6).toList();
+        final allItems = groceryService.allItems;
+        final featuredProducts = _selectedCategory == 'All'
+            ? allItems.take(6).toList()
+            : allItems
+                .where((item) =>
+                    item.category.toLowerCase() == _selectedCategory.toLowerCase())
+                .toList();
 
         return Scaffold(
           backgroundColor: const Color(0xFFFBFBFB),
@@ -371,6 +382,21 @@ class CustomerHomeTab extends StatelessWidget {
                     ],
                   ),
 
+                  const SizedBox(height: 10),
+
+                  // Category Quick-Filter Chips Row
+                  SizedBox(
+                    height: 34,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      children: [
+                        _buildFilterChip('All', _selectedCategory == 'All'),
+                        ...categories.map((c) => _buildFilterChip(c.name, _selectedCategory.toLowerCase() == c.name.toLowerCase())),
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 14),
 
                   // Featured Products Grid (2 columns matching Figma design)
@@ -425,6 +451,50 @@ class CustomerHomeTab extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildFilterChip(String label, bool isSelected) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedCategory = label;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.brandGreen : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? AppColors.brandGreen : const Color(0xFFE5E7EB),
+              width: 1.0,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.brandGreen.withValues(alpha: 0.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11.5,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                color: isSelected ? Colors.white : const Color(0xFF64748B),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
