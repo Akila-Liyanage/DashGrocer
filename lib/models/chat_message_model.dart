@@ -1,3 +1,5 @@
+enum MessageStatus { sending, sent, delivered, read }
+
 class ChatMessage {
   final String id;
   final String senderId;
@@ -10,6 +12,7 @@ class ChatMessage {
   final String? productImageUrl;
   final bool isRead;
   final bool isQuickInquiry;
+  final MessageStatus status;
 
   const ChatMessage({
     required this.id,
@@ -23,6 +26,7 @@ class ChatMessage {
     this.productImageUrl,
     this.isRead = true,
     this.isQuickInquiry = false,
+    this.status = MessageStatus.read,
   });
 
   bool get isFromCustomer => senderRole == 'customer';
@@ -40,6 +44,7 @@ class ChatMessage {
     String? productImageUrl,
     bool? isRead,
     bool? isQuickInquiry,
+    MessageStatus? status,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -53,6 +58,7 @@ class ChatMessage {
       productImageUrl: productImageUrl ?? this.productImageUrl,
       isRead: isRead ?? this.isRead,
       isQuickInquiry: isQuickInquiry ?? this.isQuickInquiry,
+      status: status ?? this.status,
     );
   }
 
