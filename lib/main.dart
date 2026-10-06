@@ -8,7 +8,7 @@ import 'services/database_seeder.dart';
 import 'views/admin/admin_dashboard.dart';
 import 'views/auth/auth_screen.dart';
 import 'views/customer/customer_dashboard.dart';
-import 'views/shop_owner/shop_owner_dashboard.dart';
+import 'views/shop_owner/shop_owner_home.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -86,7 +86,7 @@ class AuthRoleWrapper extends StatelessWidget {
           user: user,
         );
       case UserRole.shopOwner:
-        return ShopOwnerDashboard(
+        return ShopOwnerHome(
           key: ValueKey('shop_owner_dashboard_${user.id}'),
           user: user,
         );
