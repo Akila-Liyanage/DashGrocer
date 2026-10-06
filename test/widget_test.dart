@@ -116,10 +116,13 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 500));
 
-    // Verify shop owner dashboard is rendered
-    expect(find.text('GreenLeaf Fresh Mart'), findsOneWidget);
-    expect(find.text('Open for Pickup'), findsOneWidget);
-    expect(find.text('Incoming Pickup Orders'), findsOneWidget);
+    // Verify the shop owner side is rendered: its dashboard overview and
+    // its bottom navigation.
+    expect(find.text('OVERVIEW'), findsOneWidget);
+    expect(find.text('NEW ORDERS'), findsOneWidget);
+    expect(find.text('READY PICKUP'), findsOneWidget);
+    expect(find.text('Dashboard'), findsOneWidget);
+    expect(find.text('Products'), findsOneWidget);
   });
 
   test('Customer login strictly rejects fake details and wrong password', () async {
