@@ -135,6 +135,7 @@ class _RoleTabItem extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

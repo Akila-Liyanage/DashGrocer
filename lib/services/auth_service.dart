@@ -86,7 +86,11 @@ class AuthService extends ChangeNotifier {
   final Map<String, String> _registeredPasswords = {};
 
   static bool _isValidDemoPassword(String password) {
-    return password == 'Password123!' || password == 'pass123';
+    return password == 'Password123!' ||
+        password == 'pass123' ||
+        password == 'Admin123!' ||
+        password == 'admin123' ||
+        password == 'password123';
   }
 
   static Duration simulatedDelay = const Duration(milliseconds: 700);
@@ -252,11 +256,10 @@ class AuthService extends ChangeNotifier {
         return true;
       }
     } on FirebaseAuthException catch (e) {
-      // If user not found in Firebase Auth, check if it's an unprovisioned seed account
-      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
-        if (demoMatch.isNotEmpty) {
-          // Strictly check password before provisioning seed account
-          if (_isValidDemoPassword(password)) {
+      if (demoMatch.isNotEmpty) {
+        // Strictly check password for demo account
+        if (_isValidDemoPassword(password)) {
+          try {
             final cred = await DatabaseSeeder.provisionSeedUserAuth(normalizedEmail, password);
             if (cred?.user != null) {
               await _loadUserProfile(cred!.user!.uid, fallbackEmail: cred.user!.email);
@@ -266,35 +269,35 @@ class AuthService extends ChangeNotifier {
               notifyListeners();
               return true;
             }
-            _currentUser = demoMatch.first;
-            _lastLoginTime = DateTime.now();
-            _isLoading = false;
-            _errorMessage = null;
-            notifyListeners();
-            return true;
-          } else {
-            _isLoading = false;
-            _errorMessage = 'Incorrect password. Please try again.';
-            notifyListeners();
-            return false;
-          }
+          } catch (_) {}
+          _currentUser = demoMatch.first;
+          _lastLoginTime = DateTime.now();
+          _isLoading = false;
+          _errorMessage = null;
+          notifyListeners();
+          return true;
+        } else {
+          _isLoading = false;
+          _errorMessage = 'Incorrect password. Please try again.';
+          notifyListeners();
+          return false;
         }
+      }
 
-        // Check if account was registered locally in this app session
-        if (_registeredUsers.containsKey(normalizedEmail)) {
-          if (_registeredPasswords[normalizedEmail] == password) {
-            _currentUser = _registeredUsers[normalizedEmail];
-            _lastLoginTime = DateTime.now();
-            _isLoading = false;
-            _errorMessage = null;
-            notifyListeners();
-            return true;
-          } else {
-            _isLoading = false;
-            _errorMessage = 'Incorrect password. Please try again.';
-            notifyListeners();
-            return false;
-          }
+      // Check if account was registered locally in this app session
+      if (_registeredUsers.containsKey(normalizedEmail)) {
+        if (_registeredPasswords[normalizedEmail] == password) {
+          _currentUser = _registeredUsers[normalizedEmail];
+          _lastLoginTime = DateTime.now();
+          _isLoading = false;
+          _errorMessage = null;
+          notifyListeners();
+          return true;
+        } else {
+          _isLoading = false;
+          _errorMessage = 'Incorrect password. Please try again.';
+          notifyListeners();
+          return false;
         }
       }
 

@@ -56,10 +56,14 @@ class _LoginScreenState extends State<LoginScreen> {
       _selectedRole = role;
       if (role == UserRole.shopOwner) {
         _emailController.text = 'seller@dashgrocer.com';
+        _passwordController.text = 'Password123!';
+      } else if (role == UserRole.admin) {
+        _emailController.text = 'admin@dashgrocer.com';
+        _passwordController.text = 'Admin123!';
       } else {
         _emailController.text = 'customer@dashgrocer.com';
+        _passwordController.text = 'Password123!';
       }
-      _passwordController.text = 'Password123!';
     });
     _authService.clearError();
   }
@@ -137,28 +141,33 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               // Bottom Sheet Card matching Figma LOGIN screen
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0x14000000),
-                      blurRadius: 24,
-                      offset: Offset(0, -6),
-                    ),
-                  ],
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+              Expanded(
+                flex: 7,
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x14000000),
+                        blurRadius: 24,
+                        offset: Offset(0, -6),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    child: SafeArea(
+                      top: false,
+                      child: Form(
+                        key: _formKey,
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                         // Title
                         Text(
                           'Welcome back !',
@@ -473,13 +482,16 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-                      ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ],
-          );
+            ),
+          ],
+        );
         },
       ),
     );
@@ -515,6 +527,13 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           Expanded(
             child: _buildRolePill(
+              title: 'Customer',
+              isSelected: _selectedRole == UserRole.customer,
+              onTap: () => _onRoleChanged(UserRole.customer),
+            ),
+          ),
+          Expanded(
+            child: _buildRolePill(
               title: 'Shop Owner',
               isSelected: _selectedRole == UserRole.shopOwner,
               onTap: () => _onRoleChanged(UserRole.shopOwner),
@@ -522,9 +541,9 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           Expanded(
             child: _buildRolePill(
-              title: 'Customer',
-              isSelected: _selectedRole == UserRole.customer,
-              onTap: () => _onRoleChanged(UserRole.customer),
+              title: 'Admin',
+              isSelected: _selectedRole == UserRole.admin,
+              onTap: () => _onRoleChanged(UserRole.admin),
             ),
           ),
         ],
