@@ -120,6 +120,7 @@ class CustomerHomeTab extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFFF4F5F7),
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
                       ),
                       child: Row(
                         children: [
