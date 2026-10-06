@@ -1,4 +1,9 @@
-enum MessageStatus { sending, sent, delivered, read }
+enum MessageDeliveryStatus {
+  sending,
+  sent,
+  delivered,
+  read,
+}
 
 class ChatMessage {
   final String id;
@@ -12,7 +17,7 @@ class ChatMessage {
   final String? productImageUrl;
   final bool isRead;
   final bool isQuickInquiry;
-  final MessageStatus status;
+  final MessageDeliveryStatus deliveryStatus;
 
   const ChatMessage({
     required this.id,
@@ -26,7 +31,7 @@ class ChatMessage {
     this.productImageUrl,
     this.isRead = true,
     this.isQuickInquiry = false,
-    this.status = MessageStatus.read,
+    this.deliveryStatus = MessageDeliveryStatus.read,
   });
 
   bool get isFromCustomer => senderRole == 'customer';
@@ -44,7 +49,7 @@ class ChatMessage {
     String? productImageUrl,
     bool? isRead,
     bool? isQuickInquiry,
-    MessageStatus? status,
+    MessageDeliveryStatus? deliveryStatus,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -58,7 +63,7 @@ class ChatMessage {
       productImageUrl: productImageUrl ?? this.productImageUrl,
       isRead: isRead ?? this.isRead,
       isQuickInquiry: isQuickInquiry ?? this.isQuickInquiry,
-      status: status ?? this.status,
+      deliveryStatus: deliveryStatus ?? this.deliveryStatus,
     );
   }
 
@@ -75,6 +80,7 @@ class ChatMessage {
       'productImageUrl': productImageUrl,
       'isRead': isRead,
       'isQuickInquiry': isQuickInquiry,
+      'deliveryStatus': deliveryStatus.name,
     };
   }
 
@@ -93,6 +99,12 @@ class ChatMessage {
       productImageUrl: map['productImageUrl'] as String?,
       isRead: map['isRead'] as bool? ?? true,
       isQuickInquiry: map['isQuickInquiry'] as bool? ?? false,
+      deliveryStatus: map['deliveryStatus'] != null
+          ? MessageDeliveryStatus.values.firstWhere(
+              (e) => e.name == map['deliveryStatus'],
+              orElse: () => MessageDeliveryStatus.read,
+            )
+          : MessageDeliveryStatus.read,
     );
   }
 }
