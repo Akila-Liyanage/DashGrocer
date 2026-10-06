@@ -508,6 +508,11 @@ class _LoginScreenState extends State<LoginScreen> {
         obscureText: obscureText,
         keyboardType: keyboardType,
         validator: validator,
+        onChanged: (_) {
+          if (_authService.errorMessage != null) {
+            _authService.clearError();
+          }
+        },
         style: GoogleFonts.plusJakartaSans(
           fontSize: 13,
           color: const Color(0xFF1E293B),
