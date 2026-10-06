@@ -21,7 +21,7 @@ class GroceryProductCard extends StatelessWidget {
     final groceryService = GroceryService();
     final cartQty = groceryService.getQuantity(item.id);
 
-    final tapHandler = onTap ??
+    final cardOnTap = onTap ??
         () {
           Navigator.push(
             context,
@@ -41,8 +41,8 @@ class GroceryProductCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -52,7 +52,7 @@ class GroceryProductCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: tapHandler,
+          onTap: cardOnTap,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -169,13 +169,34 @@ class GroceryProductCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    item.unit,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF868889),
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        item.unit,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF868889),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F6EB),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'In Stock',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.brandGreenDark,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
