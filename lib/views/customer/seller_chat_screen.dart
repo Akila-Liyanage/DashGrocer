@@ -623,9 +623,15 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
                       if (isCustomer) ...[
                         const SizedBox(width: 4),
                         Icon(
-                          Icons.done_all_rounded,
+                          msg.status == MessageStatus.sending
+                              ? Icons.access_time_rounded
+                              : (msg.status == MessageStatus.sent
+                                  ? Icons.done_rounded
+                                  : Icons.done_all_rounded),
                           size: 13,
-                          color: Colors.white.withValues(alpha: 0.85),
+                          color: msg.status == MessageStatus.read
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.7),
                         ),
                       ],
                     ],
