@@ -155,4 +155,34 @@ void main() {
     expect(authService.isAuthenticated, true);
     expect(authService.currentUser?.email, 'customer@dashgrocer.com');
   });
+
+  test('AuthService tracks lastLoginTime and biometrics toggle', () async {
+    final authService = AuthService();
+    await authService.logout();
+    expect(authService.lastLoginTime, isNull);
+    expect(authService.isBiometricsEnabled, false);
+
+    authService.setBiometricsEnabled(true);
+    expect(authService.isBiometricsEnabled, true);
+
+    await authService.login(
+      email: 'customer@dashgrocer.com',
+      password: 'Password123!',
+    );
+    expect(authService.lastLoginTime, isNotNull);
+
+    await authService.logout();
+    expect(authService.lastLoginTime, isNull);
+  });
+
+  testWidgets('Signup screen renders country code prefix badge for phone number', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SignupScreen(onGoToLogin: () {}),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('🇱🇰 +94'), findsOneWidget);
+  });
 }

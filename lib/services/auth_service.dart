@@ -201,6 +201,7 @@ class AuthService extends ChangeNotifier {
         if (demoMatch.isNotEmpty) {
           if (_isValidDemoPassword(password)) {
             _currentUser = demoMatch.first;
+            _lastLoginTime = DateTime.now();
             _isLoading = false;
             _errorMessage = null;
             notifyListeners();
@@ -216,6 +217,7 @@ class AuthService extends ChangeNotifier {
         if (_registeredUsers.containsKey(normalizedEmail)) {
           if (_registeredPasswords[normalizedEmail] == password) {
             _currentUser = _registeredUsers[normalizedEmail];
+            _lastLoginTime = DateTime.now();
             _isLoading = false;
             _errorMessage = null;
             notifyListeners();
@@ -243,6 +245,7 @@ class AuthService extends ChangeNotifier {
       final user = credential.user;
       if (user != null) {
         await _loadUserProfile(user.uid, fallbackEmail: user.email);
+        _lastLoginTime = DateTime.now();
         _isLoading = false;
         _errorMessage = null;
         notifyListeners();
@@ -257,12 +260,14 @@ class AuthService extends ChangeNotifier {
             final cred = await DatabaseSeeder.provisionSeedUserAuth(normalizedEmail, password);
             if (cred?.user != null) {
               await _loadUserProfile(cred!.user!.uid, fallbackEmail: cred.user!.email);
+              _lastLoginTime = DateTime.now();
               _isLoading = false;
               _errorMessage = null;
               notifyListeners();
               return true;
             }
             _currentUser = demoMatch.first;
+            _lastLoginTime = DateTime.now();
             _isLoading = false;
             _errorMessage = null;
             notifyListeners();
@@ -279,6 +284,7 @@ class AuthService extends ChangeNotifier {
         if (_registeredUsers.containsKey(normalizedEmail)) {
           if (_registeredPasswords[normalizedEmail] == password) {
             _currentUser = _registeredUsers[normalizedEmail];
+            _lastLoginTime = DateTime.now();
             _isLoading = false;
             _errorMessage = null;
             notifyListeners();
@@ -300,6 +306,7 @@ class AuthService extends ChangeNotifier {
       // Unexpected error or desktop platform fallback: strictly verify credentials
       if (demoMatch.isNotEmpty && _isValidDemoPassword(password)) {
         _currentUser = demoMatch.first;
+        _lastLoginTime = DateTime.now();
         _isLoading = false;
         _errorMessage = null;
         notifyListeners();
@@ -307,6 +314,7 @@ class AuthService extends ChangeNotifier {
       }
       if (_registeredUsers.containsKey(normalizedEmail) && _registeredPasswords[normalizedEmail] == password) {
         _currentUser = _registeredUsers[normalizedEmail];
+        _lastLoginTime = DateTime.now();
         _isLoading = false;
         _errorMessage = null;
         notifyListeners();
