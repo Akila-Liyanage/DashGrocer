@@ -417,8 +417,70 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
           tooltip: 'Call Seller',
           onPressed: _showCallDialog,
         ),
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF64748B), size: 21),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          onSelected: (val) {
+            if (val == 'clear') _showClearChatDialog();
+          },
+          itemBuilder: (ctx) => [
+            const PopupMenuItem(
+              value: 'clear',
+              child: Row(
+                children: [
+                  Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 18),
+                  SizedBox(width: 8),
+                  Text('Clear Chat History'),
+                ],
+              ),
+            ),
+          ],
+        ),
         const SizedBox(width: 4),
       ],
+    );
+  }
+
+  void _showClearChatDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Clear Conversation?',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 16),
+        ),
+        content: Text(
+          'This will reset the inquiry chat messages with this seller.',
+          style: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFF64748B)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: const Color(0xFF64748B))),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              ChatService().clearChat();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Chat history cleared'),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              );
+            },
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
     );
   }
 
