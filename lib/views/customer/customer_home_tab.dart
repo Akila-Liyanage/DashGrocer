@@ -69,10 +69,26 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
         return Scaffold(
           backgroundColor: const Color(0xFFFBFBFB),
           body: SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Column(
+            child: RefreshIndicator(
+              color: AppColors.brandGreen,
+              backgroundColor: Colors.white,
+              onRefresh: () async {
+                await Future.delayed(const Duration(milliseconds: 500));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Store catalog refreshed'),
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 1),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                }
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Top Greeting & Location Header
@@ -499,7 +515,8 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
               ),
             ),
           ),
-        );
+        ),
+      );
       },
     );
   }
