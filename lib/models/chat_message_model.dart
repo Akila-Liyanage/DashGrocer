@@ -18,6 +18,7 @@ class ChatMessage {
   final bool isRead;
   final bool isQuickInquiry;
   final MessageDeliveryStatus deliveryStatus;
+  final String? attachmentUrl;
 
   const ChatMessage({
     required this.id,
@@ -32,6 +33,7 @@ class ChatMessage {
     this.isRead = true,
     this.isQuickInquiry = false,
     this.deliveryStatus = MessageDeliveryStatus.read,
+    this.attachmentUrl,
   });
 
   bool get isFromCustomer => senderRole == 'customer';
@@ -50,6 +52,7 @@ class ChatMessage {
     bool? isRead,
     bool? isQuickInquiry,
     MessageDeliveryStatus? deliveryStatus,
+    String? attachmentUrl,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -64,6 +67,7 @@ class ChatMessage {
       isRead: isRead ?? this.isRead,
       isQuickInquiry: isQuickInquiry ?? this.isQuickInquiry,
       deliveryStatus: deliveryStatus ?? this.deliveryStatus,
+      attachmentUrl: attachmentUrl ?? this.attachmentUrl,
     );
   }
 
@@ -81,6 +85,7 @@ class ChatMessage {
       'isRead': isRead,
       'isQuickInquiry': isQuickInquiry,
       'deliveryStatus': deliveryStatus.name,
+      'attachmentUrl': attachmentUrl,
     };
   }
 
@@ -99,6 +104,7 @@ class ChatMessage {
       productImageUrl: map['productImageUrl'] as String?,
       isRead: map['isRead'] as bool? ?? true,
       isQuickInquiry: map['isQuickInquiry'] as bool? ?? false,
+      attachmentUrl: map['attachmentUrl'] as String?,
       deliveryStatus: map['deliveryStatus'] != null
           ? MessageDeliveryStatus.values.firstWhere(
               (e) => e.name == map['deliveryStatus'],

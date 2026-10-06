@@ -54,6 +54,7 @@ class ChatService extends ChangeNotifier {
     required String text,
     GroceryItem? product,
     bool isQuickInquiry = false,
+    String? attachmentUrl,
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
@@ -69,6 +70,7 @@ class ChatService extends ChangeNotifier {
       productName: product?.name,
       productImageUrl: product?.imageUrl,
       isQuickInquiry: isQuickInquiry,
+      attachmentUrl: attachmentUrl,
     );
 
     _messages.add(customerMsg);

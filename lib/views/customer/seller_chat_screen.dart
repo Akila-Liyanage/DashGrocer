@@ -88,6 +88,135 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
 
+  void _sendAttachedMessage(String text, String attachmentUrl) {
+    ChatService().sendCustomerMessage(
+      text: text,
+      product: widget.product,
+      attachmentUrl: attachmentUrl,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
+  void _showAttachmentSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Attach Media or Inquiry',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 14),
+              _buildAttachmentOption(
+                icon: Icons.camera_alt_rounded,
+                title: 'Take Produce Photo',
+                subtitle: 'Snap a live photo of vegetables or fruit condition',
+                color: AppColors.brandGreen,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _sendAttachedMessage('Fresh produce condition photo', 'produce_snapshot.jpg');
+                },
+              ),
+              const SizedBox(height: 8),
+              _buildAttachmentOption(
+                icon: Icons.photo_library_rounded,
+                title: 'Pick from Gallery',
+                subtitle: 'Attach saved grocery receipt or reference item',
+                color: const Color(0xFF3B82F4),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _sendAttachedMessage('Reference item from photo album', 'gallery_reference.jpg');
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttachmentOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showCallDialog() {
     final phone = widget.sellerPhone ?? widget.product?.displaySellerPhone ?? '+94 71 987 6543';
     final shop = widget.shopName ?? widget.product?.displaySellerShopName ?? 'GreenLeaf Fresh Mart';
@@ -770,6 +899,37 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
                 crossAxisAlignment:
                     isCustomer ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                 children: [
+                  if (msg.attachmentUrl != null) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isCustomer
+                            ? Colors.white.withValues(alpha: 0.2)
+                            : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.image_rounded,
+                            size: 16,
+                            color: isCustomer ? Colors.white : const Color(0xFF475569),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Photo Attachment',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: isCustomer ? Colors.white : const Color(0xFF475569),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   Text(
                     msg.text,
                     style: GoogleFonts.plusJakartaSans(
@@ -899,15 +1059,7 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
                   color: Color(0xFF64748B),
                   size: 19,
                 ),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Attach photo or grocery snapshot'),
-                      duration: Duration(seconds: 1),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
+                onPressed: _showAttachmentSheet,
               ),
             ),
             const SizedBox(width: 8),
