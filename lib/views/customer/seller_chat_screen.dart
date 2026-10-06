@@ -27,11 +27,8 @@ class SellerChatScreen extends StatefulWidget {
 
 class _SellerChatScreenState extends State<SellerChatScreen> {
   final _messageController = TextEditingController();
-  final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   final _focusNode = FocusNode();
-  bool _isSearching = false;
-  String _searchQuery = '';
 
   final List<String> _quickInquiries = [
     '🌱 Is this freshly harvested today?',
@@ -39,8 +36,8 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
     '⚖️ Do you offer smaller custom portions?',
     '🏷️ Is there a bulk purchase discount?',
     '📦 Is this pesticide-free organic?',
-    '🚚 What are the delivery options?',
-    '⭐ Freshness & quality guarantee?',
+    '📍 Where is the exact pickup counter?',
+    '🛍️ Can you pack in paper bags?',
   ];
 
   @override
@@ -55,7 +52,6 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
   @override
   void dispose() {
     _messageController.dispose();
-    _searchController.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -220,11 +216,6 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
       listenable: chatService,
       builder: (context, _) {
         final messages = chatService.allMessages;
-        final displayMessages = _searchQuery.isEmpty
-            ? messages
-            : messages
-                .where((m) => m.text.toLowerCase().contains(_searchQuery.toLowerCase()))
-                .toList();
 
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
@@ -237,43 +228,18 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
               // Quick Inquiries Chips
               _buildQuickInquiryBar(),
 
-              // Verified Store Security Pill Banner
-              _buildChatSecurityHeader(),
-
-              // Active Search Filter Results Banner
-              if (_searchQuery.isNotEmpty)
-                Container(
-                  width: double.infinity,
-                  color: const Color(0xFFFEF3C7),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.search_rounded, size: 14, color: Color(0xFFB45309)),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Found ${displayMessages.length} matching message${displayMessages.length == 1 ? "" : "s"}',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFFB45309),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
               // Chat Messages List
               Expanded(
                 child: ListView.builder(
                   controller: _scrollController,
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  itemCount: displayMessages.length + (chatService.isSellerTyping ? 1 : 0),
+                  itemCount: messages.length + (chatService.isSellerTyping ? 1 : 0),
                   itemBuilder: (context, index) {
-                    if (index == displayMessages.length && chatService.isSellerTyping) {
+                    if (index == messages.length && chatService.isSellerTyping) {
                       return _buildTypingIndicator(shop);
                     }
-                    final msg = displayMessages[index];
+                    final msg = messages[index];
                     return _buildMessageBubble(msg);
                   },
                 ),
@@ -301,237 +267,106 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
         onPressed: () => Navigator.pop(context),
       ),
       titleSpacing: 0,
-      title: _isSearching
-          ? TextField(
-              controller: _searchController,
-              autofocus: true,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13,
-                color: const Color(0xFF0F172A),
-              ),
-              decoration: InputDecoration(
-                hintText: 'Search messages...',
-                hintStyle: GoogleFonts.plusJakartaSans(
-                  fontSize: 12.5,
-                  color: const Color(0xFF94A3B8),
-                ),
-                border: InputBorder.none,
-                isDense: true,
-              ),
-              onChanged: (val) => setState(() => _searchQuery = val.trim()),
-            )
-          : Row(
-              children: [
-                Stack(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2EB844), Color(0xFF1E8A31)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.brandGreen.withValues(alpha: 0.25),
-                            blurRadius: 6,
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.storefront_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        width: 11,
-                        height: 11,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF22C55E),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                      ),
+      title: Row(
+        children: [
+          Stack(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF2EB844), Color(0xFF1E8A31)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.brandGreen.withValues(alpha: 0.25),
+                      blurRadius: 6,
                     ),
                   ],
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              shop,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF0F172A),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 3),
-                          const Icon(
-                            Icons.verified_rounded,
-                            color: Color(0xFF2EB844),
-                            size: 13,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 1),
-                      Text(
-                        '$seller • Online',
+                child: const Center(
+                  child: Icon(
+                    Icons.storefront_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 11,
+                  height: 11,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF22C55E),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        shop,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF22C55E),
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF0F172A),
                         ),
                       ),
-                    ],
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.verified_rounded,
+                      color: Color(0xFF2EB844),
+                      size: 14,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  '$seller • Online',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF22C55E),
                   ),
                 ),
               ],
             ),
-      actions: _isSearching
-          ? [
-              IconButton(
-                icon: const Icon(
-                  Icons.close_rounded,
-                  color: Color(0xFF64748B),
-                  size: 20,
-                ),
-                tooltip: 'Close Search',
-                onPressed: () {
-                  setState(() {
-                    _isSearching = false;
-                    _searchController.clear();
-                    _searchQuery = '';
-                  });
-                },
-              ),
-            ]
-          : [
-              SizedBox(
-                width: 34,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: const Icon(
-                    Icons.search_rounded,
-                    color: Color(0xFF64748B),
-                    size: 20,
-                  ),
-                  tooltip: 'Search Messages',
-                  onPressed: () => setState(() => _isSearching = true),
-                ),
-              ),
-              SizedBox(
-                width: 34,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: const Icon(
-                    Icons.phone_rounded,
-                    color: AppColors.brandGreen,
-                    size: 20,
-                  ),
-                  tooltip: 'Call Seller',
-                  onPressed: _showCallDialog,
-                ),
-              ),
-              SizedBox(
-                width: 34,
-                child: PopupMenuButton<String>(
-                  padding: EdgeInsets.zero,
-                  icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF64748B), size: 20),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  onSelected: (val) {
-                    if (val == 'clear') _showClearChatDialog();
-                  },
-                  itemBuilder: (ctx) => [
-                    PopupMenuItem(
-                      value: 'clear',
-                      child: Row(
-                        children: [
-                          const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Clear Chat History',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF1E293B),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 6),
-            ],
-    );
-  }
-
-  void _showClearChatDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Clear Conversation?',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 16),
-        ),
-        content: Text(
-          'This will reset the inquiry chat messages with this seller.',
-          style: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFF64748B)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: const Color(0xFF64748B))),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              ChatService().clearChat();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Chat history cleared'),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              );
-            },
-            child: const Text('Clear'),
           ),
         ],
       ),
+      actions: [
+        IconButton(
+          icon: const Icon(
+            Icons.phone_rounded,
+            color: AppColors.brandGreen,
+            size: 22,
+          ),
+          tooltip: 'Call Seller',
+          onPressed: _showCallDialog,
+        ),
+        const SizedBox(width: 4),
+      ],
     );
   }
 
@@ -699,39 +534,6 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
     );
   }
 
-  Widget _buildChatSecurityHeader() {
-    return Container(
-      width: double.infinity,
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.shield_outlined, size: 13, color: Color(0xFF64748B)),
-              const SizedBox(width: 5),
-              Text(
-                'Verified Seller • Direct Store Assistance',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF64748B),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildMessageBubble(ChatMessage msg) {
     final isCustomer = msg.isFromCustomer;
     final timeStr =
@@ -823,15 +625,16 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
                       if (isCustomer) ...[
                         const SizedBox(width: 4),
                         Icon(
-                          msg.status == MessageStatus.sending
-                              ? Icons.access_time_rounded
-                              : (msg.status == MessageStatus.sent
+                          msg.deliveryStatus == MessageDeliveryStatus.read ||
+                                  msg.deliveryStatus == MessageDeliveryStatus.delivered
+                              ? Icons.done_all_rounded
+                              : (msg.deliveryStatus == MessageDeliveryStatus.sent
                                   ? Icons.done_rounded
-                                  : Icons.done_all_rounded),
+                                  : Icons.access_time_rounded),
                           size: 13,
-                          color: msg.status == MessageStatus.read
-                              ? Colors.white
-                              : Colors.white.withValues(alpha: 0.7),
+                          color: msg.deliveryStatus == MessageDeliveryStatus.read
+                              ? const Color(0xFFB9F6CA)
+                              : Colors.white.withValues(alpha: 0.85),
                         ),
                       ],
                     ],
@@ -891,19 +694,13 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: List.generate(3, (i) {
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                      width: 5,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: AppColors.brandGreen.withValues(alpha: 0.5 + (i * 0.2)),
-                        shape: BoxShape.circle,
-                      ),
-                    );
-                  }),
+                SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.brandGreen,
+                  ),
                 ),
               ],
             ),
