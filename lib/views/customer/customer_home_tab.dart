@@ -301,6 +301,13 @@ class CustomerHomeTab extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: cat.bgColor,
                                   shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: cat.iconColor.withValues(alpha: 0.12),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
                                 child: Center(
                                   child: Icon(
