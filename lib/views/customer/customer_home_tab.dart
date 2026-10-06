@@ -232,7 +232,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 6),
                                 Text(
                                   '20% off on your\nfirst purchase',
                                   style: GoogleFonts.plusJakartaSans(
@@ -240,6 +240,43 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                                     fontWeight: FontWeight.w800,
                                     color: Colors.white,
                                     height: 1.25,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                InkWell(
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text('Promo code DASH20 applied to your cart!'),
+                                        backgroundColor: AppColors.brandGreen,
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.22),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.bolt_rounded, color: Color(0xFFFBBF24), size: 14),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Use Code: DASH20',
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ],
