@@ -21,35 +21,41 @@ class GroceryProductCard extends StatelessWidget {
     final groceryService = GroceryService();
     final cartQty = groceryService.getQuantity(item.id);
 
-    return GestureDetector(
-      onTap: onTap ??
-          () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ProductDetailScreen(item: item),
-              ),
-            );
-          },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFFF1F2F4),
-            width: 1.0,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+    final tapHandler = onTap ??
+        () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProductDetailScreen(item: item),
             ),
-          ],
+          );
+        };
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFF1F2F4),
+          width: 1.0,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: tapHandler,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
             // Top Row: Badges (NEW / -16%) and Heart Icon
             Padding(
               padding: const EdgeInsets.only(left: 8, right: 8, top: 8),
@@ -265,6 +271,7 @@ class GroceryProductCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
