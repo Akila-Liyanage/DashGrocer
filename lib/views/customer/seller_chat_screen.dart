@@ -39,6 +39,8 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
     '⚖️ Do you offer smaller custom portions?',
     '🏷️ Is there a bulk purchase discount?',
     '📦 Is this pesticide-free organic?',
+    '🚚 What are the delivery options?',
+    '⭐ Freshness & quality guarantee?',
   ];
 
   @override
@@ -234,6 +236,31 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
 
               // Quick Inquiries Chips
               _buildQuickInquiryBar(),
+
+              // Verified Store Security Pill Banner
+              _buildChatSecurityHeader(),
+
+              // Active Search Filter Results Banner
+              if (_searchQuery.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  color: const Color(0xFFFEF3C7),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.search_rounded, size: 14, color: Color(0xFFB45309)),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Found ${displayMessages.length} matching message${displayMessages.length == 1 ? "" : "s"}',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFB45309),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
               // Chat Messages List
               Expanded(
@@ -668,6 +695,39 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildChatSecurityHeader() {
+    return Container(
+      width: double.infinity,
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.shield_outlined, size: 13, color: Color(0xFF64748B)),
+              const SizedBox(width: 5),
+              Text(
+                'Verified Seller • Direct Store Assistance',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
