@@ -460,8 +460,84 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
           tooltip: 'Call Seller',
           onPressed: _showCallDialog,
         ),
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF64748B), size: 21),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          onSelected: (value) {
+            if (value == 'clear') {
+              _confirmClearChat();
+            } else if (value == 'store') {
+              _showCallDialog();
+            }
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'store',
+              child: Row(
+                children: [
+                  const Icon(Icons.storefront_rounded, size: 18, color: Color(0xFF64748B)),
+                  const SizedBox(width: 8),
+                  Text('Store Info', style: GoogleFonts.plusJakartaSans(fontSize: 13)),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'clear',
+              child: Row(
+                children: [
+                  const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFEF4444)),
+                  const SizedBox(width: 8),
+                  Text('Clear Chat', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFFEF4444))),
+                ],
+              ),
+            ),
+          ],
+        ),
         const SizedBox(width: 4),
       ],
+    );
+  }
+
+  void _confirmClearChat() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Clear Conversation?',
+          style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'All current messages with this seller will be cleared.',
+          style: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFF64748B)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: GoogleFonts.plusJakartaSans(color: const Color(0xFF64748B))),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              ChatService().clearChat();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Chat history cleared', style: GoogleFonts.plusJakartaSans()),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              );
+            },
+            child: Text('Clear', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
     );
   }
 
