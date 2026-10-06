@@ -27,8 +27,11 @@ class SellerChatScreen extends StatefulWidget {
 
 class _SellerChatScreenState extends State<SellerChatScreen> {
   final _messageController = TextEditingController();
+  final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   final _focusNode = FocusNode();
+  bool _isSearching = false;
+  String _searchQuery = '';
 
   final List<String> _quickInquiries = [
     '🌱 Is this freshly harvested today?',
@@ -50,6 +53,7 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
   @override
   void dispose() {
     _messageController.dispose();
+    _searchController.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -214,6 +218,11 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
       listenable: chatService,
       builder: (context, _) {
         final messages = chatService.allMessages;
+        final displayMessages = _searchQuery.isEmpty
+            ? messages
+            : messages
+                .where((m) => m.text.toLowerCase().contains(_searchQuery.toLowerCase()))
+                .toList();
 
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
@@ -232,12 +241,12 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
                   controller: _scrollController,
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  itemCount: messages.length + (chatService.isSellerTyping ? 1 : 0),
+                  itemCount: displayMessages.length + (chatService.isSellerTyping ? 1 : 0),
                   itemBuilder: (context, index) {
-                    if (index == messages.length && chatService.isSellerTyping) {
+                    if (index == displayMessages.length && chatService.isSellerTyping) {
                       return _buildTypingIndicator(shop);
                     }
-                    final msg = messages[index];
+                    final msg = displayMessages[index];
                     return _buildMessageBubble(msg);
                   },
                 ),
@@ -265,100 +274,145 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
         onPressed: () => Navigator.pop(context),
       ),
       titleSpacing: 0,
-      title: Row(
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2EB844), Color(0xFF1E8A31)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.brandGreen.withValues(alpha: 0.25),
-                      blurRadius: 6,
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.storefront_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
+      title: _isSearching
+          ? Container(
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(20),
               ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  width: 11,
-                  height: 11,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF22C55E),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
+              child: TextField(
+                controller: _searchController,
+                autofocus: true,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13,
+                  color: const Color(0xFF0F172A),
                 ),
+                decoration: InputDecoration(
+                  hintText: 'Search messages...',
+                  hintStyle: GoogleFonts.plusJakartaSans(
+                    fontSize: 12.5,
+                    color: const Color(0xFF94A3B8),
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                ),
+                onChanged: (val) => setState(() => _searchQuery = val.trim()),
               ),
-            ],
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+            )
+          : Row(
               children: [
-                Row(
+                Stack(
                   children: [
-                    Flexible(
-                      child: Text(
-                        shop,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF0F172A),
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2EB844), Color(0xFF1E8A31)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.brandGreen.withValues(alpha: 0.25),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.storefront_rounded,
+                          color: Colors.white,
+                          size: 20,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.verified_rounded,
-                      color: Color(0xFF2EB844),
-                      size: 14,
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 11,
+                        height: 11,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF22C55E),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 1),
-                Text(
-                  '$seller • Online',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF22C55E),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              shop,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF0F172A),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.verified_rounded,
+                            color: Color(0xFF2EB844),
+                            size: 14,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        '$seller • Online',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF22C55E),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
       actions: [
+        IconButton(
+          icon: Icon(
+            _isSearching ? Icons.close_rounded : Icons.search_rounded,
+            color: const Color(0xFF64748B),
+            size: 21,
+          ),
+          tooltip: _isSearching ? 'Close Search' : 'Search Messages',
+          onPressed: () {
+            setState(() {
+              _isSearching = !_isSearching;
+              if (!_isSearching) {
+                _searchController.clear();
+                _searchQuery = '';
+              }
+            });
+          },
+        ),
         IconButton(
           icon: const Icon(
             Icons.phone_rounded,
             color: AppColors.brandGreen,
-            size: 22,
+            size: 21,
           ),
           tooltip: 'Call Seller',
           onPressed: _showCallDialog,
