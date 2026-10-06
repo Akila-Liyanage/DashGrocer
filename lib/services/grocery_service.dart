@@ -92,6 +92,22 @@ class GroceryService extends ChangeNotifier {
     'fresh vegetables',
   ];
 
+  final List<StoreOrder> _customerOrders = [
+    StoreOrder(
+      id: 'ORD-8821',
+      customerName: 'Kasun Perera',
+      customerPhone: '+94 77 123 4567',
+      itemsSummary: '2x Red Tomatoes, 1x Highland Carrots',
+      totalAmount: 1850.00,
+      pickupSlot: 'Today, 5:30 PM - 6:00 PM',
+      shopName: 'GreenLeaf Fresh Mart',
+      status: 'Ready for Pickup',
+      createdAt: DateTime.now().subtract(const Duration(minutes: 45)),
+    ),
+  ];
+
+  List<StoreOrder> get customerOrders => List.unmodifiable(_customerOrders);
+
   FirebaseFirestore? get _firestore {
     try {
       return FirebaseFirestore.instance;

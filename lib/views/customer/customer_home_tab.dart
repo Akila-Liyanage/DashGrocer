@@ -477,7 +477,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
                     child: Row(
-                      children: ['All', 'Vegetables', 'Fruits'].map((cat) {
+                      children: ['All Items', 'Fresh Veggies', 'Fresh Fruits'].map((cat) {
                         final isSelected = _selectedCategory == cat;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
@@ -569,82 +569,124 @@ class _NearbyShopCard extends StatelessWidget {
 
   const _NearbyShopCard({required this.shop});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF1F2F4)),
+  void _showShopDetails(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AppColors.brandGreenSoft,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.storefront_rounded,
-              color: AppColors.brandGreen,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      shop['name'] as String,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1A1A1A),
-                      ),
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE2E8F0),
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    Row(
-                      children: [
-                        const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 15),
-                        const SizedBox(width: 2),
-                        Text(
-                          shop['rating'] as String,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1A1A1A),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.brandGreenSoft,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.storefront_rounded, color: AppColors.brandGreen, size: 26),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            shop['name'] as String,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF0F172A),
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 16),
+                              const SizedBox(width: 3),
+                              Text(
+                                '${shop['rating']} (120+ reviews)',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF475569),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                const SizedBox(height: 14),
+                _buildInfoRow(Icons.location_on_outlined, 'Distance & Pickup', '${shop['distance']} away • ${shop['pickupTime']} ready'),
+                const SizedBox(height: 10),
+                _buildInfoRow(Icons.access_time_rounded, 'Store Hours', 'Open Daily: 7:30 AM – 9:30 PM (Closes at 10:00 PM on weekends)'),
+                const SizedBox(height: 10),
+                _buildInfoRow(Icons.check_circle_outline_rounded, 'Curbside Pickup', 'Instant counter pickup with zero waiting queue'),
+                const SizedBox(height: 20),
                 Row(
                   children: [
-                    Text(
-                      shop['distance'] as String,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        color: const Color(0xFF868889),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Calling ${shop['name']}...'),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.phone_outlined, size: 16, color: AppColors.brandGreen),
+                        label: Text(
+                          'Call Store',
+                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: AppColors.brandGreen),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.brandGreen),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    const Text('•', style: TextStyle(color: Color(0xFF868889), fontSize: 10)),
-                    const SizedBox(width: 6),
-                    Text(
-                      shop['pickupTime'] as String,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.brandGreen,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.brandGreen,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text(
+                          'Browse Stock',
+                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white),
+                        ),
                       ),
                     ),
                   ],
@@ -652,7 +694,139 @@ class _NearbyShopCard extends StatelessWidget {
               ],
             ),
           ),
-        ],
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String title, String subtitle) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF64748B)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1E293B),
+                ),
+              ),
+              Text(
+                subtitle,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11.5,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFF1F2F4)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => _showShopDetails(context),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.brandGreenSoft,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.storefront_rounded,
+                    color: AppColors.brandGreen,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            shop['name'] as String,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1A1A1A),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 15),
+                              const SizedBox(width: 2),
+                              Text(
+                                shop['rating'] as String,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF1A1A1A),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          Text(
+                            shop['distance'] as String,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              color: const Color(0xFF868889),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text('•', style: TextStyle(color: Color(0xFF868889), fontSize: 10)),
+                          const SizedBox(width: 6),
+                          Text(
+                            shop['pickupTime'] as String,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.brandGreen,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF94A3B8)),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
