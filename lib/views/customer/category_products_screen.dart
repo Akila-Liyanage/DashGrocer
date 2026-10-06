@@ -64,6 +64,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                       'Popular',
                       'Price: Low to High',
                       'Price: High to Low',
+                      'Highest Rated',
                       'Discounted',
                       'New Arrivals'
                     ].map((sortOption) {
@@ -126,6 +127,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           sortedItems.sort((a, b) => a.price.compareTo(b.price));
         } else if (_selectedSort == 'Price: High to Low') {
           sortedItems.sort((a, b) => b.price.compareTo(a.price));
+        } else if (_selectedSort == 'Highest Rated') {
+          sortedItems.sort((a, b) => b.rating.compareTo(a.rating));
         } else if (_selectedSort == 'Discounted') {
           sortedItems.sort((a, b) => (b.discountPercent ?? 0).compareTo(a.discountPercent ?? 0));
         } else if (_selectedSort == 'New Arrivals') {
@@ -206,19 +209,65 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           ),
           body: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: GridView.builder(
-              physics: const BouncingScrollPhysics(),
-              itemCount: sortedItems.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 14,
-                mainAxisSpacing: 14,
-                childAspectRatio: 0.72,
-              ),
-              itemBuilder: (context, index) {
-                final item = sortedItems[index];
-                return GroceryProductCard(item: item);
-              },
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${sortedItems.length} products found',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF64748B),
+                      ),
+                    ),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () => _showFilterModal(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              _selectedSort,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.brandGreenDark,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Color(0xFF64748B)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: GridView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: sortedItems.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
+                      childAspectRatio: 0.72,
+                    ),
+                    itemBuilder: (context, index) {
+                      final item = sortedItems[index];
+                      return GroceryProductCard(item: item);
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         );
