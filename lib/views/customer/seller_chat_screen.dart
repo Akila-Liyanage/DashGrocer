@@ -33,6 +33,7 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
   final _searchController = TextEditingController();
   bool _isSearching = false;
   String _searchQuery = '';
+  bool _isRecordingVoice = false;
 
   final List<String> _quickInquiries = [
     '🌱 Is this freshly harvested today?',
@@ -96,6 +97,29 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
       attachmentUrl: attachmentUrl,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
+  void _handleVoiceNoteTap() {
+    if (!_isRecordingVoice) {
+      setState(() => _isRecordingVoice = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.mic_rounded, color: Colors.white, size: 16),
+              SizedBox(width: 8),
+              Text('Recording voice note... Tap mic again to send'),
+            ],
+          ),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    } else {
+      setState(() => _isRecordingVoice = false);
+      _sendMessage('🎤 Voice Note (0:08) - Item Inquiry');
+    }
   }
 
   void _showAttachmentSheet() {
@@ -958,15 +982,65 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
                         ),
                       ),
                     ],
-                    Text(
-                      msg.text,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w500,
-                        height: 1.35,
-                        color: isCustomer ? Colors.white : const Color(0xFF0F172A),
+                    if (msg.text.contains('🎤 Voice Note')) ...[
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: isCustomer
+                                  ? Colors.white.withValues(alpha: 0.25)
+                                  : AppColors.brandGreenSoft,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.play_arrow_rounded,
+                              size: 20,
+                              color: isCustomer ? Colors.white : AppColors.brandGreen,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Row(
+                            children: [4, 10, 16, 8, 14, 18, 12, 6, 15, 9].map((h) {
+                              return Container(
+                                width: 3,
+                                height: h.toDouble(),
+                                margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                                decoration: BoxDecoration(
+                                  color: isCustomer
+                                      ? Colors.white.withValues(alpha: 0.85)
+                                      : const Color(0xFF64748B),
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '0:08',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isCustomer
+                                  ? Colors.white.withValues(alpha: 0.9)
+                                  : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                    ] else ...[
+                      Text(
+                        msg.text,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w500,
+                          height: 1.35,
+                          color: isCustomer ? Colors.white : const Color(0xFF0F172A),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1122,7 +1196,25 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: _isRecordingVoice ? const Color(0xFFFEE2E2) : const Color(0xFFF1F5F9),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                icon: Icon(
+                  _isRecordingVoice ? Icons.stop_circle_rounded : Icons.mic_rounded,
+                  color: _isRecordingVoice ? AppColors.error : const Color(0xFF64748B),
+                  size: 20,
+                ),
+                onPressed: _handleVoiceNoteTap,
+              ),
+            ),
+            const SizedBox(width: 6),
             GestureDetector(
               onTap: () => _sendMessage(),
               child: Container(
