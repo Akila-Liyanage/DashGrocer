@@ -120,6 +120,12 @@ class ChatService extends ChangeNotifier {
       replyText = 'We provide same-day express rider delivery within 5km, or quick 15-minute curbside pickup ready at our store counter.';
     } else if (lower.contains('refund') || lower.contains('return') || lower.contains('damaged') || lower.contains('guarantee')) {
       replyText = 'We provide a 100% freshness guarantee! If any item fails your quality expectations, we offer instant replacement or full credit at pickup.';
+    } else if (lower.contains('pay') || lower.contains('card') || lower.contains('cash') || lower.contains('koko')) {
+      replyText = 'We accept all Visa/Mastercard payments online, as well as Cash or Card on Store Pickup. We also support Koko installment checkouts!';
+    } else if (lower.contains('bag') || lower.contains('pack') || lower.contains('paper') || lower.contains('plastic')) {
+      replyText = 'Yes! We pack all produce in eco-friendly biodegradable craft paper bags and recyclable containers with zero plastic waste.';
+    } else if (lower.contains('hour') || lower.contains('open') || lower.contains('close') || lower.contains('time')) {
+      replyText = 'GreenLeaf Fresh Mart is open daily from 7:30 AM until 9:30 PM. Curbside pickup counters are staffed throughout open hours.';
     } else {
       replyText = 'Thank you for your message! Our team at GreenLeaf Fresh Mart has noted your inquiry about $pName. We have plenty in stock and ready for your order!';
     }
