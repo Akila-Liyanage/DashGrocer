@@ -29,6 +29,9 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   final _focusNode = FocusNode();
+  final _searchController = TextEditingController();
+  bool _isSearching = false;
+  String _searchQuery = '';
 
   final List<String> _quickInquiries = [
     '🌱 Is this freshly harvested today?',
@@ -54,6 +57,7 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
     _messageController.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -215,7 +219,12 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
     return ListenableBuilder(
       listenable: chatService,
       builder: (context, _) {
-        final messages = chatService.allMessages;
+        final rawMessages = chatService.allMessages;
+        final messages = _searchQuery.isEmpty
+            ? rawMessages
+            : rawMessages
+                .where((m) => m.text.toLowerCase().contains(_searchQuery.toLowerCase()))
+                .toList();
 
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
@@ -224,6 +233,28 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
             children: [
               // Pinned Product Context Banner
               if (widget.product != null) _buildProductContextBanner(widget.product!),
+
+              // Search query badge if filtering
+              if (_isSearching && _searchQuery.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: const Color(0xFFF1F5F9),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.search_rounded, size: 14, color: Color(0xFF64748B)),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Found ${messages.length} matching message(s)',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF475569),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
               // Quick Inquiries Chips
               _buildQuickInquiryBar(),
@@ -255,6 +286,61 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
   }
 
   PreferredSizeWidget _buildAppBar(String shop, String seller) {
+    if (_isSearching) {
+      return AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: Color(0xFF1E293B),
+            size: 20,
+          ),
+          onPressed: () {
+            setState(() {
+              _isSearching = false;
+              _searchQuery = '';
+              _searchController.clear();
+            });
+          },
+        ),
+        title: TextField(
+          controller: _searchController,
+          autofocus: true,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            color: const Color(0xFF0F172A),
+          ),
+          decoration: InputDecoration(
+            hintText: 'Search in chat...',
+            hintStyle: GoogleFonts.plusJakartaSans(
+              fontSize: 13,
+              color: const Color(0xFF94A3B8),
+            ),
+            border: InputBorder.none,
+          ),
+          onChanged: (val) {
+            setState(() {
+              _searchQuery = val.trim();
+            });
+          },
+        ),
+        actions: [
+          if (_searchQuery.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.close_rounded, color: Color(0xFF94A3B8), size: 18),
+              onPressed: () {
+                setState(() {
+                  _searchController.clear();
+                  _searchQuery = '';
+                });
+              },
+            ),
+          const SizedBox(width: 4),
+        ],
+      );
+    }
+
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0.5,
@@ -356,6 +442,15 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
         ],
       ),
       actions: [
+        IconButton(
+          icon: const Icon(
+            Icons.search_rounded,
+            color: Color(0xFF64748B),
+            size: 22,
+          ),
+          tooltip: 'Search Messages',
+          onPressed: () => setState(() => _isSearching = true),
+        ),
         IconButton(
           icon: const Icon(
             Icons.phone_rounded,
