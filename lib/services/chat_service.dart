@@ -112,6 +112,12 @@ class ChatService extends ChangeNotifier {
       replyText = 'Certainly! We gladly pack smaller portions or custom sizes for you. Just leave a note at checkout or let us know here.';
     } else if (lower.contains('discount') || lower.contains('price') || lower.contains('bulk')) {
       replyText = 'We provide an extra 5% discount for bulk orders over 3kg! Plus you can use your loyalty points at pickup.';
+    } else if (lower.contains('organic') || lower.contains('pesticide') || lower.contains('chemical')) {
+      replyText = 'Absolutely! Our $pName is grown by certified eco-partner farmers without synthetic pesticides or harmful chemical sprays.';
+    } else if (lower.contains('deliver') || lower.contains('shipping') || lower.contains('rider')) {
+      replyText = 'We provide same-day express rider delivery within 5km, or quick 15-minute curbside pickup ready at our store counter.';
+    } else if (lower.contains('refund') || lower.contains('return') || lower.contains('damaged') || lower.contains('guarantee')) {
+      replyText = 'We provide a 100% freshness guarantee! If any item fails your quality expectations, we offer instant replacement or full credit at pickup.';
     } else {
       replyText = 'Thank you for your message! Our team at GreenLeaf Fresh Mart has noted your inquiry about $pName. We have plenty in stock and ready for your order!';
     }
