@@ -30,11 +30,20 @@ class AuthService extends ChangeNotifier {
   UserModel? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
+  DateTime? _lastLoginTime;
+  bool _biometricsEnabled = false;
 
   UserModel? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  DateTime? get lastLoginTime => _lastLoginTime;
+  bool get isBiometricsEnabled => _biometricsEnabled;
+
+  void setBiometricsEnabled(bool enabled) {
+    _biometricsEnabled = enabled;
+    notifyListeners();
+  }
 
   // Pre-configured Demo Accounts for HCI testing
   static final List<UserModel> demoUsers = [
@@ -446,6 +455,7 @@ class AuthService extends ChangeNotifier {
     }
     _currentUser = null;
     _errorMessage = null;
+    _lastLoginTime = null;
     notifyListeners();
   }
 
