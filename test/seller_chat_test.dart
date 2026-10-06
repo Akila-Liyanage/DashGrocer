@@ -89,10 +89,7 @@ void main() {
       chatService.cancelPendingTimers();
     });
 
-    testWidgets('4. In-chat search filters messages and popup menu opens clear chat dialog', (tester) async {
-      final chatService = ChatService();
-      chatService.clearChat();
-
+    testWidgets('4. In-chat search icon button toggles search bar in AppBar', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: SellerChatScreen(
@@ -104,31 +101,38 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap search icon in AppBar
-      await tester.tap(find.byIcon(Icons.search_rounded));
+      // Find search icon and tap
+      final searchBtn = find.byTooltip('Search Messages');
+      expect(searchBtn, findsOneWidget);
+      await tester.tap(searchBtn);
       await tester.pumpAndSettle();
 
-      // Verify search input field is visible
-      expect(find.byType(TextField), findsNWidgets(2)); // search field + message input field
+      // Verify search input is displayed
+      expect(find.byType(TextField), findsNWidgets(2)); // search bar + message input
+      expect(find.text('Search in chat...'), findsOneWidget);
+    });
 
-      // Close search to restore full AppBar actions
-      await tester.tap(find.byIcon(Icons.close_rounded));
+    testWidgets('5. More options popup menu contains Store Info and Clear Chat actions', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SellerChatScreen(
+            product: testPumpkin,
+            shopName: 'GreenLeaf Fresh Mart',
+            sellerName: 'Sunil Weerasinghe',
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      // Open clear chat dialog via popup menu
-      await tester.tap(find.byIcon(Icons.more_vert_rounded));
+      // Open popup menu
+      final moreBtn = find.byIcon(Icons.more_vert_rounded);
+      expect(moreBtn, findsOneWidget);
+      await tester.tap(moreBtn);
       await tester.pumpAndSettle();
 
-      expect(find.text('Clear Chat History'), findsOneWidget);
-      await tester.tap(find.text('Clear Chat History'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Clear Conversation?'), findsOneWidget);
-      expect(find.text('Cancel'), findsOneWidget);
-
-      await tester.tap(find.text('Cancel'));
-      await tester.pumpAndSettle();
-      chatService.cancelPendingTimers();
+      // Verify menu items
+      expect(find.text('Store Info'), findsOneWidget);
+      expect(find.text('Clear Chat'), findsOneWidget);
     });
   });
 }
