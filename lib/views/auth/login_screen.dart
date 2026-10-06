@@ -50,10 +50,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _submit() async {
     if (_formKey.currentState?.validate() ?? false) {
-      await _authService.login(
+      final success = await _authService.login(
         email: _emailController.text,
         password: _passwordController.text,
       );
+      if (success && _rememberMe && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Login credentials saved for this device.'),
+            backgroundColor: AppColors.brandGreen,
+            duration: const Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
     }
   }
 
