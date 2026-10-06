@@ -282,6 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.brandGreen,
+                              disabledBackgroundColor: AppColors.brandGreen.withValues(alpha: 0.6),
                               foregroundColor: Colors.white,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
