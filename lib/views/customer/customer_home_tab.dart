@@ -4,12 +4,11 @@ import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/grocery_service.dart';
-import '../../models/seller_order_model.dart';
 import 'category_products_screen.dart';
 import 'search_screen.dart';
 import 'widgets/grocery_product_card.dart';
 
-class CustomerHomeTab extends StatefulWidget {
+class CustomerHomeTab extends StatelessWidget {
   final UserModel? user;
 
   const CustomerHomeTab({
@@ -17,78 +16,42 @@ class CustomerHomeTab extends StatefulWidget {
     this.user,
   });
 
-  @override
-  State<CustomerHomeTab> createState() => _CustomerHomeTabState();
-}
-
-class _CustomerHomeTabState extends State<CustomerHomeTab> {
-  String _selectedCategory = 'All';
-
   static const List<Map<String, dynamic>> _popularShops = [
     {
       'name': 'GreenLeaf Fresh Mart',
       'distance': '1.2 km',
       'pickupTime': 'Ready in 20m',
       'rating': '4.8',
-      'hours': 'Open • Closes 9:00 PM',
-      'phone': '+94 71 987 6543',
-      'address': 'No. 45, High Level Rd, Maharagama',
     },
     {
       'name': 'Daily Superette',
       'distance': '850 m',
       'pickupTime': 'Ready in 15m',
       'rating': '4.9',
-      'hours': 'Open • Closes 10:00 PM',
-      'phone': '+94 11 234 5678',
-      'address': 'No. 12, Station Road, Maharagama',
     },
   ];
+
+
 
   @override
   Widget build(BuildContext context) {
     final groceryService = GroceryService();
     final authService = AuthService();
-    final userName = widget.user?.fullName.split(' ').first ?? 'Kasun';
+    final userName = user?.fullName.split(' ').first ?? 'Kasun';
 
     return ListenableBuilder(
       listenable: groceryService,
       builder: (context, _) {
         final categories = groceryService.categories;
-        final allItems = groceryService.allItems;
-        final activeOrder = groceryService.sellerOrders.isNotEmpty
-            ? groceryService.sellerOrders.first
-            : null;
-        final featuredProducts = _selectedCategory == 'All'
-            ? allItems.take(6).toList()
-            : allItems
-                .where((item) =>
-                    item.category.toLowerCase() == _selectedCategory.toLowerCase())
-                .toList();
+        final featuredProducts = groceryService.allItems.take(6).toList();
 
         return Scaffold(
           backgroundColor: const Color(0xFFFBFBFB),
           body: SafeArea(
-            child: RefreshIndicator(
-              color: AppColors.brandGreen,
-              backgroundColor: Colors.white,
-              onRefresh: () async {
-                await Future.delayed(const Duration(milliseconds: 500));
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Store catalog refreshed'),
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 1),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  );
-                }
-              },
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Column(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Top Greeting & Location Header
@@ -186,10 +149,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                     ),
                   ),
 
-                  const SizedBox(height: 14),
-
-                  // Active Curbside Pickup Order Banner
-                  if (activeOrder != null) _buildActiveOrderBanner(activeOrder),
+                  const SizedBox(height: 16),
 
                   // Promotional Banner (Figma: "20% off on your first purchase")
                   Container(
@@ -261,7 +221,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 8),
                                 Text(
                                   '20% off on your\nfirst purchase',
                                   style: GoogleFonts.plusJakartaSans(
@@ -272,40 +232,27 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                InkWell(
-                                  onTap: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text('Promo code DASH20 applied to your cart!'),
-                                        backgroundColor: AppColors.brandGreen,
-                                        behavior: SnackBarBehavior.floating,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      ),
-                                    );
-                                  },
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.22),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(Icons.bolt_rounded, color: Color(0xFFFBBF24), size: 14),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Use Code: DASH20',
-                                          style: GoogleFonts.plusJakartaSans(
-                                            fontSize: 10.5,
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.white,
-                                          ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.timer_outlined, color: Colors.white, size: 12),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Ends in 04h 32m',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -448,21 +395,6 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                     ],
                   ),
 
-                  const SizedBox(height: 10),
-
-                  // Category Quick-Filter Chips Row
-                  SizedBox(
-                    height: 34,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      children: [
-                        _buildFilterChip('All', _selectedCategory == 'All'),
-                        ...categories.map((c) => _buildFilterChip(c.name, _selectedCategory.toLowerCase() == c.name.toLowerCase())),
-                      ],
-                    ),
-                  ),
-
                   const SizedBox(height: 14),
 
                   // Featured Products Grid (2 columns matching Figma design)
@@ -515,134 +447,8 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
               ),
             ),
           ),
-        ),
-      );
+        );
       },
-    );
-  }
-
-  Widget _buildFilterChip(String label, bool isSelected) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedCategory = label;
-          });
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.brandGreen : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isSelected ? AppColors.brandGreen : const Color(0xFFE5E7EB),
-              width: 1.0,
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: AppColors.brandGreen.withValues(alpha: 0.25),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 11.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF64748B),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActiveOrderBanner(StoreOrder order) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFBBF7D0)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF16A34A).withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: AppColors.brandGreen,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Pickup Order ${order.id}',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF0F172A),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: order.status == 'Ready for Pickup'
-                            ? const Color(0xFFDCFCE7)
-                            : const Color(0xFFFEF3C7),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        order.status,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w700,
-                          color: order.status == 'Ready for Pickup'
-                              ? const Color(0xFF15803D)
-                              : const Color(0xFFB45309),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${order.pickupSlot} • ${order.shopName}',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    color: const Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFF64748B), size: 20),
-        ],
-      ),
     );
   }
 }
@@ -720,6 +526,8 @@ class _NearbyShopCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 6),
+                    const Text('•', style: TextStyle(color: Color(0xFF868889), fontSize: 10)),
+                    const SizedBox(width: 6),
                     Text(
                       shop['pickupTime'] as String,
                       style: GoogleFonts.plusJakartaSans(
@@ -730,44 +538,8 @@ class _NearbyShopCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF22C55E),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      (shop['hours'] as String?) ?? 'Open Now',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF16A34A),
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.phone_in_talk_rounded, size: 18, color: AppColors.brandGreen),
-            tooltip: 'Call Store',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Calling ${shop['name']} (${shop['phone']})...'),
-                  backgroundColor: AppColors.brandGreen,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              );
-            },
           ),
         ],
       ),
