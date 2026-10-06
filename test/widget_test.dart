@@ -121,4 +121,38 @@ void main() {
     expect(find.text('Open for Pickup'), findsOneWidget);
     expect(find.text('Incoming Pickup Orders'), findsOneWidget);
   });
+
+  test('Customer login strictly rejects fake details and wrong password', () async {
+    final authService = AuthService();
+    await authService.logout();
+
+    // 1. Fake unregistered email should fail
+    final fakeEmailResult = await authService.login(
+      email: 'fake_customer@randomdomain.com',
+      password: 'Password123!',
+    );
+    expect(fakeEmailResult, false);
+    expect(authService.isAuthenticated, false);
+    expect(authService.currentUser, isNull);
+    expect(authService.errorMessage, isNotNull);
+
+    // 2. Real customer email with fake/wrong password should fail
+    final fakePassResult = await authService.login(
+      email: 'customer@dashgrocer.com',
+      password: 'wrong_fake_password_999',
+    );
+    expect(fakePassResult, false);
+    expect(authService.isAuthenticated, false);
+    expect(authService.currentUser, isNull);
+    expect(authService.errorMessage, isNotNull);
+
+    // 3. Correct credentials must succeed
+    final validResult = await authService.login(
+      email: 'customer@dashgrocer.com',
+      password: 'Password123!',
+    );
+    expect(validResult, true);
+    expect(authService.isAuthenticated, true);
+    expect(authService.currentUser?.email, 'customer@dashgrocer.com');
+  });
 }
