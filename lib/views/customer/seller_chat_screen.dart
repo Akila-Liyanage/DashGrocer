@@ -275,32 +275,23 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
       ),
       titleSpacing: 0,
       title: _isSearching
-          ? Container(
-              height: 38,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(20),
+          ? TextField(
+              controller: _searchController,
+              autofocus: true,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                color: const Color(0xFF0F172A),
               ),
-              child: TextField(
-                controller: _searchController,
-                autofocus: true,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13,
-                  color: const Color(0xFF0F172A),
+              decoration: InputDecoration(
+                hintText: 'Search messages...',
+                hintStyle: GoogleFonts.plusJakartaSans(
+                  fontSize: 12.5,
+                  color: const Color(0xFF94A3B8),
                 ),
-                decoration: InputDecoration(
-                  hintText: 'Search messages...',
-                  hintStyle: GoogleFonts.plusJakartaSans(
-                    fontSize: 12.5,
-                    color: const Color(0xFF94A3B8),
-                  ),
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 9),
-                ),
-                onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                border: InputBorder.none,
+                isDense: true,
               ),
+              onChanged: (val) => setState(() => _searchQuery = val.trim()),
             )
           : Row(
               children: [
@@ -354,23 +345,23 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
                     children: [
                       Row(
                         children: [
-                          Flexible(
+                          Expanded(
                             child: Text(
                               shop,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.plusJakartaSans(
-                                fontSize: 14.5,
+                                fontSize: 13.5,
                                 fontWeight: FontWeight.w700,
                                 color: const Color(0xFF0F172A),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 3),
                           const Icon(
                             Icons.verified_rounded,
                             color: Color(0xFF2EB844),
-                            size: 14,
+                            size: 13,
                           ),
                         ],
                       ),
@@ -380,7 +371,7 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF22C55E),
                         ),
@@ -390,54 +381,87 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
                 ),
               ],
             ),
-      actions: [
-        IconButton(
-          icon: Icon(
-            _isSearching ? Icons.close_rounded : Icons.search_rounded,
-            color: const Color(0xFF64748B),
-            size: 21,
-          ),
-          tooltip: _isSearching ? 'Close Search' : 'Search Messages',
-          onPressed: () {
-            setState(() {
-              _isSearching = !_isSearching;
-              if (!_isSearching) {
-                _searchController.clear();
-                _searchQuery = '';
-              }
-            });
-          },
-        ),
-        IconButton(
-          icon: const Icon(
-            Icons.phone_rounded,
-            color: AppColors.brandGreen,
-            size: 21,
-          ),
-          tooltip: 'Call Seller',
-          onPressed: _showCallDialog,
-        ),
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF64748B), size: 21),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          onSelected: (val) {
-            if (val == 'clear') _showClearChatDialog();
-          },
-          itemBuilder: (ctx) => [
-            const PopupMenuItem(
-              value: 'clear',
-              child: Row(
-                children: [
-                  Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 18),
-                  SizedBox(width: 8),
-                  Text('Clear Chat History'),
-                ],
+      actions: _isSearching
+          ? [
+              IconButton(
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: Color(0xFF64748B),
+                  size: 20,
+                ),
+                tooltip: 'Close Search',
+                onPressed: () {
+                  setState(() {
+                    _isSearching = false;
+                    _searchController.clear();
+                    _searchQuery = '';
+                  });
+                },
               ),
-            ),
-          ],
-        ),
-        const SizedBox(width: 4),
-      ],
+            ]
+          : [
+              SizedBox(
+                width: 34,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(
+                    Icons.search_rounded,
+                    color: Color(0xFF64748B),
+                    size: 20,
+                  ),
+                  tooltip: 'Search Messages',
+                  onPressed: () => setState(() => _isSearching = true),
+                ),
+              ),
+              SizedBox(
+                width: 34,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(
+                    Icons.phone_rounded,
+                    color: AppColors.brandGreen,
+                    size: 20,
+                  ),
+                  tooltip: 'Call Seller',
+                  onPressed: _showCallDialog,
+                ),
+              ),
+              SizedBox(
+                width: 34,
+                child: PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF64748B), size: 20),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  onSelected: (val) {
+                    if (val == 'clear') _showClearChatDialog();
+                  },
+                  itemBuilder: (ctx) => [
+                    PopupMenuItem(
+                      value: 'clear',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Clear Chat History',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF1E293B),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
     );
   }
 
