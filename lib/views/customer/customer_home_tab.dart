@@ -29,12 +29,18 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
       'distance': '1.2 km',
       'pickupTime': 'Ready in 20m',
       'rating': '4.8',
+      'hours': 'Open • Closes 9:00 PM',
+      'phone': '+94 71 987 6543',
+      'address': 'No. 45, High Level Rd, Maharagama',
     },
     {
       'name': 'Daily Superette',
       'distance': '850 m',
       'pickupTime': 'Ready in 15m',
       'rating': '4.9',
+      'hours': 'Open • Closes 10:00 PM',
+      'phone': '+94 11 234 5678',
+      'address': 'No. 12, Station Road, Maharagama',
     },
   ];
 
@@ -609,8 +615,6 @@ class _NearbyShopCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    const Text('•', style: TextStyle(color: Color(0xFF868889), fontSize: 10)),
-                    const SizedBox(width: 6),
                     Text(
                       shop['pickupTime'] as String,
                       style: GoogleFonts.plusJakartaSans(
@@ -621,8 +625,44 @@ class _NearbyShopCard extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF22C55E),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      (shop['hours'] as String?) ?? 'Open Now',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF16A34A),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.phone_in_talk_rounded, size: 18, color: AppColors.brandGreen),
+            tooltip: 'Call Store',
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Calling ${shop['name']} (${shop['phone']})...'),
+                  backgroundColor: AppColors.brandGreen,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              );
+            },
           ),
         ],
       ),
