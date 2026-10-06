@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
@@ -22,16 +23,31 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController(text: 'customer@dashgrocer.com');
   final _passwordController = TextEditingController(text: 'Password123!');
+  final _passwordFocusNode = FocusNode();
   final _authService = AuthService();
 
   UserRole _selectedRole = UserRole.customer;
   bool _rememberMe = true;
   bool _obscurePassword = true;
+  bool _isCapsLockOn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _passwordFocusNode.onKeyEvent = (node, event) {
+      final caps = HardwareKeyboard.instance.lockModesEnabled.contains(KeyboardLockMode.capsLock);
+      if (caps != _isCapsLockOn) {
+        setState(() => _isCapsLockOn = caps);
+      }
+      return KeyEventResult.ignored;
+    };
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -218,6 +234,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Password Field
                         _buildTextField(
                           controller: _passwordController,
+                          focusNode: _passwordFocusNode,
                           hint: '••••••••',
                           icon: Icons.lock_outline_rounded,
                           obscureText: _obscurePassword,
@@ -235,6 +252,25 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
+
+                        if (_isCapsLockOn)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6, left: 4),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.keyboard_capslock_rounded, size: 14, color: Color(0xFFD97706)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Caps Lock is ON',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFFD97706),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
 
                         const SizedBox(height: 12),
 
@@ -541,6 +577,7 @@ class _LoginScreenState extends State<LoginScreen> {
     Widget? suffixIcon,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
+    FocusNode? focusNode,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -550,6 +587,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       child: TextFormField(
         controller: controller,
+        focusNode: focusNode,
         obscureText: obscureText,
         keyboardType: keyboardType,
         validator: validator,
