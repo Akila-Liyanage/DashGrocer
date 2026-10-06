@@ -8,13 +8,20 @@ import 'category_products_screen.dart';
 import 'search_screen.dart';
 import 'widgets/grocery_product_card.dart';
 
-class CustomerHomeTab extends StatelessWidget {
+class CustomerHomeTab extends StatefulWidget {
   final UserModel? user;
 
   const CustomerHomeTab({
     super.key,
     this.user,
   });
+
+  @override
+  State<CustomerHomeTab> createState() => _CustomerHomeTabState();
+}
+
+class _CustomerHomeTabState extends State<CustomerHomeTab> {
+  String _selectedCategory = 'All';
 
   static const List<Map<String, dynamic>> _popularShops = [
     {
@@ -31,19 +38,22 @@ class CustomerHomeTab extends StatelessWidget {
     },
   ];
 
-
-
   @override
   Widget build(BuildContext context) {
     final groceryService = GroceryService();
     final authService = AuthService();
-    final userName = user?.fullName.split(' ').first ?? 'Kasun';
+    final userName = widget.user?.fullName.split(' ').first ?? 'Kasun';
 
     return ListenableBuilder(
       listenable: groceryService,
       builder: (context, _) {
         final categories = groceryService.categories;
-        final featuredProducts = groceryService.allItems.take(6).toList();
+        final allItems = groceryService.allItems;
+        final featuredProducts = _selectedCategory == 'All'
+            ? allItems
+            : allItems
+                .where((e) => e.category.toLowerCase().contains(_selectedCategory.toLowerCase()))
+                .toList();
 
         return Scaffold(
           backgroundColor: const Color(0xFFFBFBFB),
@@ -393,6 +403,42 @@ class CustomerHomeTab extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Category quick filter pills row
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      children: ['All', 'Vegetables', 'Fruits'].map((cat) {
+                        final isSelected = _selectedCategory == cat;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () => setState(() => _selectedCategory = cat),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppColors.brandGreen : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                cat,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  color: isSelected ? Colors.white : const Color(0xFF64748B),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
 
                   const SizedBox(height: 14),
