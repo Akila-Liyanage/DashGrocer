@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/chat_message_model.dart';
@@ -864,113 +865,141 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
             const SizedBox(width: 8),
           ],
           Flexible(
-            child: Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.76,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                gradient: isCustomer
-                    ? const LinearGradient(
-                        colors: [Color(0xFF2EB844), Color(0xFF219638)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-                color: isCustomer ? null : Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isCustomer ? 16 : 4),
-                  bottomRight: Radius.circular(isCustomer ? 4 : 16),
-                ),
-                border: isCustomer
-                    ? null
-                    : Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isCustomer ? 0.08 : 0.03),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment:
-                    isCustomer ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                children: [
-                  if (msg.attachmentUrl != null) ...[
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isCustomer
-                            ? Colors.white.withValues(alpha: 0.2)
-                            : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.image_rounded,
-                            size: 16,
-                            color: isCustomer ? Colors.white : const Color(0xFF475569),
+            child: GestureDetector(
+              onLongPress: () {
+                Clipboard.setData(ClipboardData(text: msg.text));
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        const Icon(Icons.copy_rounded, color: Colors.white, size: 16),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Message copied to clipboard',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Photo Attachment',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: isCustomer ? Colors.white : const Color(0xFF475569),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  Text(
-                    msg.text,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w500,
-                      height: 1.35,
-                      color: isCustomer ? Colors.white : const Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        timeStr,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                          color: isCustomer
-                              ? Colors.white.withValues(alpha: 0.8)
-                              : const Color(0xFF94A3B8),
-                        ),
-                      ),
-                      if (isCustomer) ...[
-                        const SizedBox(width: 4),
-                        Icon(
-                          msg.deliveryStatus == MessageDeliveryStatus.read ||
-                                  msg.deliveryStatus == MessageDeliveryStatus.delivered
-                              ? Icons.done_all_rounded
-                              : (msg.deliveryStatus == MessageDeliveryStatus.sent
-                                  ? Icons.done_rounded
-                                  : Icons.access_time_rounded),
-                          size: 13,
-                          color: msg.deliveryStatus == MessageDeliveryStatus.read
-                              ? const Color(0xFFB9F6CA)
-                              : Colors.white.withValues(alpha: 0.85),
                         ),
                       ],
-                    ],
+                    ),
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: const Color(0xFF1E293B),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                ],
+                );
+              },
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.76,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: isCustomer
+                      ? const LinearGradient(
+                          colors: [Color(0xFF2EB844), Color(0xFF219638)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : null,
+                  color: isCustomer ? null : Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(16),
+                    topRight: const Radius.circular(16),
+                    bottomLeft: Radius.circular(isCustomer ? 16 : 4),
+                    bottomRight: Radius.circular(isCustomer ? 4 : 16),
+                  ),
+                  border: isCustomer
+                      ? null
+                      : Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isCustomer ? 0.08 : 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment:
+                      isCustomer ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  children: [
+                    if (msg.attachmentUrl != null) ...[
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isCustomer
+                              ? Colors.white.withValues(alpha: 0.2)
+                              : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.image_rounded,
+                              size: 16,
+                              color: isCustomer ? Colors.white : const Color(0xFF475569),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Photo Attachment',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: isCustomer ? Colors.white : const Color(0xFF475569),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    Text(
+                      msg.text,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w500,
+                        height: 1.35,
+                        color: isCustomer ? Colors.white : const Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          timeStr,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: isCustomer
+                                ? Colors.white.withValues(alpha: 0.8)
+                                : const Color(0xFF94A3B8),
+                          ),
+                        ),
+                        if (isCustomer) ...[
+                          const SizedBox(width: 4),
+                          Icon(
+                            msg.deliveryStatus == MessageDeliveryStatus.read ||
+                                    msg.deliveryStatus == MessageDeliveryStatus.delivered
+                                ? Icons.done_all_rounded
+                                : (msg.deliveryStatus == MessageDeliveryStatus.sent
+                                    ? Icons.done_rounded
+                                    : Icons.access_time_rounded),
+                            size: 13,
+                            color: msg.deliveryStatus == MessageDeliveryStatus.read
+                                ? const Color(0xFFB9F6CA)
+                                : Colors.white.withValues(alpha: 0.85),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
