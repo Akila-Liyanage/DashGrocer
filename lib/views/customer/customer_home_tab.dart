@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/grocery_service.dart';
+import '../../models/seller_order_model.dart';
 import 'category_products_screen.dart';
 import 'search_screen.dart';
 import 'widgets/grocery_product_card.dart';
@@ -55,6 +56,9 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
       builder: (context, _) {
         final categories = groceryService.categories;
         final allItems = groceryService.allItems;
+        final activeOrder = groceryService.sellerOrders.isNotEmpty
+            ? groceryService.sellerOrders.first
+            : null;
         final featuredProducts = _selectedCategory == 'All'
             ? allItems.take(6).toList()
             : allItems
@@ -166,7 +170,10 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
+
+                  // Active Curbside Pickup Order Banner
+                  if (activeOrder != null) _buildActiveOrderBanner(activeOrder),
 
                   // Promotional Banner (Figma: "20% off on your first purchase")
                   Container(
@@ -537,6 +544,87 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildActiveOrderBanner(StoreOrder order) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFBBF7D0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF16A34A).withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.brandGreen,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Pickup Order ${order.id}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: order.status == 'Ready for Pickup'
+                            ? const Color(0xFFDCFCE7)
+                            : const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        order.status,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: order.status == 'Ready for Pickup'
+                              ? const Color(0xFF15803D)
+                              : const Color(0xFFB45309),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${order.pickupSlot} • ${order.shopName}',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    color: const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: Color(0xFF64748B), size: 20),
+        ],
       ),
     );
   }
