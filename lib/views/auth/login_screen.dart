@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_signin_button/flutter_signin_button.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
@@ -413,36 +415,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 10),
 
                         Center(
-                          child: InkWell(
-                            onTap: () {
-                              _authService.login(
-                                email: 'customer@dashgrocer.com',
-                                password: 'Password123!',
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _buildGoogleGLogo(),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Google',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF475569),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          child: SizedBox(
+                            height: 44,
+                            child: SignInButton(
+                              Buttons.Google,
+                              text: 'Continue with Google',
+                              onPressed: () async {
+                                await _authService.signInWithGoogle();
+                              },
                             ),
                           ),
                         ),
@@ -457,24 +437,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         );
         },
-      ),
-    );
-  }
-
-  Widget _buildGoogleGLogo() {
-    return Container(
-      width: 18,
-      height: 18,
-      decoration: const BoxDecoration(shape: BoxShape.circle),
-      child: Center(
-        child: Text(
-          'G',
-          style: GoogleFonts.roboto(
-            fontSize: 14,
-            fontWeight: FontWeight.w900,
-            color: const Color(0xFF4285F4),
-          ),
-        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:dashgrocer/models/user_model.dart';
 import 'database_seeder.dart';
 
@@ -211,7 +212,8 @@ class AuthService extends ChangeNotifier {
       if (auth == null) {
         // Offline / mock mode: authenticate credentials strictly
         if (demoMatch.isNotEmpty) {
-          if (_isValidDemoPassword(password)) {
+          if (_registeredPasswords[normalizedEmail] == password ||
+              (_registeredPasswords[normalizedEmail] == null && _isValidDemoPassword(password))) {
             _currentUser = demoMatch.first;
             _lastLoginTime = DateTime.now();
             _isLoading = false;
@@ -266,7 +268,8 @@ class AuthService extends ChangeNotifier {
     } on FirebaseAuthException catch (e) {
       if (demoMatch.isNotEmpty) {
         // Strictly check password for demo account
-        if (_isValidDemoPassword(password)) {
+        if (_registeredPasswords[normalizedEmail] == password ||
+            (_registeredPasswords[normalizedEmail] == null && _isValidDemoPassword(password))) {
           try {
             final cred = await DatabaseSeeder.provisionSeedUserAuth(normalizedEmail, password);
             if (cred?.user != null) {
@@ -315,7 +318,9 @@ class AuthService extends ChangeNotifier {
       return false;
     } catch (e) {
       // Unexpected error or desktop platform fallback: strictly verify credentials
-      if (demoMatch.isNotEmpty && _isValidDemoPassword(password)) {
+      if (demoMatch.isNotEmpty &&
+          (_registeredPasswords[normalizedEmail] == password ||
+              (_registeredPasswords[normalizedEmail] == null && _isValidDemoPassword(password)))) {
         _currentUser = demoMatch.first;
         _lastLoginTime = DateTime.now();
         _isLoading = false;
@@ -340,6 +345,61 @@ class AuthService extends ChangeNotifier {
 
     _isLoading = false;
     return false;
+  }
+
+  /// Sign in with Google
+  Future<bool> signInWithGoogle() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser == null) {
+        _isLoading = false;
+        _errorMessage = 'Google sign-in was cancelled.';
+        notifyListeners();
+        return false;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final auth = _firebaseAuth;
+      if (auth == null) {
+        _isLoading = false;
+        _errorMessage = 'Firebase Auth not available.';
+        notifyListeners();
+        return false;
+      }
+
+      final UserCredential userCredential = await auth.signInWithCredential(credential);
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        await _loadUserProfile(user.uid, fallbackEmail: user.email);
+        _lastLoginTime = DateTime.now();
+        _isLoading = false;
+        _errorMessage = null;
+        notifyListeners();
+        return true;
+      }
+
+      _isLoading = false;
+      _errorMessage = 'Failed to sign in with Google.';
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Google sign-in failed: ${e.toString()}';
+      notifyListeners();
+      return false;
+    }
   }
 
   /// Register a new user with Firebase Auth and store profile in Cloud Firestore
@@ -460,6 +520,70 @@ class AuthService extends ChangeNotifier {
     _currentUser = demoUsers.firstWhere((u) => u.role == role);
     _errorMessage = null;
     notifyListeners();
+  }
+
+  /// Update the signed-in user's password in Firebase Authentication.
+  /// Passwords are credentials and must not be stored in Firestore.
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    _errorMessage = null;
+    final normalizedEmail = _currentUser?.email.trim().toLowerCase();
+
+    if (normalizedEmail == null || normalizedEmail.isEmpty) {
+      _errorMessage = 'Please sign in again before changing your password.';
+      notifyListeners();
+      return false;
+    }
+    if (newPassword.length < 6) {
+      _errorMessage = 'The new password must be at least 6 characters.';
+      notifyListeners();
+      return false;
+    }
+
+    try {
+      final firebaseUser = _firebaseAuth?.currentUser;
+      if (firebaseUser != null) {
+        final email = firebaseUser.email;
+        if (email == null || email.isEmpty) {
+          _errorMessage = 'This account cannot change its password here.';
+          notifyListeners();
+          return false;
+        }
+
+        final credential = EmailAuthProvider.credential(
+          email: email,
+          password: currentPassword,
+        );
+        await firebaseUser.reauthenticateWithCredential(credential);
+        await firebaseUser.updatePassword(newPassword);
+      } else {
+        final storedPassword = _registeredPasswords[normalizedEmail];
+        final isDemoAccount = demoUsers.any((user) => user.email.toLowerCase() == normalizedEmail);
+        final currentPasswordMatches = storedPassword != null
+            ? storedPassword == currentPassword
+            : isDemoAccount && _isValidDemoPassword(currentPassword);
+
+        if (!currentPasswordMatches) {
+          _errorMessage = 'Current password is incorrect.';
+          notifyListeners();
+          return false;
+        }
+        _registeredPasswords[normalizedEmail] = newPassword;
+      }
+
+      notifyListeners();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      _errorMessage = _mapFirebaseAuthError(e);
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorMessage = 'Could not update password: ${e.toString()}';
+      notifyListeners();
+      return false;
+    }
   }
 
   /// Logout
