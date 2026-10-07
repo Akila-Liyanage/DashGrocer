@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
-import '../../services/auth_service.dart';
-import 'write_review_screen.dart';
 
 class ReviewsScreen extends StatefulWidget {
   final String productName;
@@ -46,37 +44,6 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
           'Super fast pickup service, completely zero waiting time. Vegetables were fresh and nicely packed.',
     },
   ];
-
-  Future<void> _openWriteReview() async {
-    final result = await Navigator.push<WriteReviewResult>(
-      context,
-      MaterialPageRoute(builder: (_) => const WriteReviewScreen()),
-    );
-    if (result == null || !mounted) return;
-
-    final fullName = AuthService().currentUser?.fullName ?? '';
-    final name = fullName.isNotEmpty ? fullName : 'Kasun Perera';
-    setState(() {
-      _reviews.insert(0, {
-        'initial': name[0].toUpperCase(),
-        'name': name,
-        'time': 'Just now',
-        'rating': result.rating,
-        'comment': result.comment.isNotEmpty ? result.comment : 'No written comment.',
-      });
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Thanks for your review!',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: AppColors.brandGreenDark,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -181,9 +148,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                     const SizedBox(height: 18),
 
                     // Write a Review Prompt Card
-                    GestureDetector(
-                      onTap: _openWriteReview,
-                      child: Container(
+                    Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -237,7 +202,6 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                           const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF94A3B8)),
                         ],
                       ),
-                    ),
                     ),
 
                     const SizedBox(height: 18),
