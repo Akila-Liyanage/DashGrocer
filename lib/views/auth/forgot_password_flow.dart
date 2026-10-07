@@ -5,8 +5,6 @@ import '../../core/theme/app_colors.dart';
 
 enum RecoveryStep {
   enterEmail, // Screen 8 (PASSWORD)
-  verifyCode, // Screen 9 (VERIFY)
-  changePassword, // Screen 10 (CHANGE)
 }
 
 class ForgotPasswordFlow extends StatefulWidget {
@@ -25,12 +23,7 @@ class _ForgotPasswordFlowState extends State<ForgotPasswordFlow> {
   RecoveryStep _step = RecoveryStep.enterEmail;
 
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _codeController = TextEditingController();
-  final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
 
-  bool _obscureNewPass = true;
-  bool _obscureConfirmPass = true;
   bool _isLoading = false;
   String? _message;
   bool _isError = false;
@@ -38,20 +31,11 @@ class _ForgotPasswordFlowState extends State<ForgotPasswordFlow> {
   @override
   void dispose() {
     _emailController.dispose();
-    _codeController.dispose();
-    _newPasswordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   void _handleBack() {
-    if (_step == RecoveryStep.changePassword) {
-      setState(() => _step = RecoveryStep.verifyCode);
-    } else if (_step == RecoveryStep.verifyCode) {
-      setState(() => _step = RecoveryStep.enterEmail);
-    } else {
-      widget.onBackToLogin();
-    }
+    widget.onBackToLogin();
   }
 
   Future<void> _sendCode() async {
@@ -75,9 +59,11 @@ class _ForgotPasswordFlowState extends State<ForgotPasswordFlow> {
       setState(() {
         _isLoading = false;
         _isError = false;
-        _message = 'Recovery code / link sent to your email!';
-        _step = RecoveryStep.verifyCode;
+        _message = 'Password reset link sent to your email!';
       });
+      // Redirect to login after showing success message
+      await Future.delayed(const Duration(milliseconds: 1500));
+      widget.onBackToLogin();
     } on FirebaseAuthException catch (e) {
       setState(() {
         _isLoading = false;
@@ -87,65 +73,12 @@ class _ForgotPasswordFlowState extends State<ForgotPasswordFlow> {
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _isError = false;
-        // Proceed to code verify step for user experience
-        _step = RecoveryStep.verifyCode;
+        _isError = true;
+        _message = 'Failed to send recovery email.';
       });
     }
   }
 
-  void _verifyCode() {
-    final code = _codeController.text.trim();
-    if (code.isEmpty || code.length < 4) {
-      setState(() {
-        _isError = true;
-        _message = 'Please enter the 4 to 6 digit code received.';
-      });
-      return;
-    }
-
-    setState(() {
-      _message = null;
-      _step = RecoveryStep.changePassword;
-    });
-  }
-
-  Future<void> _submitNewPassword() async {
-    final newPass = _newPasswordController.text;
-    final confirmPass = _confirmPasswordController.text;
-
-    if (newPass.length < 6) {
-      setState(() {
-        _isError = true;
-        _message = 'Password must be at least 6 characters long.';
-      });
-      return;
-    }
-
-    if (newPass != confirmPass) {
-      setState(() {
-        _isError = true;
-        _message = 'Passwords do not match.';
-      });
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _message = null;
-    });
-
-    await Future.delayed(const Duration(milliseconds: 600));
-
-    setState(() {
-      _isLoading = false;
-      _isError = false;
-      _message = 'Password updated successfully! Redirecting to login...';
-    });
-
-    await Future.delayed(const Duration(milliseconds: 800));
-    widget.onBackToLogin();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -174,9 +107,7 @@ class _ForgotPasswordFlowState extends State<ForgotPasswordFlow> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (_step == RecoveryStep.enterEmail) _buildEnterEmailStep(),
-              if (_step == RecoveryStep.verifyCode) _buildVerifyCodeStep(),
-              if (_step == RecoveryStep.changePassword) _buildChangePasswordStep(),
+              _buildEnterEmailStep(),
 
               if (_message != null) ...[
                 const SizedBox(height: 16),
@@ -257,7 +188,7 @@ class _ForgotPasswordFlowState extends State<ForgotPasswordFlow> {
                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                   )
                 : Text(
-                    'Send code',
+                    'Send link',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -269,153 +200,6 @@ class _ForgotPasswordFlowState extends State<ForgotPasswordFlow> {
     );
   }
 
-  // SCREEN 9: VERIFY (Enter Code)
-  Widget _buildVerifyCodeStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const SizedBox(height: 24),
-        Text(
-          'Forgot Password',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            color: const Color(0xFF1E293B),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'A fresh start is just ahead, regain access to your account.',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 13,
-            color: const Color(0xFF868889),
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 36),
-
-        _buildInputField(
-          controller: _codeController,
-          hint: '-- Enter the code',
-          icon: Icons.lock_clock_outlined,
-          keyboardType: TextInputType.number,
-        ),
-
-        const SizedBox(height: 24),
-
-        SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brandGreen,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: _verifyCode,
-            child: Text(
-              'verify',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // SCREEN 10: CHANGE PASSWORD
-  Widget _buildChangePasswordStep() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Change Password',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: const Color(0xFF1E293B),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // New Password field
-          _buildInputField(
-            controller: _newPasswordController,
-            hint: '•••••',
-            icon: Icons.lock_outline_rounded,
-            obscureText: _obscureNewPass,
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscureNewPass ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                size: 20,
-                color: const Color(0xFF94A3B8),
-              ),
-              onPressed: () => setState(() => _obscureNewPass = !_obscureNewPass),
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          // Confirm password field
-          _buildInputField(
-            controller: _confirmPasswordController,
-            hint: 'Confirm password',
-            icon: Icons.lock_outline_rounded,
-            obscureText: _obscureConfirmPass,
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscureConfirmPass ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                size: 20,
-                color: const Color(0xFF94A3B8),
-              ),
-              onPressed: () => setState(() => _obscureConfirmPass = !_obscureConfirmPass),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brandGreen,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: _isLoading ? null : _submitNewPassword,
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : Text(
-                      'Login',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildInputField({
     required TextEditingController controller,
