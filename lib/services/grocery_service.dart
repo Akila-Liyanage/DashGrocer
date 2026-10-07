@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/grocery_item_model.dart';
@@ -24,6 +25,8 @@ class GroceryService extends ChangeNotifier {
   factory GroceryService() => _instance;
   GroceryService._internal() {
     _initializeDefaultData();
+    _listenToFirestoreProducts();
+    _listenToFirestoreOrders();
   }
 
   final List<GroceryCategory> _categories = [
@@ -113,6 +116,90 @@ class GroceryService extends ChangeNotifier {
       return FirebaseFirestore.instance;
     } catch (_) {
       return null;
+    }
+  }
+
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _productsSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _ordersSub;
+
+  void _listenToFirestoreProducts() {
+    final firestore = _firestore;
+    if (firestore == null) return;
+    try {
+      _productsSub?.cancel();
+      _productsSub = firestore.collection('products').snapshots().listen((snapshot) {
+        if (snapshot.docs.isNotEmpty) {
+          final firestoreItems = <GroceryItem>[];
+          for (final doc in snapshot.docs) {
+            try {
+              final data = doc.data();
+              data['id'] = doc.id;
+              firestoreItems.add(GroceryItem.fromMap(data, doc.id));
+            } catch (e) {
+              debugPrint('Error parsing Firestore product doc ${doc.id}: $e');
+            }
+          }
+          if (firestoreItems.isNotEmpty) {
+            _items = firestoreItems;
+            notifyListeners();
+          }
+        } else {
+          // If Firestore products collection is empty, seed defaults safely
+          for (final item in _items) {
+            firestore.collection('products').doc(item.id).set(item.toMap(), SetOptions(merge: true)).catchError((_) {});
+          }
+        }
+      }, onError: (e) {
+        debugPrint('[GroceryService] Firestore products listener notice: $e');
+      });
+    } catch (e) {
+      debugPrint('[GroceryService] Could not attach Firestore products listener: $e');
+    }
+  }
+
+  void _listenToFirestoreOrders() {
+    final firestore = _firestore;
+    if (firestore == null) return;
+    try {
+      _ordersSub?.cancel();
+      _ordersSub = firestore.collection('orders').snapshots().listen((snapshot) {
+        if (snapshot.docs.isNotEmpty) {
+          final firestoreOrders = <StoreOrder>[];
+          for (final doc in snapshot.docs) {
+            try {
+              final data = doc.data();
+              data['id'] = doc.id;
+              firestoreOrders.add(StoreOrder(
+                id: doc.id,
+                customerName: data['customerName'] as String? ?? 'Customer',
+                customerPhone: data['customerPhone'] as String? ?? '',
+                itemsSummary: data['itemsSummary'] as String? ?? '',
+                totalAmount: (data['totalAmount'] as num?)?.toDouble() ?? 0.0,
+                pickupSlot: data['pickupSlot'] as String? ?? 'Today',
+                shopName: data['shopName'] as String? ?? 'GreenLeaf Fresh Mart',
+                status: data['status'] as String? ?? 'Pending',
+                createdAt: data['createdAt'] != null
+                    ? (data['createdAt'] is Timestamp
+                        ? (data['createdAt'] as Timestamp).toDate()
+                        : DateTime.tryParse(data['createdAt'].toString()) ?? DateTime.now())
+                    : DateTime.now(),
+                isRead: data['isRead'] as bool? ?? false,
+              ));
+            } catch (e) {
+              debugPrint('Error parsing Firestore order doc ${doc.id}: $e');
+            }
+          }
+          if (firestoreOrders.isNotEmpty) {
+            _sellerOrders.clear();
+            _sellerOrders.addAll(firestoreOrders);
+            notifyListeners();
+          }
+        }
+      }, onError: (e) {
+        debugPrint('[GroceryService] Firestore orders listener notice: $e');
+      });
+    } catch (e) {
+      debugPrint('[GroceryService] Could not attach Firestore orders listener: $e');
     }
   }
 
@@ -505,12 +592,17 @@ class GroceryService extends ChangeNotifier {
 
   // Seller Product Management (Adds directly to live catalog for Customers)
   void addProduct(GroceryItem item) {
-    _items.insert(0, item);
+    final index = _items.indexWhere((it) => it.id == item.id);
+    if (index == -1) {
+      _items.insert(0, item);
+    } else {
+      _items[index] = item;
+    }
     notifyListeners();
 
     final firestore = _firestore;
     if (firestore != null) {
-      firestore.collection('products').doc(item.id).set(item.toMap()).catchError((e) {
+      firestore.collection('products').doc(item.id).set(item.toMap(), SetOptions(merge: true)).catchError((e) {
         debugPrint('Firestore save product error: $e');
       });
     }
@@ -524,7 +616,7 @@ class GroceryService extends ChangeNotifier {
 
       final firestore = _firestore;
       if (firestore != null) {
-        firestore.collection('products').doc(updatedItem.id).set(updatedItem.toMap()).catchError((e) {
+        firestore.collection('products').doc(updatedItem.id).set(updatedItem.toMap(), SetOptions(merge: true)).catchError((e) {
           debugPrint('Firestore update product error: $e');
         });
       }
@@ -576,6 +668,25 @@ class GroceryService extends ChangeNotifier {
 
     _sellerOrders.insert(0, order);
 
+    final firestore = _firestore;
+    if (firestore != null) {
+      firestore.collection('orders').doc(order.id).set({
+        'id': order.id,
+        'customerName': order.customerName,
+        'customerPhone': order.customerPhone,
+        'itemsSummary': order.itemsSummary,
+        'totalAmount': order.totalAmount,
+        'pickupSlot': order.pickupSlot,
+        'shopName': order.shopName,
+        'status': order.status,
+        'createdAt': order.createdAt.toIso8601String(),
+        'isRead': order.isRead,
+        'paymentMethod': paymentMethod,
+      }, SetOptions(merge: true)).catchError((e) {
+        debugPrint('Firestore save order error: $e');
+      });
+    }
+
     // Push notification for the seller
     final notification = SellerNotification(
       id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
@@ -616,6 +727,13 @@ class GroceryService extends ChangeNotifier {
       final newStatus = order.status == 'Ready for Pickup' ? 'Pending' : 'Ready for Pickup';
       _sellerOrders[index] = order.copyWith(status: newStatus);
       notifyListeners();
+
+      final firestore = _firestore;
+      if (firestore != null) {
+        firestore.collection('orders').doc(orderId).set({'status': newStatus}, SetOptions(merge: true)).catchError((e) {
+          debugPrint('Firestore toggle order ready error: $e');
+        });
+      }
     }
   }
 
@@ -624,6 +742,13 @@ class GroceryService extends ChangeNotifier {
     if (index != -1) {
       _sellerOrders[index] = _sellerOrders[index].copyWith(status: newStatus);
       notifyListeners();
+
+      final firestore = _firestore;
+      if (firestore != null) {
+        firestore.collection('orders').doc(orderId).set({'status': newStatus}, SetOptions(merge: true)).catchError((e) {
+          debugPrint('Firestore update order status error: $e');
+        });
+      }
     }
   }
 

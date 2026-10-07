@@ -136,22 +136,7 @@ class DatabaseSeeder {
 
     for (final item in groceryService.allItems) {
       final doc = _firestore.collection('products').doc(item.id);
-      batch.set(doc, {
-        'id': item.id,
-        'name': item.name,
-        'unit': item.unit,
-        'price': item.price,
-        'originalPrice': item.originalPrice,
-        'discountPercent': item.discountPercent,
-        'category': item.category,
-        'rating': item.rating,
-        'reviewsCount': item.reviewsCount,
-        'description': item.description,
-        'imageUrl': item.imageUrl,
-        'isNew': item.isNew,
-        'isFavorite': item.isFavorite,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      batch.set(doc, item.toMap());
     }
 
     await batch.commit();
