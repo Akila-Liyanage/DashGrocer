@@ -158,6 +158,7 @@ class GroceryItem {
   }
 
   factory GroceryItem.fromMap(Map<String, dynamic> map, [String? docId]) {
+    final cat = map['category'] as String? ?? 'Vegetables';
     return GroceryItem(
       id: docId ?? (map['id'] as String? ?? 'item_${DateTime.now().millisecondsSinceEpoch}'),
       name: map['name'] as String? ?? '',
@@ -166,11 +167,13 @@ class GroceryItem {
       originalPrice: (map['originalPrice'] as num?)?.toDouble(),
       discountPercent: (map['discountPercent'] as num?)?.toInt(),
       isNew: map['isNew'] as bool? ?? false,
+      isFavorite: map['isFavorite'] as bool? ?? false,
       rating: (map['rating'] as num?)?.toDouble() ?? 4.5,
       reviewsCount: (map['reviewsCount'] as num?)?.toInt() ?? 24,
       description: map['description'] as String? ?? '',
-      category: map['category'] as String? ?? 'Grocery',
-      imageUrl: map['imageUrl'] as String? ?? 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80',
+      category: cat,
+      imageUrl: map['imageUrl'] as String? ?? 'assets/images/pumpkin.png',
+      circleColor: _getCircleColorForCategory(cat),
       sellerId: map['sellerId'] as String?,
       sellerName: map['sellerName'] as String?,
       sellerShopName: map['sellerShopName'] as String?,
@@ -180,6 +183,25 @@ class GroceryItem {
       sellerResponseTime: map['sellerResponseTime'] as String?,
       stockQuantity: (map['stockQuantity'] as num?)?.toInt() ?? 50,
     );
+  }
+
+  static Color _getCircleColorForCategory(String category) {
+    switch (category.toLowerCase()) {
+      case 'vegetables':
+        return const Color(0xFFE8F6EB);
+      case 'fruits':
+        return const Color(0xFFFFF2E6);
+      case 'beverages':
+        return const Color(0xFFFFF0E5);
+      case 'grocery':
+        return const Color(0xFFF3EBFA);
+      case 'edible oil':
+        return const Color(0xFFE6F8FA);
+      case 'household':
+        return const Color(0xFFEBF3FA);
+      default:
+        return const Color(0xFFE8F6EB);
+    }
   }
 
   String get formattedPrice => 'Rs. ${price.toStringAsFixed(price.truncateToDouble() == price ? 2 : 2)}';

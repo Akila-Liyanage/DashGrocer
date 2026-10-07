@@ -62,6 +62,11 @@ class ChatService extends ChangeNotifier {
             _messages.addAll(firestoreMessages);
             notifyListeners();
           }
+        } else {
+          // If empty, seed default messages to Firestore safely
+          for (final msg in _messages) {
+            db.collection('chat_messages').doc(msg.id).set(msg.toMap(), SetOptions(merge: true)).catchError((_) {});
+          }
         }
       }, onError: (err) {
         debugPrint('[ChatService] Firestore listener notice: $err');
@@ -107,8 +112,15 @@ class ChatService extends ChangeNotifier {
       if (_messages[i].isFromCustomer && !_messages[i].isRead) {
         _messages[i] = _messages[i].copyWith(isRead: true);
         changed = true;
+        final docId = _messages[i].id;
         try {
-          _firestore?.collection('chat_messages').doc(_messages[i].id).update({'isRead': true});
+          _firestore
+              ?.collection('chat_messages')
+              .doc(docId)
+              .set({'isRead': true}, SetOptions(merge: true))
+              .catchError((e) {
+            debugPrint('Firestore update read notice: $e');
+          });
         } catch (_) {}
       }
     }
@@ -123,8 +135,15 @@ class ChatService extends ChangeNotifier {
       if (_messages[i].isFromSeller && !_messages[i].isRead) {
         _messages[i] = _messages[i].copyWith(isRead: true);
         changed = true;
+        final docId = _messages[i].id;
         try {
-          _firestore?.collection('chat_messages').doc(_messages[i].id).update({'isRead': true});
+          _firestore
+              ?.collection('chat_messages')
+              .doc(docId)
+              .set({'isRead': true}, SetOptions(merge: true))
+              .catchError((e) {
+            debugPrint('Firestore update read notice: $e');
+          });
         } catch (_) {}
       }
     }
@@ -139,8 +158,15 @@ class ChatService extends ChangeNotifier {
       if (!_messages[i].isRead) {
         _messages[i] = _messages[i].copyWith(isRead: true);
         changed = true;
+        final docId = _messages[i].id;
         try {
-          _firestore?.collection('chat_messages').doc(_messages[i].id).update({'isRead': true});
+          _firestore
+              ?.collection('chat_messages')
+              .doc(docId)
+              .set({'isRead': true}, SetOptions(merge: true))
+              .catchError((e) {
+            debugPrint('Firestore update read notice: $e');
+          });
         } catch (_) {}
       }
     }
