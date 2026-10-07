@@ -164,7 +164,64 @@ class AuthService extends ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
-      debugPrint('Error loading user profile: $e');
+      if (kDebugMode) print('Error loading user profile: $e');
+    }
+  }
+
+  /// Update user profile in Firestore
+  Future<bool> updateProfile({
+    required String fullName,
+    required String phoneNumber,
+  }) async {
+    if (_currentUser == null) {
+      _errorMessage = 'No user logged in';
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final firestore = _firestore;
+      if (firestore == null) {
+        // Update local user for offline mode
+        _currentUser = UserModel(
+          id: _currentUser!.id,
+          email: _currentUser!.email,
+          fullName: fullName,
+          phoneNumber: phoneNumber,
+          role: _currentUser!.role,
+          shopName: _currentUser!.shopName,
+          shopAddress: _currentUser!.shopAddress,
+        );
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+
+      // Update in Firestore
+      final updatedUser = UserModel(
+        id: _currentUser!.id,
+        email: _currentUser!.email,
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        role: _currentUser!.role,
+        shopName: _currentUser!.shopName,
+        shopAddress: _currentUser!.shopAddress,
+      );
+
+      await firestore.collection('users').doc(_currentUser!.id).set(updatedUser.toMap());
+      _currentUser = updatedUser;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Failed to update profile: ${e.toString()}';
+      notifyListeners();
+      return false;
     }
   }
 
