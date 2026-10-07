@@ -38,8 +38,6 @@ dependencies:
   google_fonts: ^6.2.1
   firebase_auth: ^6.7.0
   cloud_firestore: ^6.10.0
-  google_sign_in: ^6.2.1
-  flutter_signin_button: ^2.0.0
   # Added for the shop owner side:
   image_picker: ^1.1.2 # product and profile photos
   url_launcher: ^6.3.1 # "call customer" button
