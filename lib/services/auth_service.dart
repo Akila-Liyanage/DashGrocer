@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:dashgrocer/models/user_model.dart';
 import 'database_seeder.dart';
 
@@ -337,61 +336,6 @@ class AuthService extends ChangeNotifier {
 
     _isLoading = false;
     return false;
-  }
-
-  /// Sign in with Google
-  Future<bool> signInWithGoogle() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final GoogleSignIn googleSignIn = GoogleSignIn();
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-
-      if (googleUser == null) {
-        _isLoading = false;
-        _errorMessage = 'Google sign-in was cancelled.';
-        notifyListeners();
-        return false;
-      }
-
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final auth = _firebaseAuth;
-      if (auth == null) {
-        _isLoading = false;
-        _errorMessage = 'Firebase Auth not available.';
-        notifyListeners();
-        return false;
-      }
-
-      final UserCredential userCredential = await auth.signInWithCredential(credential);
-      final User? user = userCredential.user;
-
-      if (user != null) {
-        await _loadUserProfile(user.uid, fallbackEmail: user.email);
-        _lastLoginTime = DateTime.now();
-        _isLoading = false;
-        _errorMessage = null;
-        notifyListeners();
-        return true;
-      }
-
-      _isLoading = false;
-      _errorMessage = 'Failed to sign in with Google.';
-      notifyListeners();
-      return false;
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = 'Google sign-in failed: ${e.toString()}';
-      notifyListeners();
-      return false;
-    }
   }
 
   /// Register a new user with Firebase Auth and store profile in Cloud Firestore
