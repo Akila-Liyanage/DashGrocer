@@ -9,6 +9,7 @@ class StoreOrder {
   final String status; // 'Pending', 'Preparing', 'Ready for Pickup', 'Completed', 'Cancelled'
   final DateTime createdAt;
   final bool isRead;
+  final String paymentMethod; // 'Pay at Store' or 'Paid Online (Card)'
 
   const StoreOrder({
     required this.id,
@@ -21,6 +22,7 @@ class StoreOrder {
     this.status = 'Pending',
     required this.createdAt,
     this.isRead = false,
+    this.paymentMethod = 'Pay at Store',
   });
 
   bool get isReady => status == 'Ready for Pickup';
@@ -37,6 +39,7 @@ class StoreOrder {
     String? status,
     DateTime? createdAt,
     bool? isRead,
+    String? paymentMethod,
   }) {
     return StoreOrder(
       id: id ?? this.id,
@@ -49,6 +52,7 @@ class StoreOrder {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       isRead: isRead ?? this.isRead,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
     );
   }
 

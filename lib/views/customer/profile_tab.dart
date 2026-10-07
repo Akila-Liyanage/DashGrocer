@@ -6,6 +6,7 @@ import '../../services/auth_service.dart';
 import '../../services/grocery_service.dart';
 import 'about_me_screen.dart';
 import 'favorites_tab.dart';
+import 'my_cards_screen.dart';
 import 'notification_settings_screen.dart';
 import 'order_history_screen.dart';
 
@@ -130,6 +131,12 @@ class ProfileTab extends StatelessWidget {
                     icon: Icons.favorite_border_rounded,
                     label: 'My Favorites',
                     onTap: () => _push(context, const FavoritesTab()),
+                  ),
+                  _buildMenuItem(
+                    context,
+                    icon: Icons.credit_card_rounded,
+                    label: 'My Cards',
+                    onTap: () => _push(context, const MyCardsScreen()),
                   ),
                   _buildMenuItem(
                     context,

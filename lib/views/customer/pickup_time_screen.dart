@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
-import '../../services/auth_service.dart';
-import '../../services/grocery_service.dart';
-import 'order_confirmation_screen.dart';
+import 'payment_screen.dart';
 
 class PickupTimeScreen extends StatefulWidget {
   final String shopName;
@@ -41,28 +39,14 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
     '5.00 PM',
   ];
 
-  void _continueToConfirmation() {
-    final groceryService = GroceryService();
-    final authService = AuthService();
-    final customer = authService.currentUser;
-
-    final orderId = groceryService.placeOrder(
-      customerName: customer?.fullName ?? 'Kasun Perera',
-      customerPhone: customer?.phoneNumber ?? '+94 77 123 4567',
-      pickupSlot: '$_selectedDay, $_selectedSlot',
-      totalAmount: widget.totalAmount,
-      shopName: widget.shopName,
-      orderId: '#FP-2028-0142',
-    );
-
+  void _continueToPayment() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => OrderConfirmationScreen(
-          orderId: orderId,
-          pickupTime: '$_selectedDay, $_selectedSlot',
+        builder: (_) => PaymentScreen(
           shopName: widget.shopName,
-          totalPaid: 'Rs. ${widget.totalAmount.toStringAsFixed(0)}',
+          pickupSlot: '$_selectedDay, $_selectedSlot',
+          totalAmount: widget.totalAmount,
         ),
       ),
     );
@@ -215,7 +199,7 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: _continueToConfirmation,
+                  onPressed: _continueToPayment,
                   child: Text(
                     'Continue to Payment',
                     style: GoogleFonts.plusJakartaSans(
