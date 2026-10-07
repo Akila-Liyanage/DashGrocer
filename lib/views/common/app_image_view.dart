@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -66,6 +68,26 @@ class AppImageView extends StatelessWidget {
               );
         },
       );
+    }
+
+    // Photos taken by a shop owner in the app are saved as 'data:image/...'
+    // text instead of a web link.
+    if (trimmed.startsWith('data:image/')) {
+      final comma = trimmed.indexOf(',');
+      if (comma > 0) {
+        try {
+          return Image.memory(
+            base64Decode(trimmed.substring(comma + 1)),
+            width: width,
+            height: height,
+            fit: fit,
+            gaplessPlayback: true,
+            errorBuilder: (context, error, stackTrace) => fallback,
+          );
+        } on FormatException {
+          return fallback;
+        }
+      }
     }
 
     // Default fallback

@@ -88,5 +88,90 @@ void main() {
 
       chatService.cancelPendingTimers();
     });
+
+    testWidgets('4. In-chat search icon button toggles search bar in AppBar', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SellerChatScreen(
+            product: testPumpkin,
+            shopName: 'GreenLeaf Fresh Mart',
+            sellerName: 'Sunil Weerasinghe',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Find search icon and tap
+      final searchBtn = find.byTooltip('Search Messages');
+      expect(searchBtn, findsOneWidget);
+      await tester.tap(searchBtn);
+      await tester.pumpAndSettle();
+
+      // Verify search input is displayed
+      expect(find.byType(TextField), findsNWidgets(2)); // search bar + message input
+      expect(find.text('Search in chat...'), findsOneWidget);
+    });
+
+    testWidgets('5. More options popup menu contains Store Info and Clear Chat actions', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SellerChatScreen(
+            product: testPumpkin,
+            shopName: 'GreenLeaf Fresh Mart',
+            sellerName: 'Sunil Weerasinghe',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Open popup menu
+      final moreBtn = find.byIcon(Icons.more_vert_rounded);
+      expect(moreBtn, findsOneWidget);
+      await tester.tap(moreBtn);
+      await tester.pumpAndSettle();
+
+      // Verify menu items
+      expect(find.text('Store Info'), findsOneWidget);
+      expect(find.text('Clear Chat'), findsOneWidget);
+    });
+
+    testWidgets('6. Camera icon button triggers media attachment modal', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SellerChatScreen(
+            product: testPumpkin,
+            shopName: 'GreenLeaf Fresh Mart',
+            sellerName: 'Sunil Weerasinghe',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap camera icon
+      final cameraBtn = find.byIcon(Icons.camera_alt_outlined);
+      expect(cameraBtn, findsOneWidget);
+      await tester.tap(cameraBtn);
+      await tester.pumpAndSettle();
+
+      // Verify attachment sheet options
+      expect(find.text('Attach Media or Inquiry'), findsOneWidget);
+      expect(find.text('Take Produce Photo'), findsOneWidget);
+      expect(find.text('Pick from Gallery'), findsOneWidget);
+    });
+
+    testWidgets('7. Microphone voice note button is present in input bar', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SellerChatScreen(
+            product: testPumpkin,
+            shopName: 'GreenLeaf Fresh Mart',
+            sellerName: 'Sunil Weerasinghe',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.mic_rounded), findsOneWidget);
+    });
   });
 }

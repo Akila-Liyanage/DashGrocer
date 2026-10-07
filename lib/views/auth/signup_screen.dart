@@ -30,7 +30,18 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _passwordController.addListener(_onPasswordChanged);
+  }
+
+  void _onPasswordChanged() {
+    setState(() {});
+  }
+
+  @override
   void dispose() {
+    _passwordController.removeListener(_onPasswordChanged);
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
@@ -238,11 +249,31 @@ class _SignupScreenState extends State<SignupScreen> {
                           // Phone Number Field
                           _buildTextField(
                             controller: _phoneController,
-                            hint: 'Phone number',
+                            hint: '77 123 4567',
                             icon: Icons.phone_outlined,
+                            prefixWidget: Padding(
+                              padding: const EdgeInsets.only(left: 12, right: 8),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '🇱🇰 +94',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF334155),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(width: 1, height: 16, color: const Color(0xFFE2E8F0)),
+                                ],
+                              ),
+                            ),
                             keyboardType: TextInputType.phone,
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) return 'Enter phone number';
+                              final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
+                              if (digits.length < 9) return 'Enter valid 9 or 10 digit number';
                               return null;
                             },
                           ),
@@ -297,6 +328,10 @@ class _SignupScreenState extends State<SignupScreen> {
                               return null;
                             },
                           ),
+
+                          // Live Password Strength Indicator
+                          if (_passwordController.text.isNotEmpty)
+                            _buildPasswordStrengthIndicator(),
 
                           const SizedBox(height: 18),
 
@@ -446,6 +481,7 @@ class _SignupScreenState extends State<SignupScreen> {
     required IconData icon,
     bool obscureText = false,
     Widget? suffixIcon,
+    Widget? prefixWidget,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
   }) {
@@ -466,7 +502,7 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
         decoration: InputDecoration(
           isDense: true,
-          prefixIcon: Icon(icon, color: const Color(0xFF94A3B8), size: 18),
+          prefixIcon: prefixWidget ?? Icon(icon, color: const Color(0xFF94A3B8), size: 18),
           suffixIcon: suffixIcon,
           hintText: hint,
           hintStyle: GoogleFonts.plusJakartaSans(
@@ -476,6 +512,63 @@ class _SignupScreenState extends State<SignupScreen> {
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         ),
+      ),
+    );
+  }
+
+  int _calculatePasswordStrength(String password) {
+    if (password.isEmpty) return 0;
+    int strength = 0;
+    if (password.length >= 6) strength++;
+    if (password.contains(RegExp(r'[0-9]'))) strength++;
+    if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) strength++;
+    return strength;
+  }
+
+  Widget _buildPasswordStrengthIndicator() {
+    final strength = _calculatePasswordStrength(_passwordController.text);
+    Color color;
+    String label;
+    if (strength <= 1) {
+      color = AppColors.error;
+      label = 'Weak password (add numbers & symbols)';
+    } else if (strength == 2) {
+      color = const Color(0xFFF59E0B);
+      label = 'Moderate (add special characters like ! or @)';
+    } else {
+      color = const Color(0xFF10B981);
+      label = 'Strong & secure password';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: List.generate(3, (index) {
+              return Expanded(
+                child: Container(
+                  height: 4,
+                  margin: EdgeInsets.only(right: index < 2 ? 4 : 0),
+                  decoration: BoxDecoration(
+                    color: index < strength ? color : const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }

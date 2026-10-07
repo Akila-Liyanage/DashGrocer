@@ -92,6 +92,22 @@ class GroceryService extends ChangeNotifier {
     'fresh vegetables',
   ];
 
+  final List<StoreOrder> _customerOrders = [
+    StoreOrder(
+      id: 'ORD-8821',
+      customerName: 'Kasun Perera',
+      customerPhone: '+94 77 123 4567',
+      itemsSummary: '2x Red Tomatoes, 1x Highland Carrots',
+      totalAmount: 1850.00,
+      pickupSlot: 'Today, 5:30 PM - 6:00 PM',
+      shopName: 'GreenLeaf Fresh Mart',
+      status: 'Ready for Pickup',
+      createdAt: DateTime.now().subtract(const Duration(minutes: 45)),
+    ),
+  ];
+
+  List<StoreOrder> get customerOrders => List.unmodifiable(_customerOrders);
+
   FirebaseFirestore? get _firestore {
     try {
       return FirebaseFirestore.instance;
@@ -102,29 +118,6 @@ class GroceryService extends ChangeNotifier {
 
   final List<StoreOrder> _sellerOrders = [];
   final List<SellerNotification> _sellerNotifications = [];
-  final List<CustomerNotification> _customerNotifications = [];
-
-  // Customer notification preferences (Profile → Notifications)
-  bool allowNotifications = true;
-  bool emailNotifications = false;
-  bool orderNotifications = true;
-  bool generalNotifications = true;
-
-  void saveNotificationSettings({
-    required bool allow,
-    required bool email,
-    required bool order,
-    required bool general,
-  }) {
-    allowNotifications = allow;
-    emailNotifications = email;
-    orderNotifications = order;
-    generalNotifications = general;
-    notifyListeners();
-  }
-
-  List<CustomerNotification> get customerNotifications => List.unmodifiable(_customerNotifications);
-  int get unreadCustomerNotificationsCount => _customerNotifications.where((n) => !n.isRead).length;
 
   List<GroceryCategory> get categories => List.unmodifiable(_categories);
   List<GroceryItem> get allItems => List.unmodifiable(_items);
@@ -268,6 +261,80 @@ class GroceryService extends ChangeNotifier {
         reviewsCount: 110,
         description: 'Sweet, crunchy highland farm carrots freshly pulled and washed with green tops. Vibrant orange hue packed with beta-carotene, lutein, and essential minerals for radiant health and vision. Delicious raw as crunchy snack sticks, or slow-cooked in curries, hearty stews, and fresh juices.',
       ),
+      const GroceryItem(
+        id: 'fresh_milk',
+        name: 'Fresh Dairy Milk',
+        unit: '1 L',
+        price: 450.00,
+        originalPrice: 500.00,
+        discountPercent: 10,
+        isNew: true,
+        circleColor: Color(0xFFFFF0E5),
+        imageUrl: 'assets/images/pumpkin.png',
+        category: 'Beverages',
+        rating: 4.9,
+        reviewsCount: 88,
+        description: 'Pure, fresh pasteurized whole dairy milk rich in calcium, protein, and essential nutrients. Daily morning delivery from local highland dairy farms.',
+        sellerShopName: 'Daily Superette',
+        sellerName: 'Kamal Perera',
+        sellerPhone: '+94 77 234 5678',
+        sellerAddress: 'No. 18, Station Road, Maharagama',
+      ),
+      const GroceryItem(
+        id: 'farm_eggs',
+        name: 'Farm Fresh Brown Eggs',
+        unit: '10 Pack',
+        price: 560.00,
+        originalPrice: 620.00,
+        discountPercent: 10,
+        circleColor: Color(0xFFFFF3E0),
+        imageUrl: 'assets/images/carrot.png',
+        category: 'Grocery',
+        rating: 4.8,
+        reviewsCount: 74,
+        description: 'Grade-A farm fresh brown eggs with rich golden yolks, high in protein and vitamins. Sourced daily from certified local poultry farms.',
+        sellerShopName: 'Daily Superette',
+        sellerName: 'Kamal Perera',
+        sellerPhone: '+94 77 234 5678',
+        sellerAddress: 'No. 18, Station Road, Maharagama',
+      ),
+      const GroceryItem(
+        id: 'ceylon_tea',
+        name: 'Ceylon Premium Black Tea',
+        unit: '200 g',
+        price: 480.00,
+        originalPrice: 540.00,
+        discountPercent: 11,
+        isFavorite: true,
+        circleColor: Color(0xFFF3EBFA),
+        imageUrl: 'assets/images/beans.png',
+        category: 'Beverages',
+        rating: 4.9,
+        reviewsCount: 105,
+        description: 'Finest handpicked Ceylon BOPF black tea leaves from misty central hill country estates. Rich aroma with a bright golden infusion.',
+        sellerShopName: 'Daily Superette',
+        sellerName: 'Kamal Perera',
+        sellerPhone: '+94 77 234 5678',
+        sellerAddress: 'No. 18, Station Road, Maharagama',
+      ),
+      const GroceryItem(
+        id: 'mysore_dhal',
+        name: 'Mysore Red Dhal',
+        unit: '1 kg',
+        price: 390.00,
+        originalPrice: 430.00,
+        discountPercent: 9,
+        circleColor: Color(0xFFFFF0E6),
+        imageUrl: 'assets/images/red_onion.png',
+        category: 'Grocery',
+        rating: 4.7,
+        reviewsCount: 62,
+        description: 'Premium cleaned Mysore red lentils, quick-cooking and naturally high in iron and plant protein. Perfect for authentic Sri Lankan parippu curry.',
+        sellerShopName: 'Daily Superette',
+        sellerName: 'Kamal Perera',
+        sellerPhone: '+94 77 234 5678',
+        sellerAddress: 'No. 18, Station Road, Maharagama',
+      ),
     ];
 
     // Seed default cart with the new fresh products:
@@ -373,6 +440,37 @@ class GroceryService extends ChangeNotifier {
     return filtered.isNotEmpty ? filtered : _items;
   }
 
+  /// Returns all products belonging to a specific shop.
+  List<GroceryItem> getItemsByShop(String shopName) {
+    final target = shopName.trim().toLowerCase();
+    if (target.isEmpty) return _items;
+    final isGreenLeaf = target.contains('greenleaf') ||
+        target.contains('green leaf') ||
+        target.contains('green mart');
+
+    final matched = _items.where((item) {
+      final itemShop = item.displaySellerShopName.trim().toLowerCase();
+      final itemSeller = (item.sellerName ?? '').trim().toLowerCase();
+      final itemSellerShop = (item.sellerShopName ?? '').trim().toLowerCase();
+
+      if (itemShop == target || itemSeller == target || itemSellerShop == target) {
+        return true;
+      }
+      if (itemShop.contains(target) || target.contains(itemShop)) {
+        return true;
+      }
+      if (isGreenLeaf &&
+          (itemSellerShop.isEmpty ||
+              itemSellerShop == 'greenleaf fresh mart' ||
+              itemSellerShop == 'green mart')) {
+        return true;
+      }
+      return false;
+    }).toList();
+
+    return matched;
+  }
+
   // Search
   void addSearchQuery(String query) {
     final trimmed = query.trim();
@@ -454,6 +552,7 @@ class GroceryService extends ChangeNotifier {
     required double totalAmount,
     required String shopName,
     String? orderId,
+    String paymentMethod = 'Pay at Store',
   }) {
     final generatedId = orderId ?? '#FP-2028-0${142 + _sellerOrders.length + 1}';
     final itemsCount = totalCartItemCount;
@@ -472,6 +571,7 @@ class GroceryService extends ChangeNotifier {
       status: 'Pending',
       createdAt: DateTime.now(),
       isRead: false,
+      paymentMethod: paymentMethod,
     );
 
     _sellerOrders.insert(0, order);
@@ -480,27 +580,13 @@ class GroceryService extends ChangeNotifier {
     final notification = SellerNotification(
       id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
       title: 'New Order: $generatedId',
-      message: '$customerName placed a pickup order for Rs. ${totalAmount.toStringAsFixed(0)} ($pickupSlot).',
+      message: '$customerName placed a pickup order for Rs. ${totalAmount.toStringAsFixed(0)} ($pickupSlot). Payment: $paymentMethod.',
       time: DateTime.now(),
       orderId: generatedId,
       isRead: false,
     );
 
     _sellerNotifications.insert(0, notification);
-
-    // Confirmation notification for the customer (respects notification settings)
-    if (allowNotifications && orderNotifications) {
-      _customerNotifications.insert(
-        0,
-        CustomerNotification(
-          id: 'cnotif_${DateTime.now().millisecondsSinceEpoch}',
-          title: 'Order Placed: $generatedId',
-          message: 'Your order at $shopName was placed successfully. Pickup: $pickupSlot. Total: Rs. ${totalAmount.toStringAsFixed(0)}.',
-          time: DateTime.now(),
-          orderId: generatedId,
-        ),
-      );
-    }
     clearCart();
     notifyListeners();
     return generatedId;
@@ -539,13 +625,6 @@ class GroceryService extends ChangeNotifier {
       _sellerOrders[index] = _sellerOrders[index].copyWith(status: newStatus);
       notifyListeners();
     }
-  }
-
-  void markCustomerNotificationsRead() {
-    for (int i = 0; i < _customerNotifications.length; i++) {
-      _customerNotifications[i] = _customerNotifications[i].copyWith(isRead: true);
-    }
-    notifyListeners();
   }
 
   void markNotificationsRead() {

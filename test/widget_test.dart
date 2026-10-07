@@ -116,9 +116,76 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 500));
 
-    // Verify shop owner dashboard is rendered
-    expect(find.text('GreenLeaf Fresh Mart'), findsOneWidget);
-    expect(find.text('Open for Pickup'), findsOneWidget);
-    expect(find.text('Incoming Pickup Orders'), findsOneWidget);
+    // Verify the shop owner side is rendered: its dashboard overview and
+    // its bottom navigation.
+    expect(find.text('OVERVIEW'), findsOneWidget);
+    expect(find.text('NEW ORDERS'), findsOneWidget);
+    expect(find.text('READY PICKUP'), findsOneWidget);
+    expect(find.text('Dashboard'), findsOneWidget);
+    expect(find.text('Products'), findsOneWidget);
+  });
+
+  test('Customer login strictly rejects fake details and wrong password', () async {
+    final authService = AuthService();
+    await authService.logout();
+
+    // 1. Fake unregistered email should fail
+    final fakeEmailResult = await authService.login(
+      email: 'fake_customer@randomdomain.com',
+      password: 'Password123!',
+    );
+    expect(fakeEmailResult, false);
+    expect(authService.isAuthenticated, false);
+    expect(authService.currentUser, isNull);
+    expect(authService.errorMessage, isNotNull);
+
+    // 2. Real customer email with fake/wrong password should fail
+    final fakePassResult = await authService.login(
+      email: 'customer@dashgrocer.com',
+      password: 'wrong_fake_password_999',
+    );
+    expect(fakePassResult, false);
+    expect(authService.isAuthenticated, false);
+    expect(authService.currentUser, isNull);
+    expect(authService.errorMessage, isNotNull);
+
+    // 3. Correct credentials must succeed
+    final validResult = await authService.login(
+      email: 'customer@dashgrocer.com',
+      password: 'Password123!',
+    );
+    expect(validResult, true);
+    expect(authService.isAuthenticated, true);
+    expect(authService.currentUser?.email, 'customer@dashgrocer.com');
+  });
+
+  test('AuthService tracks lastLoginTime and biometrics toggle', () async {
+    final authService = AuthService();
+    await authService.logout();
+    expect(authService.lastLoginTime, isNull);
+    expect(authService.isBiometricsEnabled, false);
+
+    authService.setBiometricsEnabled(true);
+    expect(authService.isBiometricsEnabled, true);
+
+    await authService.login(
+      email: 'customer@dashgrocer.com',
+      password: 'Password123!',
+    );
+    expect(authService.lastLoginTime, isNotNull);
+
+    await authService.logout();
+    expect(authService.lastLoginTime, isNull);
+  });
+
+  testWidgets('Signup screen renders country code prefix badge for phone number', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SignupScreen(onGoToLogin: () {}),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('🇱🇰 +94'), findsOneWidget);
   });
 }

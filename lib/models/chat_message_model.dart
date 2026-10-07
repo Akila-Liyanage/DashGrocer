@@ -1,3 +1,10 @@
+enum MessageDeliveryStatus {
+  sending,
+  sent,
+  delivered,
+  read,
+}
+
 class ChatMessage {
   final String id;
   final String senderId;
@@ -10,6 +17,8 @@ class ChatMessage {
   final String? productImageUrl;
   final bool isRead;
   final bool isQuickInquiry;
+  final MessageDeliveryStatus deliveryStatus;
+  final String? attachmentUrl;
 
   const ChatMessage({
     required this.id,
@@ -23,6 +32,8 @@ class ChatMessage {
     this.productImageUrl,
     this.isRead = true,
     this.isQuickInquiry = false,
+    this.deliveryStatus = MessageDeliveryStatus.read,
+    this.attachmentUrl,
   });
 
   bool get isFromCustomer => senderRole == 'customer';
@@ -40,6 +51,8 @@ class ChatMessage {
     String? productImageUrl,
     bool? isRead,
     bool? isQuickInquiry,
+    MessageDeliveryStatus? deliveryStatus,
+    String? attachmentUrl,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -53,6 +66,8 @@ class ChatMessage {
       productImageUrl: productImageUrl ?? this.productImageUrl,
       isRead: isRead ?? this.isRead,
       isQuickInquiry: isQuickInquiry ?? this.isQuickInquiry,
+      deliveryStatus: deliveryStatus ?? this.deliveryStatus,
+      attachmentUrl: attachmentUrl ?? this.attachmentUrl,
     );
   }
 
@@ -69,6 +84,8 @@ class ChatMessage {
       'productImageUrl': productImageUrl,
       'isRead': isRead,
       'isQuickInquiry': isQuickInquiry,
+      'deliveryStatus': deliveryStatus.name,
+      'attachmentUrl': attachmentUrl,
     };
   }
 
@@ -87,6 +104,13 @@ class ChatMessage {
       productImageUrl: map['productImageUrl'] as String?,
       isRead: map['isRead'] as bool? ?? true,
       isQuickInquiry: map['isQuickInquiry'] as bool? ?? false,
+      attachmentUrl: map['attachmentUrl'] as String?,
+      deliveryStatus: map['deliveryStatus'] != null
+          ? MessageDeliveryStatus.values.firstWhere(
+              (e) => e.name == map['deliveryStatus'],
+              orElse: () => MessageDeliveryStatus.read,
+            )
+          : MessageDeliveryStatus.read,
     );
   }
 }
