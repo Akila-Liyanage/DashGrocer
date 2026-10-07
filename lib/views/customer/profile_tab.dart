@@ -68,17 +68,56 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   Future<void> _saveSettings() async {
+    final currentPassword = _currentPassController.text;
+    final newPassword = _newPassController.text;
+    final confirmPassword = _confirmPassController.text;
+    final isChangingPassword = currentPassword.isNotEmpty ||
+        newPassword.isNotEmpty ||
+        confirmPassword.isNotEmpty;
+
+    if (isChangingPassword &&
+        (currentPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty)) {
+      _showSaveMessage('Enter your current password and both new password fields.', isError: true);
+      return;
+    }
+    if (isChangingPassword && newPassword != confirmPassword) {
+      _showSaveMessage('The new passwords do not match.', isError: true);
+      return;
+    }
+
     setState(() => _isSaving = true);
+
+    if (isChangingPassword) {
+      final succeeded = await AuthService().changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      if (!mounted) return;
+
+      setState(() => _isSaving = false);
+      if (!succeeded) {
+        _showSaveMessage(AuthService().errorMessage ?? 'Could not update password.', isError: true);
+        return;
+      }
+
+      _currentPassController.clear();
+      _newPassController.clear();
+      _confirmPassController.clear();
+      _showSaveMessage('Password updated successfully!');
+      return;
+    }
+
     await Future.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
     setState(() => _isSaving = false);
+    _showSaveMessage('Profile details updated successfully!');
+  }
+
+  void _showSaveMessage(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          'Profile details updated successfully!',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: AppColors.brandGreenDark,
+        content: Text(message, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+        backgroundColor: isError ? const Color(0xFFDC2626) : AppColors.brandGreenDark,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
