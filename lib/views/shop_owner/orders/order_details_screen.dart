@@ -648,8 +648,36 @@ class _ChecklistCard extends StatelessWidget {
                     Expanded(
                       child: Text('Payment Method', style: ShopText.body),
                     ),
-                    Text(order.paymentMethod, style: ShopText.bodyStrong),
+                    Icon(
+                      order.isPaidOnline
+                          ? Icons.credit_card
+                          : Icons.payments_outlined,
+                      size: 14,
+                      color: order.isPaidOnline
+                          ? ShopColors.primary
+                          : ShopColors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      order.paymentMethod,
+                      style: ShopText.bodyStrong.copyWith(
+                        color: order.isPaidOnline
+                            ? ShopColors.primary
+                            : ShopColors.textPrimary,
+                      ),
+                    ),
                   ],
+                ),
+                const SizedBox(height: 2),
+                // Says plainly whether money still has to be collected.
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    order.isPaidOnline
+                        ? 'Already paid. Do not collect payment at pickup.'
+                        : 'Collect ${formatRs(order.total)} at pickup.',
+                    style: ShopText.label,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Row(
