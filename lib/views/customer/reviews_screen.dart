@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/auth_service.dart';
+<<<<<<< Updated upstream
+=======
+import 'write_review_screen.dart';
+>>>>>>> Stashed changes
 
 class ReviewsScreen extends StatefulWidget {
   final String productName;
@@ -61,6 +65,37 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
           'Super fast pickup service, completely zero waiting time. Vegetables were fresh and nicely packed.',
     },
   ];
+
+  Future<void> _openWriteReview() async {
+    final result = await Navigator.push<WriteReviewResult>(
+      context,
+      MaterialPageRoute(builder: (_) => const WriteReviewScreen()),
+    );
+    if (result == null || !mounted) return;
+
+    final fullName = AuthService().currentUser?.fullName ?? '';
+    final name = fullName.isNotEmpty ? fullName : 'Kasun Perera';
+    setState(() {
+      _reviews.insert(0, {
+        'initial': name[0].toUpperCase(),
+        'name': name,
+        'time': 'Just now',
+        'rating': result.rating,
+        'comment': result.comment.isNotEmpty ? result.comment : 'No written comment.',
+      });
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Thanks for your review!',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: AppColors.brandGreenDark,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -611,6 +646,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                     const SizedBox(height: 18),
 
                     // Write a Review Prompt Card
+<<<<<<< Updated upstream
                     InkWell(
                       onTap: _showWriteReviewModal,
                       borderRadius: BorderRadius.circular(14),
@@ -625,6 +661,25 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                               color: Color(0x06000000),
                               blurRadius: 8,
                               offset: Offset(0, 2),
+=======
+                    GestureDetector(
+                      onTap: _openWriteReview,
+                      child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFF1F5F9)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: AppColors.brandGreenSoft,
+                              borderRadius: BorderRadius.circular(10),
+>>>>>>> Stashed changes
                             ),
                           ],
                         ),
@@ -676,6 +731,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                           ],
                         ),
                       ),
+                    ),
                     ),
 
                     const SizedBox(height: 18),
