@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/shop_owner_theme.dart';
 import '../../../../core/formatters.dart';
 import '../../../../models/shop_order.dart';
+import '../../chat/shop_owner_chat_screen.dart';
 import '../../widgets/button_spinner.dart';
 import '../../widgets/status_pill.dart';
 
@@ -99,6 +100,38 @@ class OrderActionCard extends StatelessWidget {
                               Icons.receipt_long_outlined,
                               size: 20,
                               color: ShopColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Tooltip(
+                      message: 'Chat with ${order.customerName}',
+                      child: Material(
+                        color: const Color(0xFFE8F6EB),
+                        borderRadius: BorderRadius.circular(8),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ShopOwnerChatScreen(
+                                  customerName: order.customerName,
+                                  customerPhone: order.customerPhone,
+                                  orderId: '#${order.orderNumber}',
+                                ),
+                              ),
+                            );
+                          },
+                          child: const SizedBox(
+                            width: 44,
+                            height: 44,
+                            child: Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              size: 19,
+                              color: ShopColors.primary,
                             ),
                           ),
                         ),
