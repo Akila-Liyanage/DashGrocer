@@ -216,6 +216,9 @@ class GroceryService extends ChangeNotifier {
   final List<SellerNotification> _sellerNotifications = [];
   final List<CustomerNotification> _customerNotifications = [];
 
+  List<CustomerNotification> get customerNotifications => List.unmodifiable(_customerNotifications);
+  int get unreadCustomerNotificationsCount => _customerNotifications.where((n) => !n.isRead).length;
+
   List<GroceryCategory> get categories => List.unmodifiable(_categories);
   List<GroceryItem> get allItems => List.unmodifiable(_items);
   List<String> get searchHistory => List.unmodifiable(_searchHistory);
@@ -888,6 +891,13 @@ class GroceryService extends ChangeNotifier {
         });
       }
     }
+  }
+
+  void markCustomerNotificationsRead() {
+    for (int i = 0; i < _customerNotifications.length; i++) {
+      _customerNotifications[i] = _customerNotifications[i].copyWith(isRead: true);
+    }
+    notifyListeners();
   }
 
   void markNotificationsRead() {

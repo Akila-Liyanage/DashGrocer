@@ -95,6 +95,7 @@ class SellerNotification {
   }
 }
 
+/// A notification shown to the customer (e.g. "Order Placed").
 class CustomerNotification {
   final String id;
   final String title;

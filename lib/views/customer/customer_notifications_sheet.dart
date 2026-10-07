@@ -16,6 +16,7 @@ class CustomerNotificationsSheet extends StatelessWidget {
         final notifications = groceryService.customerNotifications;
 
         return Container(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -34,7 +35,6 @@ class CustomerNotificationsSheet extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top drag handle pill
                 Center(
                   child: Container(
                     width: 40,
@@ -46,18 +46,12 @@ class CustomerNotificationsSheet extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Header with Bell Icon, "Notifications", and "Mark read"
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        const Icon(
-                          Icons.notifications_active_rounded,
-                          color: AppColors.brandGreen,
-                          size: 22,
-                        ),
+                        const Icon(Icons.notifications_active_rounded, color: AppColors.brandGreen, size: 22),
                         const SizedBox(width: 8),
                         Text(
                           'Notifications',
@@ -69,13 +63,14 @@ class CustomerNotificationsSheet extends StatelessWidget {
                         ),
                       ],
                     ),
-                    InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () {
-                        groceryService.markAllCustomerNotificationsAsRead();
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    if (notifications.any((n) => !n.isRead))
+                      InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () {
+                          groceryService.markAllCustomerNotificationsAsRead();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                         child: Text(
                           'Mark read',
                           style: GoogleFonts.plusJakartaSans(
@@ -85,21 +80,34 @@ class CustomerNotificationsSheet extends StatelessWidget {
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
-                const SizedBox(height: 14),
-
+                const SizedBox(height: 10),
                 if (notifications.isEmpty)
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    padding: const EdgeInsets.symmetric(vertical: 40),
                     child: Center(
-                      child: Text(
-                        'No notifications yet',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13.5,
-                          color: const Color(0xFF94A3B8),
-                        ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.notifications_off_outlined, size: 48, color: Colors.grey.shade400),
+                          const SizedBox(height: 10),
+                          Text(
+                            'No notifications yet',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Your order updates will appear here.',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   )
