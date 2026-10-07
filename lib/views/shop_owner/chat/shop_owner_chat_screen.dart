@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/shop_owner_theme.dart';
 import '../../../models/chat_message_model.dart';
 import '../../../services/chat_service.dart';
+import '../../customer/seller_chat_screen.dart';
 
 class ShopOwnerChatScreen extends StatefulWidget {
   final String customerName;
@@ -172,6 +173,26 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Switch to Customer Chat',
+            icon: const Icon(
+              Icons.swap_horiz_rounded,
+              color: ShopColors.primary,
+              size: 22,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SellerChatScreen(
+                    shopName: 'GreenLeaf Fresh Mart',
+                    sellerName: 'Sunil Weerasinghe',
+                    sellerPhone: '+94 71 987 6543',
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Call Customer',
             icon: const Icon(

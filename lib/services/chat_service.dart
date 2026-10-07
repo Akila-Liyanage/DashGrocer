@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/chat_message_model.dart';
 import '../models/grocery_item_model.dart';
@@ -10,13 +11,65 @@ class ChatService extends ChangeNotifier {
 
   ChatService._internal() {
     _initDefaultChat();
+    _listenToFirestore();
   }
 
+  FirebaseFirestore? get _firestore {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _firestoreSub;
   final List<ChatMessage> _messages = [];
   bool _isSellerTyping = false;
+  bool _isBotAutoReplyEnabled = false;
 
   List<ChatMessage> get allMessages => List.unmodifiable(_messages);
   bool get isSellerTyping => _isSellerTyping;
+  bool get isBotAutoReplyEnabled => _isBotAutoReplyEnabled;
+
+  void toggleBotAutoReply([bool? value]) {
+    _isBotAutoReplyEnabled = value ?? !_isBotAutoReplyEnabled;
+    notifyListeners();
+  }
+
+  void _listenToFirestore() {
+    final db = _firestore;
+    if (db == null) return;
+    try {
+      _firestoreSub?.cancel();
+      _firestoreSub = db
+          .collection('chat_messages')
+          .orderBy('timestamp', descending: false)
+          .snapshots()
+          .listen((snapshot) {
+        if (snapshot.docs.isNotEmpty) {
+          final firestoreMessages = <ChatMessage>[];
+          for (final doc in snapshot.docs) {
+            try {
+              final data = doc.data();
+              data['id'] = doc.id;
+              firestoreMessages.add(ChatMessage.fromMap(data));
+            } catch (e) {
+              debugPrint('Error parsing chat message doc ${doc.id}: $e');
+            }
+          }
+          if (firestoreMessages.isNotEmpty) {
+            _messages.clear();
+            _messages.addAll(firestoreMessages);
+            notifyListeners();
+          }
+        }
+      }, onError: (err) {
+        debugPrint('[ChatService] Firestore listener notice: $err');
+      });
+    } catch (e) {
+      debugPrint('[ChatService] Could not initialize Firestore listener: $e');
+    }
+  }
 
   void _initDefaultChat() {
     _messages.addAll([
@@ -54,6 +107,9 @@ class ChatService extends ChangeNotifier {
       if (_messages[i].isFromCustomer && !_messages[i].isRead) {
         _messages[i] = _messages[i].copyWith(isRead: true);
         changed = true;
+        try {
+          _firestore?.collection('chat_messages').doc(_messages[i].id).update({'isRead': true});
+        } catch (_) {}
       }
     }
     if (changed) {
@@ -67,6 +123,9 @@ class ChatService extends ChangeNotifier {
       if (_messages[i].isFromSeller && !_messages[i].isRead) {
         _messages[i] = _messages[i].copyWith(isRead: true);
         changed = true;
+        try {
+          _firestore?.collection('chat_messages').doc(_messages[i].id).update({'isRead': true});
+        } catch (_) {}
       }
     }
     if (changed) {
@@ -80,6 +139,9 @@ class ChatService extends ChangeNotifier {
       if (!_messages[i].isRead) {
         _messages[i] = _messages[i].copyWith(isRead: true);
         changed = true;
+        try {
+          _firestore?.collection('chat_messages').doc(_messages[i].id).update({'isRead': true});
+        } catch (_) {}
       }
     }
     if (changed) {
@@ -98,7 +160,7 @@ class ChatService extends ChangeNotifier {
     final sellerMsg = ChatMessage(
       id: 'msg_seller_${DateTime.now().millisecondsSinceEpoch}',
       senderId: 'seller_sunil',
-      senderName: sellerName ?? 'Sunil Weerasinghe',
+      senderName: sellerName ?? 'Sunil Weerasinghe (GreenLeaf Mart)',
       senderRole: 'seller',
       text: trimmed,
       timestamp: DateTime.now(),
@@ -108,6 +170,14 @@ class ChatService extends ChangeNotifier {
 
     _messages.add(sellerMsg);
     notifyListeners();
+
+    // Persist to Cloud Firestore for real-time multi-device sync
+    try {
+      final db = _firestore;
+      if (db != null) {
+        await db.collection('chat_messages').doc(sellerMsg.id).set(sellerMsg.toMap());
+      }
+    } catch (_) {}
   }
 
   Future<void> sendCustomerMessage({
@@ -115,7 +185,7 @@ class ChatService extends ChangeNotifier {
     GroceryItem? product,
     bool isQuickInquiry = false,
     String? attachmentUrl,
-    bool simulateAutoReply = true,
+    bool? simulateAutoReply,
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
@@ -138,6 +208,14 @@ class ChatService extends ChangeNotifier {
     _messages.add(customerMsg);
     notifyListeners();
 
+    // Persist to Cloud Firestore for real-time multi-device sync
+    try {
+      final db = _firestore;
+      if (db != null) {
+        await db.collection('chat_messages').doc(customerMsg.id).set(customerMsg.toMap());
+      }
+    } catch (_) {}
+
     // Trigger seller notification in GroceryService
     try {
       final groceryService = GroceryService();
@@ -148,8 +226,9 @@ class ChatService extends ChangeNotifier {
       );
     } catch (_) {}
 
-    // Simulate realistic intelligent seller reply
-    if (simulateAutoReply) {
+    // Only auto-reply if explicitly requested or if bot mode is turned on
+    final shouldSimulate = simulateAutoReply ?? _isBotAutoReplyEnabled;
+    if (shouldSimulate) {
       _simulateSellerReply(trimmed, product);
     }
   }
@@ -191,6 +270,10 @@ class ChatService extends ChangeNotifier {
     } else if (lower.contains('hour') || lower.contains('open') || lower.contains('close') || lower.contains('time')) {
       replyText = 'GreenLeaf Fresh Mart is open daily from 7:30 AM until 9:30 PM. Curbside pickup counters are staffed throughout open hours.';
     } else {
+      // Show initial Thank You acknowledgement only ONCE; do not repeat for every subsequent message
+      if (_hasSentInitialThankYou) {
+        return;
+      }
       replyText = 'Thank you for your message! Our team at GreenLeaf Fresh Mart has noted your inquiry about $pName. We have plenty in stock and ready for your order!';
     }
 
@@ -213,9 +296,22 @@ class ChatService extends ChangeNotifier {
         );
         _messages.add(sellerMsg);
         notifyListeners();
+
+        // Also sync to Cloud Firestore
+        try {
+          final db = _firestore;
+          if (db != null) {
+            db.collection('chat_messages').doc(sellerMsg.id).set(sellerMsg.toMap());
+          }
+        } catch (_) {}
       });
     });
   }
+
+  bool get _hasSentInitialThankYou => _messages.any((m) =>
+      m.isFromSeller &&
+      (m.text.toLowerCase().contains('thank you for your message') ||
+       m.text.toLowerCase().contains('noted your inquiry')));
 
   void clearChat() {
     cancelPendingTimers();

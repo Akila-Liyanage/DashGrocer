@@ -7,6 +7,7 @@ import '../../models/grocery_item_model.dart';
 import '../../services/chat_service.dart';
 import '../../services/grocery_service.dart';
 import '../common/app_image_view.dart';
+import '../shop_owner/chat/shop_owner_chat_screen.dart';
 
 class SellerChatScreen extends StatefulWidget {
   final GroceryItem? product;
@@ -48,8 +49,8 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
   @override
   void initState() {
     super.initState();
-    ChatService().markAllAsRead();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      ChatService().markAllAsReadByCustomer();
       _scrollToBottom();
     });
   }
@@ -607,6 +608,26 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
         ),
         IconButton(
           icon: const Icon(
+            Icons.swap_horiz_rounded,
+            color: AppColors.brandGreen,
+            size: 24,
+          ),
+          tooltip: 'Switch to Shop Owner Chat',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const ShopOwnerChatScreen(
+                  customerName: 'Kasun Perera',
+                  customerPhone: '+94 77 123 4567',
+                  orderId: '#FP-2028-0142',
+                ),
+              ),
+            );
+          },
+        ),
+        IconButton(
+          icon: const Icon(
             Icons.phone_rounded,
             color: AppColors.brandGreen,
             size: 22,
@@ -618,13 +639,79 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
           icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF64748B), size: 21),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           onSelected: (value) {
-            if (value == 'clear') {
+            if (value == 'switch_seller') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ShopOwnerChatScreen(
+                    customerName: 'Kasun Perera',
+                    customerPhone: '+94 77 123 4567',
+                    orderId: '#FP-2028-0142',
+                  ),
+                ),
+              );
+            } else if (value == 'bot_toggle') {
+              ChatService().toggleBotAutoReply();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    ChatService().isBotAutoReplyEnabled
+                        ? '🤖 Bot Auto-Reply Enabled (Simulated answers ON)'
+                        : '👤 Live Seller Mode (Real seller replies only)',
+                  ),
+                  backgroundColor: ChatService().isBotAutoReplyEnabled
+                      ? const Color(0xFF2563EB)
+                      : AppColors.brandGreen,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            } else if (value == 'clear') {
               _confirmClearChat();
             } else if (value == 'store') {
               _showCallDialog();
             }
           },
           itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'switch_seller',
+              child: Row(
+                children: [
+                  const Icon(Icons.swap_horiz_rounded, size: 18, color: AppColors.brandGreen),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Seller View',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.brandGreenDark,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'bot_toggle',
+              child: Row(
+                children: [
+                  Icon(
+                    ChatService().isBotAutoReplyEnabled ? Icons.smart_toy_rounded : Icons.smart_toy_outlined,
+                    size: 18,
+                    color: ChatService().isBotAutoReplyEnabled ? const Color(0xFF2563EB) : const Color(0xFF64748B),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Bot Reply: ${ChatService().isBotAutoReplyEnabled ? "ON" : "OFF"}',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             PopupMenuItem(
               value: 'store',
               child: Row(

@@ -145,5 +145,37 @@ void main() {
 
       expect(find.byType(ShopOwnerChatScreen), findsOneWidget);
     });
+
+    test('5. ChatService: Thank you acknowledgment is only sent once and does not repeat', () async {
+      final chatService = ChatService();
+      chatService.clearChat();
+
+      // Send first message with auto reply
+      await chatService.sendCustomerMessage(
+        text: 'Hi',
+        simulateAutoReply: true,
+      );
+
+      await Future.delayed(const Duration(milliseconds: 1700));
+
+      final count1 = chatService.allMessages
+          .where((m) => m.isFromSeller && m.text.contains('Thank you for your message'))
+          .length;
+      expect(count1, 1);
+
+      // Send second message with auto reply
+      await chatService.sendCustomerMessage(
+        text: 'Aaa',
+        simulateAutoReply: true,
+      );
+
+      await Future.delayed(const Duration(milliseconds: 1700));
+
+      final count2 = chatService.allMessages
+          .where((m) => m.isFromSeller && m.text.contains('Thank you for your message'))
+          .length;
+      // Must STILL be 1!
+      expect(count2, 1);
+    });
   });
 }
