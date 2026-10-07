@@ -169,6 +169,12 @@ class GroceryService extends ChangeNotifier {
             try {
               final data = doc.data();
               data['id'] = doc.id;
+              // A document with no customer and no total is not a real
+              // order (status-only documents were written by an older
+              // version when a sample order was updated). Skip it.
+              if (data['customerName'] == null && data['totalAmount'] == null) {
+                continue;
+              }
               firestoreOrders.add(StoreOrder(
                 id: doc.id,
                 customerName: data['customerName'] as String? ?? 'Customer',
@@ -184,12 +190,15 @@ class GroceryService extends ChangeNotifier {
                         : DateTime.tryParse(data['createdAt'].toString()) ?? DateTime.now())
                     : DateTime.now(),
                 isRead: data['isRead'] as bool? ?? false,
+                paymentMethod: data['paymentMethod'] as String? ?? 'Pay at Store',
               ));
             } catch (e) {
               debugPrint('Error parsing Firestore order doc ${doc.id}: $e');
             }
           }
           if (firestoreOrders.isNotEmpty) {
+            // Newest first, the same order placeOrder() keeps locally.
+            firestoreOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
             _sellerOrders.clear();
             _sellerOrders.addAll(firestoreOrders);
             notifyListeners();
@@ -698,6 +707,67 @@ class GroceryService extends ChangeNotifier {
   }
 
   // Customer Order Placement with instant Seller Notification trigger
+  /// The whole order as saved in Firestore. Status changes save this full
+  /// map, so an order document never ends up holding only a status.
+  Map<String, dynamic> _orderToMap(StoreOrder order) {
+    return {
+      'id': order.id,
+      'customerName': order.customerName,
+      'customerPhone': order.customerPhone,
+      'itemsSummary': order.itemsSummary,
+      'totalAmount': order.totalAmount,
+      'pickupSlot': order.pickupSlot,
+      'shopName': order.shopName,
+      'status': order.status,
+      'createdAt': order.createdAt.toIso8601String(),
+      'isRead': order.isRead,
+      'paymentMethod': order.paymentMethod,
+    };
+  }
+
+  /// A new order number that no existing order uses, for example
+  /// "#FP-41562237". It is based on the clock, so two phones do not produce
+  /// the same number.
+  String _newOrderId() {
+    final stamp = (DateTime.now().millisecondsSinceEpoch % 100000000)
+        .toString()
+        .padLeft(8, '0');
+    var id = '#FP-$stamp';
+    var attempt = 1;
+    while (_sellerOrders.any((o) => o.id == id)) {
+      id = '#FP-$stamp-${attempt++}';
+    }
+    return id;
+  }
+
+  /// The order with this number, or null when there is none.
+  StoreOrder? orderById(String orderId) {
+    for (final order in _sellerOrders) {
+      if (order.id == orderId) return order;
+    }
+    return null;
+  }
+
+  /// One customer's orders (matched by name or phone), newest first.
+  List<StoreOrder> ordersForCustomer({required String name, String phone = ''}) {
+    final wantedName = name.trim().toLowerCase();
+    if (wantedName.isEmpty && phone.isEmpty) return const <StoreOrder>[];
+    return _sellerOrders.where((o) {
+      final sameName =
+          wantedName.isNotEmpty && o.customerName.trim().toLowerCase() == wantedName;
+      final samePhone = phone.isNotEmpty && o.customerPhone == phone;
+      return sameName || samePhone;
+    }).toList();
+  }
+
+  /// One customer's orders that are still in progress (not completed and
+  /// not cancelled), newest first.
+  List<StoreOrder> activeOrdersFor({required String name, String phone = ''}) {
+    return ordersForCustomer(name: name, phone: phone)
+        .where((o) => o.status != 'Completed' && o.status != 'Cancelled')
+        .toList();
+  }
+
   String placeOrder({
     required String customerName,
     required String customerPhone,
@@ -707,7 +777,13 @@ class GroceryService extends ChangeNotifier {
     String? orderId,
     String paymentMethod = 'Pay at Store',
   }) {
-    final generatedId = orderId ?? '#FP-2028-0${142 + _sellerOrders.length + 1}';
+    // Every order needs its own number. If the number passed in is already
+    // used by another order, a fresh one is generated instead. Otherwise the
+    // new order would overwrite the old one in Firestore.
+    var generatedId = orderId ?? _newOrderId();
+    if (_sellerOrders.any((o) => o.id == generatedId)) {
+      generatedId = _newOrderId();
+    }
     final itemsCount = totalCartItemCount;
     final itemsSummaryDesc = itemsCount > 0
         ? '$itemsCount items (${cartItems.map((e) => e.name).take(3).join(', ')}${itemsCount > 3 ? '...' : ''})'
@@ -731,19 +807,7 @@ class GroceryService extends ChangeNotifier {
 
     final firestore = _firestore;
     if (firestore != null) {
-      firestore.collection('orders').doc(order.id).set({
-        'id': order.id,
-        'customerName': order.customerName,
-        'customerPhone': order.customerPhone,
-        'itemsSummary': order.itemsSummary,
-        'totalAmount': order.totalAmount,
-        'pickupSlot': order.pickupSlot,
-        'shopName': order.shopName,
-        'status': order.status,
-        'createdAt': order.createdAt.toIso8601String(),
-        'isRead': order.isRead,
-        'paymentMethod': paymentMethod,
-      }, SetOptions(merge: true)).catchError((e) {
+      firestore.collection('orders').doc(order.id).set(_orderToMap(order), SetOptions(merge: true)).catchError((e) {
         debugPrint('Firestore save order error: $e');
       });
     }
@@ -804,7 +868,7 @@ class GroceryService extends ChangeNotifier {
 
       final firestore = _firestore;
       if (firestore != null) {
-        firestore.collection('orders').doc(orderId).set({'status': newStatus}, SetOptions(merge: true)).catchError((e) {
+        firestore.collection('orders').doc(orderId).set(_orderToMap(_sellerOrders[index]), SetOptions(merge: true)).catchError((e) {
           debugPrint('Firestore toggle order ready error: $e');
         });
       }
@@ -819,7 +883,7 @@ class GroceryService extends ChangeNotifier {
 
       final firestore = _firestore;
       if (firestore != null) {
-        firestore.collection('orders').doc(orderId).set({'status': newStatus}, SetOptions(merge: true)).catchError((e) {
+        firestore.collection('orders').doc(orderId).set(_orderToMap(_sellerOrders[index]), SetOptions(merge: true)).catchError((e) {
           debugPrint('Firestore update order status error: $e');
         });
       }

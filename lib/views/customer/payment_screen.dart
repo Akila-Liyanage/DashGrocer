@@ -108,7 +108,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       pickupSlot: widget.pickupSlot,
       totalAmount: widget.totalAmount,
       shopName: widget.shopName,
-      orderId: '#FP-2028-0142',
+      // No order number is passed: GroceryService gives every order its own.
       paymentMethod: isCard ? 'Paid Online (Card)' : 'Pay at Store',
     );
 
