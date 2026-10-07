@@ -136,6 +136,15 @@ class ShopOrder {
       .where((index) => index >= 0 && index < items.length)
       .length;
 
+  /// True when the customer has already paid in the app (card payment).
+  bool get isPaidOnline {
+    final method = paymentMethod.toLowerCase();
+    return method.contains('online') || method.contains('card');
+  }
+
+  /// Short payment text for cards and lists.
+  String get paymentLabel => isPaidOnline ? 'Paid Online' : 'Pay at Store';
+
   /// The day a completed order counts towards in the sales summary.
   DateTime get saleDate => completedAt ?? pickupTime;
 
