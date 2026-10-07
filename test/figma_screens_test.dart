@@ -172,5 +172,37 @@ void main() {
       expect(find.text('Olivia'), findsOneWidget);
       expect(find.text('Back To Home'), findsOneWidget);
     });
+
+    testWidgets('11. Reviews Screen: tapping Write a review opens modal and allows submitting new review', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: ReviewsScreen(productName: 'Fresh Organic Apples'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap Write a review card
+      await tester.tap(find.text('Write a review'));
+      await tester.pumpAndSettle();
+
+      // Modal should be displayed
+      expect(find.text('Write a Review'), findsOneWidget);
+      expect(find.text('Overall Rating'), findsOneWidget);
+      expect(find.text('Submit Review'), findsOneWidget);
+
+      // Enter review comment in text field
+      final textFields = find.byType(TextField);
+      expect(textFields, findsNWidgets(2)); // comment field and name field
+      await tester.enterText(textFields.first, 'Excellent crisp apples and very quick pickup!');
+      await tester.pumpAndSettle();
+
+      // Tap Submit Review button
+      await tester.tap(find.text('Submit Review'));
+      await tester.pumpAndSettle();
+
+      // Modal closes, review count updates, new review is displayed in list
+      expect(find.text('126 Reviews'), findsOneWidget);
+      expect(find.text('Excellent crisp apples and very quick pickup!'), findsOneWidget);
+    });
   });
 }

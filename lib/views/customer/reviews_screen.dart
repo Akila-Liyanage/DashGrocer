@@ -442,9 +442,10 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
 
     // Persist to Cloud Firestore if connected
     try {
+      final docId = newReview['id']?.toString() ?? 'rev_${DateTime.now().millisecondsSinceEpoch}';
       FirebaseFirestore.instance
           .collection('reviews')
-          .doc(newReview['id'])
+          .doc(docId)
           .set(newReview, SetOptions(merge: true))
           .catchError((_) {});
     } catch (_) {}
