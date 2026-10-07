@@ -115,7 +115,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
       rating: 4.8,
       reviewsCount: 1,
       sellerId: widget.seller.id,
-      sellerName: widget.seller.shopName ?? 'GreenLeaf Fresh Mart',
+      sellerName: widget.seller.fullName.isNotEmpty ? widget.seller.fullName : (widget.seller.shopName ?? 'Sunil Weerasinghe'),
+      sellerShopName: widget.seller.shopName ?? 'GreenLeaf Fresh Mart',
+      sellerPhone: widget.seller.phoneNumber,
       stockQuantity: stock,
     );
 
