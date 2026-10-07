@@ -49,14 +49,22 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
   @override
   void initState() {
     super.initState();
+    ChatService().addListener(_onChatUpdated);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ChatService().markAllAsReadByCustomer();
       _scrollToBottom();
     });
   }
 
+  void _onChatUpdated() {
+    if (!mounted) return;
+    ChatService().markAllAsReadByCustomer();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
   @override
   void dispose() {
+    ChatService().removeListener(_onChatUpdated);
     _messageController.dispose();
     _scrollController.dispose();
     _focusNode.dispose();

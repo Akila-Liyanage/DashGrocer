@@ -10,12 +10,18 @@ class ShopOwnerChatScreen extends StatefulWidget {
   final String customerName;
   final String customerPhone;
   final String? orderId;
+  final String? orderItemSummary;
+  final String? orderPickupSlot;
+  final String? orderStatusLabel;
 
   const ShopOwnerChatScreen({
     super.key,
     this.customerName = 'Kasun Perera',
     this.customerPhone = '+94 77 123 4567',
     this.orderId = '#FP-2028-0142',
+    this.orderItemSummary,
+    this.orderPickupSlot,
+    this.orderStatusLabel,
   });
 
   @override
@@ -38,14 +44,22 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
   @override
   void initState() {
     super.initState();
+    ChatService().addListener(_onChatUpdated);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ChatService().markAllAsReadBySeller();
       _scrollToBottom();
     });
   }
 
+  void _onChatUpdated() {
+    if (!mounted) return;
+    ChatService().markAllAsReadBySeller();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
   @override
   void dispose() {
+    ChatService().removeListener(_onChatUpdated);
     _textController.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
@@ -55,7 +69,7 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent + 60,
+        _scrollController.position.maxScrollExtent + 80,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutQuad,
       );
@@ -69,6 +83,7 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
     ChatService().sendSellerMessage(
       text: text,
       sellerName: 'Sunil Weerasinghe (GreenLeaf Mart)',
+      orderId: widget.orderId,
     );
 
     if (customText == null) {
@@ -237,7 +252,7 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Order ${widget.orderId} • 3 items (Carrots, Milk, Bread)',
+                          'Order ${widget.orderId} • ${widget.orderItemSummary ?? "10 items (Highland Carrots, Tomatoes, Greens)"}',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -245,7 +260,7 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
                           ),
                         ),
                         Text(
-                          'Pickup: Today, 4:30 PM • Rs. 940.00',
+                          'Pickup: ${widget.orderPickupSlot ?? "Tomorrow, 11:00 AM • Ready to prepare"}',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 11,
                             color: const Color(0xFF64748B),
@@ -261,7 +276,7 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      'PENDING',
+                      widget.orderStatusLabel ?? 'PENDING',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w700,
@@ -279,12 +294,16 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
               listenable: chatService,
               builder: (context, _) {
                 final messages = chatService.allMessages;
+                final isTyping = chatService.isCustomerTyping;
 
                 return ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  itemCount: messages.length,
+                  itemCount: messages.length + (isTyping ? 1 : 0),
                   itemBuilder: (context, index) {
+                    if (index == messages.length && isTyping) {
+                      return _buildCustomerTypingIndicator();
+                    }
                     final msg = messages[index];
                     final isSeller = msg.isFromSeller;
 
@@ -303,7 +322,7 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               itemCount: _quickReplies.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 final reply = _quickReplies[index];
                 return ActionChip(
@@ -437,6 +456,36 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (msg.attachmentUrl != null)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isSeller
+                                ? Colors.white.withValues(alpha: 0.2)
+                                : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.image_rounded,
+                                size: 14,
+                                color: isSeller ? Colors.white : AppColors.brandGreen,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Attachment: ${msg.attachmentUrl}',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: isSeller ? Colors.white : const Color(0xFF0F172A),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       if (msg.productName != null)
                         Container(
                           margin: const EdgeInsets.only(bottom: 6),
@@ -503,6 +552,70 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
             ),
           ),
           if (isSeller) const SizedBox(width: 6),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCustomerTypingIndicator() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          const CircleAvatar(
+            radius: 14,
+            backgroundColor: Color(0xFFE2E8F0),
+            child: Icon(
+              Icons.person_rounded,
+              size: 16,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+                bottomLeft: Radius.circular(4),
+                bottomRight: Radius.circular(16),
+              ),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${widget.customerName} is typing',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    color: const Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.5,
+                    color: AppColors.brandGreen,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

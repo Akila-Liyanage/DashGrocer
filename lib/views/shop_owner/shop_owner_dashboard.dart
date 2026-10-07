@@ -187,42 +187,6 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
         ],
       ),
       actions: [
-        // Circular Chat popup button with live badge
-        ListenableBuilder(
-          listenable: ChatService(),
-          builder: (context, _) {
-            final unread = ChatService().sellerUnreadCount;
-            return IconButton(
-              tooltip: 'Customer Messages',
-              icon: Badge(
-                isLabelVisible: unread > 0,
-                label: Text(unread > 9 ? '9+' : '$unread'),
-                backgroundColor: const Color(0xFFEF4444),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF1F5F9),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    color: Color(0xFF374151),
-                    size: 19,
-                  ),
-                ),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ShopOwnerChatScreen(),
-                  ),
-                );
-              },
-            );
-          },
-        ),
         // Notification bell with clean badge
         IconButton(
           tooltip: 'Notifications',

@@ -46,11 +46,20 @@ class DatabaseSeeder {
     },
   ];
 
+  static bool _hasSeeded = false;
+
   /// Initialize and seed default Firestore collections if not yet present
   static Future<void> seedInitialDataIfNeeded() async {
+    if (_hasSeeded) return;
+    _hasSeeded = true;
+
     try {
       // 1. Seed Categories & Products to Firestore
-      final productsSnapshot = await _firestore.collection('products').limit(1).get();
+      final productsSnapshot = await _firestore
+          .collection('products')
+          .limit(1)
+          .get()
+          .timeout(const Duration(seconds: 4));
       if (productsSnapshot.docs.isEmpty) {
         debugPrint('[DatabaseSeeder] Seeding initial grocery products to Firestore...');
         await seedProducts();
@@ -63,7 +72,8 @@ class DatabaseSeeder {
             .collection('users')
             .where('email', isEqualTo: email.toLowerCase())
             .limit(1)
-            .get();
+            .get()
+            .timeout(const Duration(seconds: 4));
 
         if (query.docs.isEmpty) {
           final docRef = _firestore.collection('users').doc();

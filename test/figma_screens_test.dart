@@ -204,5 +204,34 @@ void main() {
       expect(find.text('126 Reviews'), findsOneWidget);
       expect(find.text('Excellent crisp apples and very quick pickup!'), findsOneWidget);
     });
+
+    testWidgets('12. Home Screen: tapping notification bell opens Notifications sheet with items and Mark read', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: CustomerDashboard(user: AuthService.demoUsers.first),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      // Find notification bell icon and unread badge
+      expect(find.byTooltip('Notifications'), findsOneWidget);
+      expect(find.byKey(const ValueKey('customer_notif_badge')), findsOneWidget);
+
+      // Tap Notification button
+      await tester.tap(find.byTooltip('Notifications'));
+      await tester.pumpAndSettle();
+
+      // Notifications sheet displayed
+      expect(find.text('Notifications'), findsOneWidget);
+      expect(find.text('Mark read'), findsOneWidget);
+      expect(find.text('Order Placed: #FP-2028-0142'), findsWidgets);
+
+      // Tap 'Mark read'
+      await tester.tap(find.text('Mark read'));
+      await tester.pumpAndSettle();
+
+      // Unread badge is cleared
+      expect(find.byKey(const ValueKey('customer_notif_badge')), findsNothing);
+    });
   });
 }

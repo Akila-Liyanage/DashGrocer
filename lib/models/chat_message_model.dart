@@ -15,6 +15,7 @@ class ChatMessage {
   final String? productId;
   final String? productName;
   final String? productImageUrl;
+  final String? orderId;
   final bool isRead;
   final bool isQuickInquiry;
   final MessageDeliveryStatus deliveryStatus;
@@ -30,6 +31,7 @@ class ChatMessage {
     this.productId,
     this.productName,
     this.productImageUrl,
+    this.orderId,
     this.isRead = true,
     this.isQuickInquiry = false,
     this.deliveryStatus = MessageDeliveryStatus.read,
@@ -49,6 +51,7 @@ class ChatMessage {
     String? productId,
     String? productName,
     String? productImageUrl,
+    String? orderId,
     bool? isRead,
     bool? isQuickInquiry,
     MessageDeliveryStatus? deliveryStatus,
@@ -64,6 +67,7 @@ class ChatMessage {
       productId: productId ?? this.productId,
       productName: productName ?? this.productName,
       productImageUrl: productImageUrl ?? this.productImageUrl,
+      orderId: orderId ?? this.orderId,
       isRead: isRead ?? this.isRead,
       isQuickInquiry: isQuickInquiry ?? this.isQuickInquiry,
       deliveryStatus: deliveryStatus ?? this.deliveryStatus,
@@ -82,11 +86,28 @@ class ChatMessage {
       'productId': productId,
       'productName': productName,
       'productImageUrl': productImageUrl,
+      'orderId': orderId,
       'isRead': isRead,
       'isQuickInquiry': isQuickInquiry,
       'deliveryStatus': deliveryStatus.name,
       'attachmentUrl': attachmentUrl,
     };
+  }
+
+  static DateTime _parseTimestamp(dynamic raw) {
+    if (raw == null) return DateTime.now();
+    if (raw is DateTime) return raw;
+    if (raw is int) return DateTime.fromMillisecondsSinceEpoch(raw);
+    if (raw is String) return DateTime.tryParse(raw) ?? DateTime.now();
+    try {
+      final dynamic dynamicVal = raw;
+      final toDate = dynamicVal.toDate;
+      if (toDate is Function) {
+        final result = toDate();
+        if (result is DateTime) return result;
+      }
+    } catch (_) {}
+    return DateTime.now();
   }
 
   factory ChatMessage.fromMap(Map<String, dynamic> map) {
@@ -96,12 +117,11 @@ class ChatMessage {
       senderName: map['senderName'] as String? ?? '',
       senderRole: map['senderRole'] as String? ?? 'customer',
       text: map['text'] as String? ?? '',
-      timestamp: map['timestamp'] != null
-          ? DateTime.tryParse(map['timestamp'] as String) ?? DateTime.now()
-          : DateTime.now(),
+      timestamp: _parseTimestamp(map['timestamp']),
       productId: map['productId'] as String?,
       productName: map['productName'] as String?,
       productImageUrl: map['productImageUrl'] as String?,
+      orderId: map['orderId'] as String?,
       isRead: map['isRead'] as bool? ?? true,
       isQuickInquiry: map['isQuickInquiry'] as bool? ?? false,
       attachmentUrl: map['attachmentUrl'] as String?,

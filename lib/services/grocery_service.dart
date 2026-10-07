@@ -122,6 +122,11 @@ class GroceryService extends ChangeNotifier {
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _productsSub;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _ordersSub;
 
+  void initFirebaseListeners() {
+    _listenToFirestoreProducts();
+    _listenToFirestoreOrders();
+  }
+
   void _listenToFirestoreProducts() {
     final firestore = _firestore;
     if (firestore == null) return;
@@ -142,11 +147,6 @@ class GroceryService extends ChangeNotifier {
           if (firestoreItems.isNotEmpty) {
             _items = firestoreItems;
             notifyListeners();
-          }
-        } else {
-          // If Firestore products collection is empty, seed defaults safely
-          for (final item in _items) {
-            firestore.collection('products').doc(item.id).set(item.toMap(), SetOptions(merge: true)).catchError((_) {});
           }
         }
       }, onError: (e) {
@@ -205,6 +205,7 @@ class GroceryService extends ChangeNotifier {
 
   final List<StoreOrder> _sellerOrders = [];
   final List<SellerNotification> _sellerNotifications = [];
+  final List<CustomerNotification> _customerNotifications = [];
 
   List<GroceryCategory> get categories => List.unmodifiable(_categories);
   List<GroceryItem> get allItems => List.unmodifiable(_items);
@@ -213,6 +214,36 @@ class GroceryService extends ChangeNotifier {
   List<StoreOrder> get sellerOrders => List.unmodifiable(_sellerOrders);
   List<SellerNotification> get sellerNotifications => List.unmodifiable(_sellerNotifications);
   int get unreadNotificationsCount => _sellerNotifications.where((n) => !n.isRead).length;
+
+  List<CustomerNotification> get customerNotifications => List.unmodifiable(_customerNotifications);
+  int get unreadCustomerNotificationsCount => _customerNotifications.where((n) => !n.isRead).length;
+
+  void markAllCustomerNotificationsAsRead() {
+    for (int i = 0; i < _customerNotifications.length; i++) {
+      _customerNotifications[i] = _customerNotifications[i].copyWith(isRead: true);
+    }
+    notifyListeners();
+  }
+
+  void addCustomerNotification({
+    required String title,
+    required String message,
+    String? orderId,
+  }) {
+    _customerNotifications.insert(
+      0,
+      CustomerNotification(
+        id: 'cust_notif_${DateTime.now().millisecondsSinceEpoch}',
+        title: title,
+        message: message,
+        timeAgo: 'Just now',
+        time: DateTime.now(),
+        orderId: orderId,
+        isRead: false,
+      ),
+    );
+    notifyListeners();
+  }
 
   void _initializeDefaultData() {
     _sellerOrders.addAll([
@@ -270,6 +301,36 @@ class GroceryService extends ChangeNotifier {
         time: DateTime.now().subtract(const Duration(hours: 1)),
         orderId: '#FP-2028-0141',
         isRead: true,
+      ),
+    ]);
+
+    _customerNotifications.addAll([
+      CustomerNotification(
+        id: 'cust_notif_1',
+        title: 'Order Placed: #FP-2028-0142',
+        message: 'Your order at Green mart was placed successfully. Pickup: Today, 4.00 PM. Total: Rs. 870.',
+        timeAgo: '2h ago',
+        time: DateTime.now().subtract(const Duration(hours: 2)),
+        orderId: '#FP-2028-0142',
+        isRead: false,
+      ),
+      CustomerNotification(
+        id: 'cust_notif_2',
+        title: 'Order Placed: #FP-2028-0142',
+        message: 'Your order at Green mart was placed successfully. Pickup: Today, 4.00 PM. Total: Rs. 870.',
+        timeAgo: '2h ago',
+        time: DateTime.now().subtract(const Duration(hours: 2)),
+        orderId: '#FP-2028-0142',
+        isRead: false,
+      ),
+      CustomerNotification(
+        id: 'cust_notif_3',
+        title: 'Order Placed: #FP-2028-0142',
+        message: 'Your order at Green mart was placed successfully. Pickup: Today, 11.00 AM. Total: Rs. 3050.',
+        timeAgo: '2h ago',
+        time: DateTime.now().subtract(const Duration(hours: 2)),
+        orderId: '#FP-2028-0142',
+        isRead: false,
       ),
     ]);
 
@@ -698,6 +759,19 @@ class GroceryService extends ChangeNotifier {
     );
 
     _sellerNotifications.insert(0, notification);
+
+    // Push notification for customer
+    final customerNotif = CustomerNotification(
+      id: 'cust_notif_${DateTime.now().millisecondsSinceEpoch}',
+      title: 'Order Placed: $generatedId',
+      message: 'Your order at $shopName was placed successfully. Pickup: $pickupSlot. Total: Rs. ${totalAmount.toStringAsFixed(0)}.',
+      timeAgo: 'Just now',
+      time: DateTime.now(),
+      orderId: generatedId,
+      isRead: false,
+    );
+    _customerNotifications.insert(0, customerNotif);
+
     clearCart();
     notifyListeners();
     return generatedId;

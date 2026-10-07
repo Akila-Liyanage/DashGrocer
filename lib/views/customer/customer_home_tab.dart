@@ -5,6 +5,7 @@ import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/grocery_service.dart';
 import 'category_products_screen.dart';
+import 'customer_notifications_sheet.dart';
 import 'search_screen.dart';
 import 'store_details_screen.dart';
 import 'track_order_screen.dart';
@@ -23,6 +24,15 @@ class CustomerHomeTab extends StatefulWidget {
 }
 
 class _CustomerHomeTabState extends State<CustomerHomeTab> {
+  void _showCustomerNotificationsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const CustomerNotificationsSheet(),
+    );
+  }
+
   static const List<Map<String, dynamic>> _popularShops = [
     {
       'id': 'shop_greenleaf',
@@ -114,14 +124,62 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                           ),
                         ],
                       ),
-                      IconButton(
-                        tooltip: 'Log Out',
-                        icon: const Icon(
-                          Icons.logout_rounded,
-                          color: Color(0xFF868889),
-                          size: 22,
-                        ),
-                        onPressed: () => authService.logout(),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Notification Bell Button with Unread Badge
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              IconButton(
+                                tooltip: 'Notifications',
+                                icon: const Icon(
+                                  Icons.notifications_none_rounded,
+                                  color: Color(0xFF868889),
+                                  size: 24,
+                                ),
+                                onPressed: () => _showCustomerNotificationsSheet(context),
+                              ),
+                              if (groceryService.unreadCustomerNotificationsCount > 0)
+                                Positioned(
+                                  top: 6,
+                                  right: 6,
+                                  child: Container(
+                                    key: const ValueKey('customer_notif_badge'),
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFEF4444),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 16,
+                                      minHeight: 16,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '${groceryService.unreadCustomerNotificationsCount}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w700,
+                                          height: 1,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          IconButton(
+                            tooltip: 'Log Out',
+                            icon: const Icon(
+                              Icons.logout_rounded,
+                              color: Color(0xFF868889),
+                              size: 22,
+                            ),
+                            onPressed: () => authService.logout(),
+                          ),
+                        ],
                       ),
                     ],
                   ),
