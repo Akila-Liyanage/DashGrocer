@@ -172,42 +172,5 @@ void main() {
       expect(find.text('Olivia'), findsOneWidget);
       expect(find.text('Back To Home'), findsOneWidget);
     });
-<<<<<<< Updated upstream
-=======
-
-    testWidgets('11. Reviews Screen: tapping Write a review opens the Write Reviews page and allows submitting new review', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: ReviewsScreen(productName: 'Fresh Organic Apples'),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // Tap Write a review card
-      await tester.tap(find.text('Write a review'));
-      await tester.pumpAndSettle();
-
-      // Write Reviews page should be displayed
-      expect(find.text('Write Reviews'), findsOneWidget);
-      expect(find.text('What do you think ?'), findsOneWidget);
-      expect(find.text('Submit review'), findsOneWidget);
-
-      // Select 5 stars and enter the review comment
-      await tester.tap(find.byIcon(Icons.star_rounded).at(4));
-      await tester.pump();
-      final textFields = find.byType(TextField);
-      expect(textFields, findsOneWidget);
-      await tester.enterText(textFields, 'Excellent crisp apples and very quick pickup!');
-      await tester.pumpAndSettle();
-
-      // Tap Submit review button
-      await tester.tap(find.text('Submit review'));
-      await tester.pumpAndSettle();
-
-      // Page closes, review count updates, new review is displayed in list
-      expect(find.text('126 Reviews'), findsOneWidget);
-      expect(find.text('Excellent crisp apples and very quick pickup!'), findsOneWidget);
-    });
->>>>>>> Stashed changes
   });
 }
