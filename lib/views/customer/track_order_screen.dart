@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../models/seller_order_model.dart';
+import '../../services/grocery_service.dart';
 
 class TrackOrderScreen extends StatelessWidget {
   final String orderId;
@@ -10,8 +12,65 @@ class TrackOrderScreen extends StatelessWidget {
     this.orderId = '#FP-2028-0142',
   });
 
+  static const List<String> _months = [
+    'January', 'February', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December',
+  ];
+
+  /// "October 15 2026"
+  static String _formatDate(DateTime date) {
+    return '${_months[date.month - 1]} ${date.day} ${date.year}';
+  }
+
+  /// How many of the five steps are finished for each order status:
+  ///   Pending          -> 1  (Order Placed)
+  ///   Preparing        -> 2  (+ Order Confirmed)
+  ///   Ready for Pickup -> 4  (+ Order Prepared, Ready for Pickup)
+  ///   Completed        -> 5  (+ Pickup Order)
+  /// A cancelled order stays at 1.
+  static int _stepsDone(String status) {
+    switch (status) {
+      case 'Preparing':
+        return 2;
+      case 'Ready for Pickup':
+        return 4;
+      case 'Completed':
+        return 5;
+      default:
+        return 1;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Listening to GroceryService makes this screen follow the order live:
+    // when the shop changes the status, the steps below update by themselves.
+    final groceryService = GroceryService();
+    return ListenableBuilder(
+      listenable: groceryService,
+      builder: (context, _) =>
+          _buildScreen(context, groceryService.orderById(orderId)),
+    );
+  }
+
+  Widget _buildScreen(BuildContext context, StoreOrder? order) {
+    // An order number that is not in the list (for example a sample card)
+    // keeps the original sample look: three steps done.
+    final cancelled = order?.status == 'Cancelled';
+    final stepsDone = order == null ? 3 : _stepsDone(order.status);
+    final placedOn =
+        order == null ? 'October 15 2026' : _formatDate(order.createdAt);
+
+    // Text under each step: the date for the first, then Done, the step
+    // being worked on, and Pending for the rest.
+    String stepNote(int index) {
+      if (index == 0) return placedOn;
+      if (order == null) return index < stepsDone ? placedOn : 'Pending';
+      if (cancelled) return 'Cancelled';
+      if (index < stepsDone) return 'Done';
+      return index == stepsDone ? 'In progress' : 'Pending';
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFFBFBFB),
       appBar: AppBar(
@@ -85,7 +144,10 @@ class TrackOrderScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Placed on October 15 2026\nItems: 4   Price: Rs.1000',
+                                  order == null
+                                      ? 'Placed on October 15 2026\nItems: 4   Price: Rs.1000'
+                                      : 'Placed on $placedOn\n${order.itemsSummary}\n'
+                                          '${order.formattedTotal}  •  ${order.paymentMethod}',
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 12,
                                     color: const Color(0xFF868889),
@@ -101,37 +163,70 @@ class TrackOrderScreen extends StatelessWidget {
 
                     const SizedBox(height: 28),
 
-                    // Vertical Stepper Timeline
+                    // Shown instead of progress when the shop cancelled.
+                    if (cancelled)
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.cancel_outlined,
+                              color: Color(0xFFDC2626),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'This order was cancelled by the shop.',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF991B1B),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    // Vertical Stepper Timeline, filled in from the order's
+                    // current status.
                     _buildTimelineStep(
                       icon: Icons.receipt_long_outlined,
                       title: 'Order Placed',
-                      subtitle: 'October 15 2026',
-                      isCompleted: true,
+                      subtitle: stepNote(0),
+                      isCompleted: stepsDone > 0,
                       isFirst: true,
                     ),
                     _buildTimelineStep(
                       icon: Icons.check_circle_outline_rounded,
                       title: 'Order Confirmed',
-                      subtitle: 'October 15 2026',
-                      isCompleted: true,
+                      subtitle: stepNote(1),
+                      isCompleted: stepsDone > 1,
                     ),
                     _buildTimelineStep(
                       icon: Icons.shopping_bag_outlined,
                       title: 'Order Prepared',
-                      subtitle: 'October 15 2026',
-                      isCompleted: true,
+                      subtitle: stepNote(2),
+                      isCompleted: stepsDone > 2,
                     ),
                     _buildTimelineStep(
                       icon: Icons.storefront_outlined,
                       title: 'Ready for Pickup',
-                      subtitle: 'Pending',
-                      isCompleted: false,
+                      subtitle: stepNote(3),
+                      isCompleted: stepsDone > 3,
                     ),
                     _buildTimelineStep(
                       icon: Icons.done_all_rounded,
                       title: 'Pickup Order',
-                      subtitle: 'Pending',
-                      isCompleted: false,
+                      subtitle: stepNote(4),
+                      isCompleted: stepsDone > 4,
                       isLast: true,
                     ),
                   ],

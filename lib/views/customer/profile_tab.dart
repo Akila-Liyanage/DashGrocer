@@ -578,10 +578,19 @@ class _ProfileTabState extends State<ProfileTab> {
     } else if (order.status == 'Completed') {
       statusBgColor = const Color(0xFFF1F5F9);
       statusTextColor = const Color(0xFF64748B);
-    } else {
+    } else if (order.status == 'Cancelled') {
+      statusBgColor = const Color(0xFFFEE2E2);
+      statusTextColor = const Color(0xFFDC2626);
+    } else if (order.status == 'Preparing') {
+      // The shop has accepted the order and is packing it.
       statusBgColor = const Color(0xFFE0F2FE);
       statusTextColor = const Color(0xFF0284C7);
-      displayStatus = 'Preparing';
+    } else {
+      // 'Pending': placed, but the shop has not started it yet. This used to
+      // be shown as "Preparing", which was not true.
+      statusBgColor = const Color(0xFFFEF3C7);
+      statusTextColor = const Color(0xFFB45309);
+      displayStatus = 'Order Placed';
     }
 
     return Container(
