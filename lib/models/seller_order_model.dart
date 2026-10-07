@@ -94,3 +94,33 @@ class SellerNotification {
     );
   }
 }
+
+/// A notification shown to the customer (e.g. "Order Placed").
+class CustomerNotification {
+  final String id;
+  final String title;
+  final String message;
+  final DateTime time;
+  final String? orderId;
+  final bool isRead;
+
+  const CustomerNotification({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.time,
+    this.orderId,
+    this.isRead = false,
+  });
+
+  CustomerNotification copyWith({bool? isRead}) {
+    return CustomerNotification(
+      id: id,
+      title: title,
+      message: message,
+      time: time,
+      orderId: orderId,
+      isRead: isRead ?? this.isRead,
+    );
+  }
+}

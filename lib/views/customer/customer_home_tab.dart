@@ -5,6 +5,7 @@ import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/grocery_service.dart';
 import 'category_products_screen.dart';
+import 'customer_notifications_sheet.dart';
 import 'search_screen.dart';
 import 'store_details_screen.dart';
 import 'track_order_screen.dart';
@@ -114,14 +115,39 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                           ),
                         ],
                       ),
-                      IconButton(
-                        tooltip: 'Log Out',
-                        icon: const Icon(
-                          Icons.logout_rounded,
-                          color: Color(0xFF868889),
-                          size: 22,
-                        ),
-                        onPressed: () => authService.logout(),
+                      Row(
+                        children: [
+                          IconButton(
+                            tooltip: 'Notifications',
+                            icon: Badge(
+                              isLabelVisible: groceryService.unreadCustomerNotificationsCount > 0,
+                              label: Text('${groceryService.unreadCustomerNotificationsCount}'),
+                              backgroundColor: const Color(0xFFFE5858),
+                              child: const Icon(
+                                Icons.notifications_outlined,
+                                color: Color(0xFF868889),
+                                size: 24,
+                              ),
+                            ),
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                backgroundColor: Colors.transparent,
+                                isScrollControlled: true,
+                                builder: (_) => const CustomerNotificationsSheet(),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            tooltip: 'Log Out',
+                            icon: const Icon(
+                              Icons.logout_rounded,
+                              color: Color(0xFF868889),
+                              size: 22,
+                            ),
+                            onPressed: () => authService.logout(),
+                          ),
+                        ],
                       ),
                     ],
                   ),
