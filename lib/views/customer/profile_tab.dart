@@ -107,9 +107,20 @@ class _ProfileTabState extends State<ProfileTab> {
       return;
     }
 
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Save personal details
+    final succeeded = await AuthService().updateProfile(
+      fullName: _nameController.text.trim(),
+      phoneNumber: _phoneController.text.trim(),
+    );
+
     if (!mounted) return;
     setState(() => _isSaving = false);
+
+    if (!succeeded) {
+      _showSaveMessage(AuthService().errorMessage ?? 'Could not update profile.', isError: true);
+      return;
+    }
+
     _showSaveMessage('Profile details updated successfully!');
   }
 
