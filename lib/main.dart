@@ -13,11 +13,14 @@ import 'views/shop_owner/shop_owner_home.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
+    // Never let a slow/blocked Firebase init keep the app on a blank screen
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
-    );
-    // Seed initial Firestore catalog and demo users if needed
-    DatabaseSeeder.seedInitialDataIfNeeded();
+    ).timeout(const Duration(seconds: 8));
+    // Seed initial Firestore catalog and demo users if needed (runs in background)
+    DatabaseSeeder.seedInitialDataIfNeeded().catchError((Object e) {
+      debugPrint('Database seeding notice: $e');
+    });
   } catch (e) {
     debugPrint('Firebase initialization notice: $e');
   }

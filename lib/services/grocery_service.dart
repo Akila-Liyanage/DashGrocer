@@ -552,6 +552,7 @@ class GroceryService extends ChangeNotifier {
     required double totalAmount,
     required String shopName,
     String? orderId,
+    String paymentMethod = 'Pay at Store',
   }) {
     final generatedId = orderId ?? '#FP-2028-0${142 + _sellerOrders.length + 1}';
     final itemsCount = totalCartItemCount;
@@ -570,6 +571,7 @@ class GroceryService extends ChangeNotifier {
       status: 'Pending',
       createdAt: DateTime.now(),
       isRead: false,
+      paymentMethod: paymentMethod,
     );
 
     _sellerOrders.insert(0, order);
@@ -578,7 +580,7 @@ class GroceryService extends ChangeNotifier {
     final notification = SellerNotification(
       id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
       title: 'New Order: $generatedId',
-      message: '$customerName placed a pickup order for Rs. ${totalAmount.toStringAsFixed(0)} ($pickupSlot).',
+      message: '$customerName placed a pickup order for Rs. ${totalAmount.toStringAsFixed(0)} ($pickupSlot). Payment: $paymentMethod.',
       time: DateTime.now(),
       orderId: generatedId,
       isRead: false,
