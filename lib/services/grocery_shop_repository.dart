@@ -129,10 +129,15 @@ class GroceryShopRepository implements ShopRepository {
     }
   }
 
-  /// Several orders can share one order number, so the screens use the
-  /// number plus the creation time to tell them apart.
-  static String _keyFor(StoreOrder order) {
-    return '${order.id}~${order.createdAt.microsecondsSinceEpoch}';
+  /// The id the shop owner screens use for an order: its order number.
+  /// Order numbers are unique, but if a list ever holds the same number
+  /// twice, the later ones get "~1", "~2" added so every row stays distinct.
+  /// (The id must not depend on anything that can change, such as a time
+  /// read back from Firestore, or an open order would "disappear".)
+  static String _keyFor(StoreOrder order, Map<String, int> seen) {
+    final count = seen[order.id] ?? 0;
+    seen[order.id] = count + 1;
+    return count == 0 ? order.id : '${order.id}~$count';
   }
 
   /// "Today, 4.00 PM" or "Tomorrow, 9:00 AM - 9:30 AM" -> a real date and
@@ -159,8 +164,8 @@ class GroceryShopRepository implements ShopRepository {
     return match == null ? null : int.tryParse(match.group(1)!);
   }
 
-  ShopOrder _toShopOrder(StoreOrder order) {
-    final key = _keyFor(order);
+  ShopOrder _toShopOrder(StoreOrder order, Map<String, int> seen) {
+    final key = _keyFor(order, seen);
     _storeOrderIds[key] = order.id;
 
     return ShopOrder(
@@ -178,7 +183,8 @@ class GroceryShopRepository implements ShopRepository {
       status: _statusFromWord(order.status),
       pickupTime: _parsePickup(order.pickupSlot, order.createdAt),
       createdAt: order.createdAt,
-      paymentMethod: 'Not specified',
+      // 'Pay at Store' or 'Paid Online (Card)', chosen by the customer.
+      paymentMethod: order.paymentMethod,
       packedIndexes: _packed[key] ?? const <int>[],
       cancelReason: _cancelReasons[key],
       completedAt: _completedAt[key],
@@ -187,7 +193,12 @@ class GroceryShopRepository implements ShopRepository {
 
   @override
   Stream<List<ShopOrder>> watchOrders(String shopId) {
-    return _watch(() => _service.sellerOrders.map(_toShopOrder).toList());
+    return _watch(() {
+      final seen = <String, int>{};
+      return [
+        for (final order in _service.sellerOrders) _toShopOrder(order, seen),
+      ];
+    });
   }
 
   @override
@@ -201,16 +212,10 @@ class GroceryShopRepository implements ShopRepository {
       throw StateError('Order ${order.orderNumber} was not found.');
     }
 
-    // GroceryService changes the first order that has this number. If that
-    // is a different order, stop instead of changing the wrong one.
-    StoreOrder? first;
-    for (final candidate in _service.sellerOrders) {
-      if (candidate.id == storeId) {
-        first = candidate;
-        break;
-      }
-    }
-    if (first == null || _keyFor(first) != order.id) {
+    // GroceryService changes the first order that has this number. A row
+    // whose id has a "~1" style ending is a later duplicate, so stop instead
+    // of changing the wrong order.
+    if (storeId != order.id) {
       throw StateError(
         'Another order uses the number ${order.orderNumber}, so this one '
         'cannot be updated.',
