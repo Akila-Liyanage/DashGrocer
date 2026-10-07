@@ -227,9 +227,6 @@ class GroceryService extends ChangeNotifier {
   List<SellerNotification> get sellerNotifications => List.unmodifiable(_sellerNotifications);
   int get unreadNotificationsCount => _sellerNotifications.where((n) => !n.isRead).length;
 
-  List<CustomerNotification> get customerNotifications => List.unmodifiable(_customerNotifications);
-  int get unreadCustomerNotificationsCount => _customerNotifications.where((n) => !n.isRead).length;
-
   void markAllCustomerNotificationsAsRead() {
     for (int i = 0; i < _customerNotifications.length; i++) {
       _customerNotifications[i] = _customerNotifications[i].copyWith(isRead: true);
