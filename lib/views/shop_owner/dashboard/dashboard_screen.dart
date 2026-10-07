@@ -35,6 +35,7 @@ class DashboardScreen extends StatefulWidget {
     required this.onOpenSales,
     required this.onOpenNotifications,
     required this.onOpenUserProfile,
+    this.onOpenChat,
   });
 
   final ShopStore store;
@@ -50,6 +51,7 @@ class DashboardScreen extends StatefulWidget {
   final ValueChanged<ShopOrder> onOpenOrder;
   final VoidCallback onOpenSales;
   final VoidCallback onOpenNotifications;
+  final VoidCallback? onOpenChat;
 
   /// Opens the owner's "My Profile" screen (the profile icon in the header).
   final VoidCallback onOpenUserProfile;
@@ -114,6 +116,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             owner: _store.owner,
             onProfile: widget.onOpenUserProfile,
             onNotifications: widget.onOpenNotifications,
+            onChat: widget.onOpenChat,
             unreadCount: _store.unreadAlertCount,
           ),
           body: ListView(

@@ -5,8 +5,8 @@ import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/grocery_service.dart';
 import 'category_products_screen.dart';
-import 'customer_notifications_sheet.dart';
 import 'search_screen.dart';
+import 'store_details_screen.dart';
 import 'track_order_screen.dart';
 import 'widgets/grocery_product_card.dart';
 
@@ -28,16 +28,34 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
 
   static const List<Map<String, dynamic>> _popularShops = [
     {
+      'id': 'shop_greenleaf',
       'name': 'GreenLeaf Fresh Mart',
+      'ownerName': 'Sunil Weerasinghe',
       'distance': '1.2 km',
       'pickupTime': 'Ready in 20m',
       'rating': '4.8',
+      'reviewsCount': '120+ reviews',
+      'address': 'No. 42, High Level Road, Maharagama',
+      'phone': '+94 71 987 6543',
+      'hours': 'Open Daily: 7:30 AM – 9:30 PM (Closes at 10:00 PM on weekends)',
+      'curbside': 'Instant counter pickup with zero waiting queue',
+      'description': 'Specializing in fresh highland vegetables, crisp greens, and farm produce with curbside pickup.',
+      'badge': 'Verified Partner',
     },
     {
+      'id': 'shop_dailysuperette',
       'name': 'Daily Superette',
+      'ownerName': 'Kamal Perera',
       'distance': '850 m',
       'pickupTime': 'Ready in 15m',
       'rating': '4.9',
+      'reviewsCount': '95+ reviews',
+      'address': 'No. 18, Station Road, Maharagama',
+      'phone': '+94 77 234 5678',
+      'hours': 'Open Daily: 7:00 AM – 10:00 PM',
+      'curbside': 'Express counter pickup at entrance rack',
+      'description': 'Your friendly neighborhood grocery for dairy, farm eggs, bread, dry rations, and premium Ceylon tea.',
+      'badge': 'Top Rated',
     },
   ];
 
@@ -109,39 +127,14 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                           ),
                         ],
                       ),
-                      Row(
-                        children: [
-                          IconButton(
-                            tooltip: 'Notifications',
-                            icon: Badge(
-                              isLabelVisible: groceryService.unreadCustomerNotificationsCount > 0,
-                              label: Text('${groceryService.unreadCustomerNotificationsCount}'),
-                              backgroundColor: const Color(0xFFFE5858),
-                              child: const Icon(
-                                Icons.notifications_outlined,
-                                color: Color(0xFF868889),
-                                size: 24,
-                              ),
-                            ),
-                            onPressed: () {
-                              showModalBottomSheet(
-                                context: context,
-                                backgroundColor: Colors.transparent,
-                                isScrollControlled: true,
-                                builder: (_) => const CustomerNotificationsSheet(),
-                              );
-                            },
-                          ),
-                          IconButton(
-                            tooltip: 'Log Out',
-                            icon: const Icon(
-                              Icons.logout_rounded,
-                              color: Color(0xFF868889),
-                              size: 22,
-                            ),
-                            onPressed: () => authService.logout(),
-                          ),
-                        ],
+                      IconButton(
+                        tooltip: 'Log Out',
+                        icon: const Icon(
+                          Icons.logout_rounded,
+                          color: Color(0xFF868889),
+                          size: 22,
+                        ),
+                        onPressed: () => authService.logout(),
                       ),
                     ],
                   ),
@@ -587,12 +580,26 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                           color: const Color(0xFF1A1A1A),
                         ),
                       ),
-                      Text(
-                        'See All',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.brandGreen,
+                      InkWell(
+                        borderRadius: BorderRadius.circular(6),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StoreDetailsScreen(shop: _popularShops.first),
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          child: Text(
+                            'See All',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.brandGreen,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -720,11 +727,23 @@ class _NearbyShopCard extends StatelessWidget {
                 const SizedBox(height: 16),
                 const Divider(height: 1, color: Color(0xFFF1F5F9)),
                 const SizedBox(height: 14),
-                _buildInfoRow(Icons.location_on_outlined, 'Distance & Pickup', '${shop['distance']} away • ${shop['pickupTime']} ready'),
+                _buildInfoRow(
+                  Icons.location_on_outlined,
+                  'Distance & Pickup',
+                  '${shop['distance']} away • ${shop['pickupTime']} ready',
+                ),
                 const SizedBox(height: 10),
-                _buildInfoRow(Icons.access_time_rounded, 'Store Hours', 'Open Daily: 7:30 AM – 9:30 PM (Closes at 10:00 PM on weekends)'),
+                _buildInfoRow(
+                  Icons.access_time_rounded,
+                  'Store Hours',
+                  shop['hours'] as String? ?? 'Open Daily: 7:30 AM – 9:30 PM (Closes at 10:00 PM on weekends)',
+                ),
                 const SizedBox(height: 10),
-                _buildInfoRow(Icons.check_circle_outline_rounded, 'Curbside Pickup', 'Instant counter pickup with zero waiting queue'),
+                _buildInfoRow(
+                  Icons.check_circle_outline_rounded,
+                  'Curbside Pickup',
+                  shop['curbside'] as String? ?? 'Instant counter pickup with zero waiting queue',
+                ),
                 const SizedBox(height: 20),
                 Row(
                   children: [
@@ -732,9 +751,10 @@ class _NearbyShopCard extends StatelessWidget {
                       child: OutlinedButton.icon(
                         onPressed: () {
                           Navigator.pop(ctx);
+                          final phone = shop['phone'] as String? ?? '+94 71 987 6543';
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Calling ${shop['name']}...'),
+                              content: Text('Calling ${shop['name']} ($phone)...'),
                               behavior: SnackBarBehavior.floating,
                               duration: const Duration(seconds: 1),
                             ),
@@ -755,7 +775,15 @@ class _NearbyShopCard extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => Navigator.pop(ctx),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StoreDetailsScreen(shop: shop),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.brandGreen,
                           padding: const EdgeInsets.symmetric(vertical: 12),

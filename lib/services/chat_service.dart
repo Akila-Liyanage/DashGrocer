@@ -28,6 +28,15 @@ class ChatService extends ChangeNotifier {
         text: 'Ayubowan! 🙏 Welcome to GreenLeaf Fresh Mart. Let us know if you have any questions about today\'s harvest or store pickup.',
         timestamp: DateTime.now().subtract(const Duration(hours: 2)),
       ),
+      ChatMessage(
+        id: 'msg_kasun_inquiry',
+        senderId: 'cust_kasun',
+        senderName: 'Kasun Perera',
+        senderRole: 'customer',
+        text: 'Hello! I placed pickup order #FP-2028-0142. Are the highland carrots and tomatoes ready?',
+        timestamp: DateTime.now().subtract(const Duration(minutes: 12)),
+        isRead: false,
+      ),
     ]);
   }
 
@@ -35,7 +44,35 @@ class ChatService extends ChangeNotifier {
     return _messages.where((m) => m.productId == null || m.productId == productId).toList();
   }
 
-  int get unreadCount => _messages.where((m) => m.isFromSeller && !m.isRead).length;
+  int get customerUnreadCount => _messages.where((m) => m.isFromSeller && !m.isRead).length;
+  int get sellerUnreadCount => _messages.where((m) => m.isFromCustomer && !m.isRead).length;
+  int get unreadCount => customerUnreadCount;
+
+  void markAllAsReadBySeller() {
+    bool changed = false;
+    for (int i = 0; i < _messages.length; i++) {
+      if (_messages[i].isFromCustomer && !_messages[i].isRead) {
+        _messages[i] = _messages[i].copyWith(isRead: true);
+        changed = true;
+      }
+    }
+    if (changed) {
+      notifyListeners();
+    }
+  }
+
+  void markAllAsReadByCustomer() {
+    bool changed = false;
+    for (int i = 0; i < _messages.length; i++) {
+      if (_messages[i].isFromSeller && !_messages[i].isRead) {
+        _messages[i] = _messages[i].copyWith(isRead: true);
+        changed = true;
+      }
+    }
+    if (changed) {
+      notifyListeners();
+    }
+  }
 
   void markAllAsRead() {
     bool changed = false;
@@ -50,11 +87,35 @@ class ChatService extends ChangeNotifier {
     }
   }
 
+  Future<void> sendSellerMessage({
+    required String text,
+    String? sellerName,
+    String? attachmentUrl,
+  }) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+
+    final sellerMsg = ChatMessage(
+      id: 'msg_seller_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: 'seller_sunil',
+      senderName: sellerName ?? 'Sunil Weerasinghe',
+      senderRole: 'seller',
+      text: trimmed,
+      timestamp: DateTime.now(),
+      isRead: false,
+      attachmentUrl: attachmentUrl,
+    );
+
+    _messages.add(sellerMsg);
+    notifyListeners();
+  }
+
   Future<void> sendCustomerMessage({
     required String text,
     GroceryItem? product,
     bool isQuickInquiry = false,
     String? attachmentUrl,
+    bool simulateAutoReply = true,
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
@@ -71,6 +132,7 @@ class ChatService extends ChangeNotifier {
       productImageUrl: product?.imageUrl,
       isQuickInquiry: isQuickInquiry,
       attachmentUrl: attachmentUrl,
+      isRead: false,
     );
 
     _messages.add(customerMsg);
@@ -87,7 +149,9 @@ class ChatService extends ChangeNotifier {
     } catch (_) {}
 
     // Simulate realistic intelligent seller reply
-    _simulateSellerReply(trimmed, product);
+    if (simulateAutoReply) {
+      _simulateSellerReply(trimmed, product);
+    }
   }
 
   Timer? _typingTimer;

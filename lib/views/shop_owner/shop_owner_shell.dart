@@ -2,10 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:google_fonts/google_fonts.dart';
+
 import '../../core/theme/shop_owner_theme.dart';
 import '../../models/shop_order.dart';
+import '../../services/chat_service.dart';
 import '../../services/shop_repository.dart';
 import '../../services/shop_store.dart';
+import 'chat/shop_owner_chat_screen.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'notifications/notifications_panel.dart';
 import 'orders/order_details_screen.dart';
@@ -133,6 +137,72 @@ class _ShopOwnerShellState extends State<ShopOwnerShell> {
     );
   }
 
+  void _openChat() {
+    Navigator.of(context).push(
+      shopRoute<void>(
+        (context) => const ShopOwnerChatScreen(),
+      ),
+    );
+  }
+
+  Widget _buildChatCircleButton() {
+    final chatService = ChatService();
+    return ListenableBuilder(
+      listenable: chatService,
+      builder: (context, _) {
+        final unread = chatService.sellerUnreadCount;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Tooltip(
+            message: 'Customer Chat',
+            child: Badge(
+              isLabelVisible: unread > 0,
+              label: Text('$unread'),
+              backgroundColor: const Color(0xFFEF4444),
+              largeSize: 20,
+              textStyle: GoogleFonts.plusJakartaSans(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+              offset: const Offset(-2, 2),
+              child: Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: ShopColors.primary,
+                  boxShadow: [
+                    BoxShadow(
+                      color: ShopColors.primary.withValues(alpha: 0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _openChat,
+                    child: const Center(
+                      child: Icon(
+                        Icons.chat_bubble_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -150,6 +220,7 @@ class _ShopOwnerShellState extends State<ShopOwnerShell> {
             onOpenSales: _openSales,
             onOpenNotifications: _openNotifications,
             onOpenUserProfile: _openUserProfile,
+            onOpenChat: _openChat,
           ),
           OrdersScreen(
             store: _store,
@@ -180,6 +251,7 @@ class _ShopOwnerShellState extends State<ShopOwnerShell> {
         currentIndex: _index,
         onChanged: (index) => setState(() => _index = index),
       ),
+      floatingActionButton: _buildChatCircleButton(),
     );
   }
 }

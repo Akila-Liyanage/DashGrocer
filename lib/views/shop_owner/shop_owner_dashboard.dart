@@ -4,9 +4,11 @@ import '../../models/grocery_item_model.dart';
 import '../../models/seller_order_model.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
+import '../../services/chat_service.dart';
 import '../../services/grocery_service.dart';
 import '../common/app_image_view.dart';
 import 'add_product_screen.dart';
+import 'chat/shop_owner_chat_screen.dart';
 import 'seller_notifications_sheet.dart';
 
 class ShopOwnerDashboard extends StatefulWidget {
@@ -71,6 +73,7 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
             ],
           ),
           bottomNavigationBar: _buildBottomNav(pendingCount),
+          floatingActionButton: _buildChatCircleButton(),
         );
       },
     );
@@ -184,6 +187,42 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
         ],
       ),
       actions: [
+        // Circular Chat popup button with live badge
+        ListenableBuilder(
+          listenable: ChatService(),
+          builder: (context, _) {
+            final unread = ChatService().sellerUnreadCount;
+            return IconButton(
+              tooltip: 'Customer Messages',
+              icon: Badge(
+                isLabelVisible: unread > 0,
+                label: Text(unread > 9 ? '9+' : '$unread'),
+                backgroundColor: const Color(0xFFEF4444),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF1F5F9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    color: Color(0xFF374151),
+                    size: 19,
+                  ),
+                ),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ShopOwnerChatScreen(),
+                  ),
+                );
+              },
+            );
+          },
+        ),
         // Notification bell with clean badge
         IconButton(
           tooltip: 'Notifications',
@@ -1261,6 +1300,71 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildChatCircleButton() {
+    final chatService = ChatService();
+    return ListenableBuilder(
+      listenable: chatService,
+      builder: (context, _) {
+        final unread = chatService.sellerUnreadCount;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Tooltip(
+            message: 'Customer Chat',
+            child: Badge(
+              isLabelVisible: unread > 0,
+              label: Text('$unread'),
+              backgroundColor: const Color(0xFFEF4444),
+              largeSize: 20,
+              textStyle: GoogleFonts.plusJakartaSans(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+              offset: const Offset(-2, 2),
+              child: Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF2EB844),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF2EB844).withValues(alpha: 0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ShopOwnerChatScreen(),
+                        ),
+                      );
+                    },
+                    child: const Center(
+                      child: Icon(
+                        Icons.chat_bubble_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -301,7 +301,11 @@ class GroceryShopRepository implements ShopRepository {
           imageUrl: product.imageUrl ?? '',
           isNew: true,
           sellerId: sellerId,
-          sellerName: sellerName,
+          sellerName: _fallbackOwner.fullName.isNotEmpty
+              ? _fallbackOwner.fullName
+              : sellerName,
+          sellerShopName: sellerName,
+          sellerPhone: _fallbackOwner.phoneNumber,
           stockQuantity: product.stock,
         ),
       );
