@@ -30,11 +30,20 @@ class AuthService extends ChangeNotifier {
   UserModel? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
+  DateTime? _lastLoginTime;
+  bool _biometricsEnabled = false;
 
   UserModel? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  DateTime? get lastLoginTime => _lastLoginTime;
+  bool get isBiometricsEnabled => _biometricsEnabled;
+
+  void setBiometricsEnabled(bool enabled) {
+    _biometricsEnabled = enabled;
+    notifyListeners();
+  }
 
   // Pre-configured Demo Accounts for HCI testing
   static final List<UserModel> demoUsers = [
@@ -47,6 +56,15 @@ class AuthService extends ChangeNotifier {
     ),
     const UserModel(
       id: 'owner_01',
+      email: 'seller@dashgrocer.com',
+      fullName: 'Sunil Weerasinghe',
+      phoneNumber: '+94 71 987 6543',
+      role: UserRole.shopOwner,
+      shopName: 'GreenLeaf Fresh Mart',
+      shopAddress: 'No. 42, High Level Road, Maharagama',
+    ),
+    const UserModel(
+      id: 'owner_02',
       email: 'owner@dashgrocer.com',
       fullName: 'Sunil Weerasinghe',
       phoneNumber: '+94 71 987 6543',
@@ -62,6 +80,18 @@ class AuthService extends ChangeNotifier {
       role: UserRole.admin,
     ),
   ];
+
+  /// Runtime registry for accounts registered in app session
+  final Map<String, UserModel> _registeredUsers = {};
+  final Map<String, String> _registeredPasswords = {};
+
+  static bool _isValidDemoPassword(String password) {
+    return password == 'Password123!' ||
+        password == 'pass123' ||
+        password == 'Admin123!' ||
+        password == 'admin123' ||
+        password == 'password123';
+  }
 
   static Duration simulatedDelay = const Duration(milliseconds: 700);
 
@@ -143,7 +173,7 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Login with email and password using Firebase Auth
+  /// Login with email and password with strict authentication
   Future<bool> login({
     required String email,
     required String password,
@@ -153,31 +183,62 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
 
     final normalizedEmail = email.trim().toLowerCase();
+    if (normalizedEmail.isEmpty) {
+      _isLoading = false;
+      _errorMessage = 'Please enter your email address.';
+      notifyListeners();
+      return false;
+    }
+    if (password.isEmpty) {
+      _isLoading = false;
+      _errorMessage = 'Please enter your password.';
+      notifyListeners();
+      return false;
+    }
+
     final demoMatch = demoUsers.where((u) => u.email.toLowerCase() == normalizedEmail);
 
     try {
       final auth = _firebaseAuth;
       if (auth == null) {
-        if (demoMatch.isNotEmpty && (password == 'pass123' || password == 'Password123!' || password.length >= 6)) {
-          _currentUser = demoMatch.first;
-          _isLoading = false;
-          _errorMessage = null;
-          notifyListeners();
-          return true;
+        // Offline / mock mode: authenticate credentials strictly
+        if (demoMatch.isNotEmpty) {
+          if (_isValidDemoPassword(password)) {
+            _currentUser = demoMatch.first;
+            _lastLoginTime = DateTime.now();
+            _isLoading = false;
+            _errorMessage = null;
+            notifyListeners();
+            return true;
+          } else {
+            _isLoading = false;
+            _errorMessage = 'Incorrect password. Please try again.';
+            notifyListeners();
+            return false;
+          }
         }
-        _currentUser = UserModel(
-          id: 'user_${DateTime.now().millisecondsSinceEpoch}',
-          email: normalizedEmail,
-          fullName: normalizedEmail.split('@').first,
-          phoneNumber: '',
-          role: normalizedEmail.contains('owner') || normalizedEmail.contains('seller')
-              ? UserRole.shopOwner
-              : UserRole.customer,
-        );
+
+        if (_registeredUsers.containsKey(normalizedEmail)) {
+          if (_registeredPasswords[normalizedEmail] == password) {
+            _currentUser = _registeredUsers[normalizedEmail];
+            _lastLoginTime = DateTime.now();
+            _isLoading = false;
+            _errorMessage = null;
+            notifyListeners();
+            return true;
+          } else {
+            _isLoading = false;
+            _errorMessage = 'Incorrect password. Please try again.';
+            notifyListeners();
+            return false;
+          }
+        }
+
+        // Neither a demo user nor an existing registered user
         _isLoading = false;
-        _errorMessage = null;
+        _errorMessage = 'No account found with this email. Please check your credentials or register.';
         notifyListeners();
-        return true;
+        return false;
       }
 
       final credential = await auth.signInWithEmailAndPassword(
@@ -188,31 +249,56 @@ class AuthService extends ChangeNotifier {
       final user = credential.user;
       if (user != null) {
         await _loadUserProfile(user.uid, fallbackEmail: user.email);
+        _lastLoginTime = DateTime.now();
         _isLoading = false;
         _errorMessage = null;
         notifyListeners();
         return true;
       }
     } on FirebaseAuthException catch (e) {
-      // If user not found, try auto-provisioning seed credentials in Firebase Auth
-      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
-        final cred = await DatabaseSeeder.provisionSeedUserAuth(normalizedEmail, password);
-        if (cred?.user != null) {
-          await _loadUserProfile(cred!.user!.uid, fallbackEmail: cred.user!.email);
+      if (demoMatch.isNotEmpty) {
+        // Strictly check password for demo account
+        if (_isValidDemoPassword(password)) {
+          try {
+            final cred = await DatabaseSeeder.provisionSeedUserAuth(normalizedEmail, password);
+            if (cred?.user != null) {
+              await _loadUserProfile(cred!.user!.uid, fallbackEmail: cred.user!.email);
+              _lastLoginTime = DateTime.now();
+              _isLoading = false;
+              _errorMessage = null;
+              notifyListeners();
+              return true;
+            }
+          } catch (_) {}
+          _currentUser = demoMatch.first;
+          _lastLoginTime = DateTime.now();
           _isLoading = false;
           _errorMessage = null;
           notifyListeners();
           return true;
+        } else {
+          _isLoading = false;
+          _errorMessage = 'Incorrect password. Please try again.';
+          notifyListeners();
+          return false;
         }
       }
 
-      // Allow demo user login fallback for quick testing
-      if (demoMatch.isNotEmpty && (password == 'pass123' || password == 'Password123!' || password.length >= 6)) {
-        _currentUser = demoMatch.first;
-        _isLoading = false;
-        _errorMessage = null;
-        notifyListeners();
-        return true;
+      // Check if account was registered locally in this app session
+      if (_registeredUsers.containsKey(normalizedEmail)) {
+        if (_registeredPasswords[normalizedEmail] == password) {
+          _currentUser = _registeredUsers[normalizedEmail];
+          _lastLoginTime = DateTime.now();
+          _isLoading = false;
+          _errorMessage = null;
+          notifyListeners();
+          return true;
+        } else {
+          _isLoading = false;
+          _errorMessage = 'Incorrect password. Please try again.';
+          notifyListeners();
+          return false;
+        }
       }
 
       _isLoading = false;
@@ -220,8 +306,18 @@ class AuthService extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      if (demoMatch.isNotEmpty && (password == 'pass123' || password == 'Password123!' || password.length >= 6)) {
+      // Unexpected error or desktop platform fallback: strictly verify credentials
+      if (demoMatch.isNotEmpty && _isValidDemoPassword(password)) {
         _currentUser = demoMatch.first;
+        _lastLoginTime = DateTime.now();
+        _isLoading = false;
+        _errorMessage = null;
+        notifyListeners();
+        return true;
+      }
+      if (_registeredUsers.containsKey(normalizedEmail) && _registeredPasswords[normalizedEmail] == password) {
+        _currentUser = _registeredUsers[normalizedEmail];
+        _lastLoginTime = DateTime.now();
         _isLoading = false;
         _errorMessage = null;
         notifyListeners();
@@ -229,7 +325,7 @@ class AuthService extends ChangeNotifier {
       }
 
       _isLoading = false;
-      _errorMessage = 'Login failed: ${e.toString()}';
+      _errorMessage = 'Invalid email or password. Please try again.';
       notifyListeners();
       return false;
     }
@@ -270,6 +366,15 @@ class AuthService extends ChangeNotifier {
       }
     }
 
+    // Prevent duplicate registrations
+    if (demoUsers.any((u) => u.email.toLowerCase() == normalizedEmail) ||
+        _registeredUsers.containsKey(normalizedEmail)) {
+      _isLoading = false;
+      _errorMessage = 'An account already exists with this email address. Please login.';
+      notifyListeners();
+      return false;
+    }
+
     try {
       final auth = _firebaseAuth;
       final firestore = _firestore;
@@ -285,6 +390,8 @@ class AuthService extends ChangeNotifier {
           shopName: role == UserRole.shopOwner ? shopName?.trim() : null,
           shopAddress: role == UserRole.shopOwner ? shopAddress?.trim() : null,
         );
+        _registeredUsers[normalizedEmail] = newUser;
+        _registeredPasswords[normalizedEmail] = password;
         _currentUser = newUser;
         _isLoading = false;
         _errorMessage = null;
@@ -320,6 +427,8 @@ class AuthService extends ChangeNotifier {
         await firestore.collection('users').doc(user.uid).set(newUser.toMap());
       }
 
+      _registeredUsers[normalizedEmail] = newUser;
+      _registeredPasswords[normalizedEmail] = password;
       _currentUser = newUser;
       _isLoading = false;
       _errorMessage = null;
@@ -357,6 +466,7 @@ class AuthService extends ChangeNotifier {
     }
     _currentUser = null;
     _errorMessage = null;
+    _lastLoginTime = null;
     notifyListeners();
   }
 

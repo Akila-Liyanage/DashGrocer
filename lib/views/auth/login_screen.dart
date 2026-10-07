@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
@@ -22,16 +23,31 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController(text: 'customer@dashgrocer.com');
   final _passwordController = TextEditingController(text: 'Password123!');
+  final _passwordFocusNode = FocusNode();
   final _authService = AuthService();
 
   UserRole _selectedRole = UserRole.customer;
   bool _rememberMe = true;
   bool _obscurePassword = true;
+  bool _isCapsLockOn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _passwordFocusNode.onKeyEvent = (node, event) {
+      final caps = HardwareKeyboard.instance.lockModesEnabled.contains(KeyboardLockMode.capsLock);
+      if (caps != _isCapsLockOn) {
+        setState(() => _isCapsLockOn = caps);
+      }
+      return KeyEventResult.ignored;
+    };
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -40,20 +56,35 @@ class _LoginScreenState extends State<LoginScreen> {
       _selectedRole = role;
       if (role == UserRole.shopOwner) {
         _emailController.text = 'seller@dashgrocer.com';
+        _passwordController.text = 'Password123!';
+      } else if (role == UserRole.admin) {
+        _emailController.text = 'admin@dashgrocer.com';
+        _passwordController.text = 'Admin123!';
       } else {
         _emailController.text = 'customer@dashgrocer.com';
+        _passwordController.text = 'Password123!';
       }
-      _passwordController.text = 'Password123!';
     });
     _authService.clearError();
   }
 
   Future<void> _submit() async {
     if (_formKey.currentState?.validate() ?? false) {
-      await _authService.login(
+      final success = await _authService.login(
         email: _emailController.text,
         password: _passwordController.text,
       );
+      if (success && _rememberMe && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Login credentials saved for this device.'),
+            backgroundColor: AppColors.brandGreen,
+            duration: const Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
     }
   }
 
@@ -110,28 +141,33 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               // Bottom Sheet Card matching Figma LOGIN screen
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0x14000000),
-                      blurRadius: 24,
-                      offset: Offset(0, -6),
-                    ),
-                  ],
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+              Expanded(
+                flex: 7,
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x14000000),
+                        blurRadius: 24,
+                        offset: Offset(0, -6),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    child: SafeArea(
+                      top: false,
+                      child: Form(
+                        key: _formKey,
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                         // Title
                         Text(
                           'Welcome back !',
@@ -207,6 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Password Field
                         _buildTextField(
                           controller: _passwordController,
+                          focusNode: _passwordFocusNode,
                           hint: '••••••••',
                           icon: Icons.lock_outline_rounded,
                           obscureText: _obscurePassword,
@@ -224,6 +261,25 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
+
+                        if (_isCapsLockOn)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6, left: 4),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.keyboard_capslock_rounded, size: 14, color: Color(0xFFD97706)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Caps Lock is ON',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFFD97706),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
 
                         const SizedBox(height: 12),
 
@@ -282,6 +338,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.brandGreen,
+                              disabledBackgroundColor: AppColors.brandGreen.withValues(alpha: 0.6),
                               foregroundColor: Colors.white,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
@@ -327,6 +384,39 @@ class _LoginScreenState extends State<LoginScreen> {
                                       fontSize: 13,
                                       color: const Color(0xFF1E293B),
                                       fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        // Quick Demo Accounts Sheet Trigger
+                        Center(
+                          child: InkWell(
+                            onTap: _showDemoAccountsSheet,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.flash_on_rounded, size: 14, color: Color(0xFFF59E0B)),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '1-Tap Demo Credentials',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF475569),
                                     ),
                                   ),
                                 ],
@@ -392,13 +482,16 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-                      ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ],
-          );
+            ),
+          ],
+        );
         },
       ),
     );
@@ -434,6 +527,13 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           Expanded(
             child: _buildRolePill(
+              title: 'Customer',
+              isSelected: _selectedRole == UserRole.customer,
+              onTap: () => _onRoleChanged(UserRole.customer),
+            ),
+          ),
+          Expanded(
+            child: _buildRolePill(
               title: 'Shop Owner',
               isSelected: _selectedRole == UserRole.shopOwner,
               onTap: () => _onRoleChanged(UserRole.shopOwner),
@@ -441,9 +541,9 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           Expanded(
             child: _buildRolePill(
-              title: 'Customer',
-              isSelected: _selectedRole == UserRole.customer,
-              onTap: () => _onRoleChanged(UserRole.customer),
+              title: 'Admin',
+              isSelected: _selectedRole == UserRole.admin,
+              onTap: () => _onRoleChanged(UserRole.admin),
             ),
           ),
         ],
@@ -496,6 +596,7 @@ class _LoginScreenState extends State<LoginScreen> {
     Widget? suffixIcon,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
+    FocusNode? focusNode,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -505,9 +606,15 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       child: TextFormField(
         controller: controller,
+        focusNode: focusNode,
         obscureText: obscureText,
         keyboardType: keyboardType,
         validator: validator,
+        onChanged: (_) {
+          if (_authService.errorMessage != null) {
+            _authService.clearError();
+          }
+        },
         style: GoogleFonts.plusJakartaSans(
           fontSize: 13,
           color: const Color(0xFF1E293B),
@@ -523,6 +630,162 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  void _showDemoAccountsSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Quick Demo Accounts',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Tap any role below to autofill verified test credentials:',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(height: 14),
+              _buildDemoAccountCard(
+                ctx: ctx,
+                title: 'Customer (Kasun Perera)',
+                email: 'customer@dashgrocer.com',
+                pass: 'Password123!',
+                role: UserRole.customer,
+                icon: Icons.person_rounded,
+                color: const Color(0xFF10B981),
+              ),
+              const SizedBox(height: 8),
+              _buildDemoAccountCard(
+                ctx: ctx,
+                title: 'Shop Owner (Sunil Weerasinghe)',
+                email: 'seller@dashgrocer.com',
+                pass: 'Password123!',
+                role: UserRole.shopOwner,
+                icon: Icons.storefront_rounded,
+                color: const Color(0xFF3B82F4),
+              ),
+              const SizedBox(height: 8),
+              _buildDemoAccountCard(
+                ctx: ctx,
+                title: 'Platform Admin',
+                email: 'admin@dashgrocer.com',
+                pass: 'Admin123!',
+                role: UserRole.admin,
+                icon: Icons.admin_panel_settings_rounded,
+                color: const Color(0xFF8B5CF6),
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDemoAccountCard({
+    required BuildContext ctx,
+    required String title,
+    required String email,
+    required String pass,
+    required UserRole role,
+    required IconData icon,
+    required Color color,
+  }) {
+    return InkWell(
+      onTap: () {
+        Navigator.pop(ctx);
+        setState(() {
+          _selectedRole = role;
+          _emailController.text = email;
+          _passwordController.text = pass;
+        });
+        _authService.clearError();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Loaded $title credentials'),
+            backgroundColor: AppColors.brandGreen,
+            duration: const Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.25)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                  Text(
+                    email,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFF94A3B8)),
+          ],
         ),
       ),
     );

@@ -6,9 +6,11 @@ import '../../services/auth_service.dart';
 import '../../services/grocery_service.dart';
 import 'category_products_screen.dart';
 import 'search_screen.dart';
+import 'store_details_screen.dart';
+import 'track_order_screen.dart';
 import 'widgets/grocery_product_card.dart';
 
-class CustomerHomeTab extends StatelessWidget {
+class CustomerHomeTab extends StatefulWidget {
   final UserModel? user;
 
   const CustomerHomeTab({
@@ -16,34 +18,69 @@ class CustomerHomeTab extends StatelessWidget {
     this.user,
   });
 
+  @override
+  State<CustomerHomeTab> createState() => _CustomerHomeTabState();
+}
+
+class _CustomerHomeTabState extends State<CustomerHomeTab> {
+  String _selectedCategory = 'All Items';
+  String _selectedDietary = 'All';
+
   static const List<Map<String, dynamic>> _popularShops = [
     {
+      'id': 'shop_greenleaf',
       'name': 'GreenLeaf Fresh Mart',
+      'ownerName': 'Sunil Weerasinghe',
       'distance': '1.2 km',
       'pickupTime': 'Ready in 20m',
       'rating': '4.8',
+      'reviewsCount': '120+ reviews',
+      'address': 'No. 42, High Level Road, Maharagama',
+      'phone': '+94 71 987 6543',
+      'hours': 'Open Daily: 7:30 AM – 9:30 PM (Closes at 10:00 PM on weekends)',
+      'curbside': 'Instant counter pickup with zero waiting queue',
+      'description': 'Specializing in fresh highland vegetables, crisp greens, and farm produce with curbside pickup.',
+      'badge': 'Verified Partner',
     },
     {
+      'id': 'shop_dailysuperette',
       'name': 'Daily Superette',
+      'ownerName': 'Kamal Perera',
       'distance': '850 m',
       'pickupTime': 'Ready in 15m',
       'rating': '4.9',
+      'reviewsCount': '95+ reviews',
+      'address': 'No. 18, Station Road, Maharagama',
+      'phone': '+94 77 234 5678',
+      'hours': 'Open Daily: 7:00 AM – 10:00 PM',
+      'curbside': 'Express counter pickup at entrance rack',
+      'description': 'Your friendly neighborhood grocery for dairy, farm eggs, bread, dry rations, and premium Ceylon tea.',
+      'badge': 'Top Rated',
     },
   ];
-
-
 
   @override
   Widget build(BuildContext context) {
     final groceryService = GroceryService();
     final authService = AuthService();
-    final userName = user?.fullName.split(' ').first ?? 'Kasun';
+    final userName = widget.user?.fullName.split(' ').first ?? 'Kasun';
 
     return ListenableBuilder(
       listenable: groceryService,
       builder: (context, _) {
         final categories = groceryService.categories;
-        final featuredProducts = groceryService.allItems.take(6).toList();
+        final allItems = groceryService.allItems;
+        var featuredProducts = _selectedCategory == 'All Items' || _selectedCategory == 'All'
+            ? allItems
+            : allItems
+                .where((e) => e.category.toLowerCase().contains(_selectedCategory.replaceAll('Fresh ', '').toLowerCase()))
+                .toList();
+
+        if (_selectedDietary == 'Discounted') {
+          featuredProducts = featuredProducts.where((e) => e.discountPercent != null && e.discountPercent! > 0).toList();
+        } else if (_selectedDietary == 'New') {
+          featuredProducts = featuredProducts.where((e) => e.isNew).toList();
+        }
 
         return Scaffold(
           backgroundColor: const Color(0xFFFBFBFB),
@@ -102,6 +139,70 @@ class CustomerHomeTab extends StatelessWidget {
                     ],
                   ),
 
+                  // Active Pickup Order Quick Status Alert
+                  if (groceryService.customerOrders.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => TrackOrderScreen(
+                                orderId: groceryService.customerOrders.first.id,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFBBF7D0)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.brandGreen,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 15),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Active Pickup: ${groceryService.customerOrders.first.id}',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF166534),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Status: ${groceryService.customerOrders.first.status} • Tap to track live',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 11,
+                                        color: const Color(0xFF15803D),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF166534), size: 12),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
                   const SizedBox(height: 14),
 
                   // Search Bar Header (Figma)
@@ -120,6 +221,7 @@ class CustomerHomeTab extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFFF4F5F7),
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
                       ),
                       child: Row(
                         children: [
@@ -230,6 +332,30 @@ class CustomerHomeTab extends StatelessWidget {
                                     height: 1.25,
                                   ),
                                 ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.timer_outlined, color: Colors.white, size: 12),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Ends in 04h 32m',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -300,6 +426,13 @@ class CustomerHomeTab extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: cat.bgColor,
                                   shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: cat.iconColor.withValues(alpha: 0.12),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
                                 child: Center(
                                   child: Icon(
@@ -363,6 +496,57 @@ class CustomerHomeTab extends StatelessWidget {
                     ],
                   ),
 
+                  const SizedBox(height: 12),
+
+                  // Category quick filter pills row
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      children: ['All Items', 'Fresh Veggies', 'Fresh Fruits'].map((cat) {
+                        final isSelected = _selectedCategory == cat;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () => setState(() => _selectedCategory = cat),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppColors.brandGreen : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                cat,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  color: isSelected ? Colors.white : const Color(0xFF64748B),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Dietary & Savings Filter Chips
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      children: [
+                        _buildDietaryFilterChip('All', '🌟 All Fresh'),
+                        _buildDietaryFilterChip('Discounted', '🏷️ Big Savings'),
+                        _buildDietaryFilterChip('New', '✨ New Arrivals'),
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 14),
 
                   // Featured Products Grid (2 columns matching Figma design)
@@ -396,12 +580,26 @@ class CustomerHomeTab extends StatelessWidget {
                           color: const Color(0xFF1A1A1A),
                         ),
                       ),
-                      Text(
-                        'See All',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.brandGreen,
+                      InkWell(
+                        borderRadius: BorderRadius.circular(6),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StoreDetailsScreen(shop: _popularShops.first),
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          child: Text(
+                            'See All',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.brandGreen,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -419,6 +617,36 @@ class CustomerHomeTab extends StatelessWidget {
       },
     );
   }
+
+  Widget _buildDietaryFilterChip(String value, String label) {
+    final isSelected = _selectedDietary == value;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => setState(() => _selectedDietary = value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFFE8F6EB) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? AppColors.brandGreen : const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 11.5,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              color: isSelected ? AppColors.brandGreenDark : const Color(0xFF64748B),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _NearbyShopCard extends StatelessWidget {
@@ -426,82 +654,145 @@ class _NearbyShopCard extends StatelessWidget {
 
   const _NearbyShopCard({required this.shop});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF1F2F4)),
+  void _showShopDetails(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AppColors.brandGreenSoft,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.storefront_rounded,
-              color: AppColors.brandGreen,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      shop['name'] as String,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1A1A1A),
-                      ),
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE2E8F0),
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    Row(
-                      children: [
-                        const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 15),
-                        const SizedBox(width: 2),
-                        Text(
-                          shop['rating'] as String,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1A1A1A),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.brandGreenSoft,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.storefront_rounded, color: AppColors.brandGreen, size: 26),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            shop['name'] as String,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF0F172A),
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 16),
+                              const SizedBox(width: 3),
+                              Text(
+                                '${shop['rating']} (120+ reviews)',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF475569),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                const SizedBox(height: 14),
+                _buildInfoRow(
+                  Icons.location_on_outlined,
+                  'Distance & Pickup',
+                  '${shop['distance']} away • ${shop['pickupTime']} ready',
+                ),
+                const SizedBox(height: 10),
+                _buildInfoRow(
+                  Icons.access_time_rounded,
+                  'Store Hours',
+                  shop['hours'] as String? ?? 'Open Daily: 7:30 AM – 9:30 PM (Closes at 10:00 PM on weekends)',
+                ),
+                const SizedBox(height: 10),
+                _buildInfoRow(
+                  Icons.check_circle_outline_rounded,
+                  'Curbside Pickup',
+                  shop['curbside'] as String? ?? 'Instant counter pickup with zero waiting queue',
+                ),
+                const SizedBox(height: 20),
                 Row(
                   children: [
-                    Text(
-                      shop['distance'] as String,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        color: const Color(0xFF868889),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          final phone = shop['phone'] as String? ?? '+94 71 987 6543';
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Calling ${shop['name']} ($phone)...'),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.phone_outlined, size: 16, color: AppColors.brandGreen),
+                        label: Text(
+                          'Call Store',
+                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: AppColors.brandGreen),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.brandGreen),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    const Text('•', style: TextStyle(color: Color(0xFF868889), fontSize: 10)),
-                    const SizedBox(width: 6),
-                    Text(
-                      shop['pickupTime'] as String,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.brandGreen,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StoreDetailsScreen(shop: shop),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.brandGreen,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text(
+                          'Browse Stock',
+                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white),
+                        ),
                       ),
                     ),
                   ],
@@ -509,7 +800,139 @@ class _NearbyShopCard extends StatelessWidget {
               ],
             ),
           ),
-        ],
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String title, String subtitle) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF64748B)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1E293B),
+                ),
+              ),
+              Text(
+                subtitle,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11.5,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFF1F2F4)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => _showShopDetails(context),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.brandGreenSoft,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.storefront_rounded,
+                    color: AppColors.brandGreen,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            shop['name'] as String,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1A1A1A),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 15),
+                              const SizedBox(width: 2),
+                              Text(
+                                shop['rating'] as String,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF1A1A1A),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          Text(
+                            shop['distance'] as String,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              color: const Color(0xFF868889),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text('•', style: TextStyle(color: Color(0xFF868889), fontSize: 10)),
+                          const SizedBox(width: 6),
+                          Text(
+                            shop['pickupTime'] as String,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.brandGreen,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF94A3B8)),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

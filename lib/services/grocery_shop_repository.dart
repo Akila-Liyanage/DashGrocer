@@ -26,14 +26,12 @@ import 'shop_repository.dart';
 /// (Firestore when Firebase is running, in memory otherwise).
 class GroceryShopRepository implements ShopRepository {
   GroceryShopRepository({
-    required ShopRepository profiles,
+    required this._profiles,
     required this.sellerId,
     required this.sellerName,
-    required OwnerProfile fallbackOwner,
+    required this._fallbackOwner,
     GroceryService? service,
-  })  : _profiles = profiles,
-        _fallbackOwner = fallbackOwner,
-        _service = service ?? GroceryService();
+  }) : _service = service ?? GroceryService();
 
   final GroceryService _service;
   final ShopRepository _profiles;
@@ -140,8 +138,8 @@ class GroceryShopRepository implements ShopRepository {
   /// "Today, 4.00 PM" or "Tomorrow, 9:00 AM - 9:30 AM" -> a real date and
   /// time, counted from the day the order was placed.
   static DateTime _parsePickup(String slot, DateTime createdAt) {
-    final match =
-        RegExp(r'(\d{1,2})[.:](\d{2})\s*([AaPp][Mm])').firstMatch(slot);
+    final match = RegExp(r'(\d{1,2})[.:](\d{2})\s*([AaPp][Mm])')
+        .firstMatch(slot);
     if (match == null) return createdAt.add(const Duration(hours: 1));
 
     var hour = int.parse(match.group(1)!) % 12;
@@ -303,7 +301,11 @@ class GroceryShopRepository implements ShopRepository {
           imageUrl: product.imageUrl ?? '',
           isNew: true,
           sellerId: sellerId,
-          sellerName: sellerName,
+          sellerName: _fallbackOwner.fullName.isNotEmpty
+              ? _fallbackOwner.fullName
+              : sellerName,
+          sellerShopName: sellerName,
+          sellerPhone: _fallbackOwner.phoneNumber,
           stockQuantity: product.stock,
         ),
       );

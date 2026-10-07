@@ -5,6 +5,7 @@ import '../../models/seller_order_model.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/grocery_service.dart';
+import 'my_cards_screen.dart';
 import 'order_history_screen.dart';
 import 'track_order_screen.dart';
 
@@ -881,11 +882,9 @@ class _ProfileTabState extends State<ProfileTab> {
           // Payment Methods
           InkWell(
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Payment Methods: Cash on Pickup, Visa & Mastercard enabled', style: GoogleFonts.plusJakartaSans()),
-                  behavior: SnackBarBehavior.floating,
-                ),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MyCardsScreen()),
               );
             },
             child: Padding(

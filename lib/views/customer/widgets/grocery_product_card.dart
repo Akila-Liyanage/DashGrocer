@@ -21,35 +21,41 @@ class GroceryProductCard extends StatelessWidget {
     final groceryService = GroceryService();
     final cartQty = groceryService.getQuantity(item.id);
 
-    return GestureDetector(
-      onTap: onTap ??
-          () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ProductDetailScreen(item: item),
-              ),
-            );
-          },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFFF1F2F4),
-            width: 1.0,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+    final cardOnTap = onTap ??
+        () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProductDetailScreen(item: item),
             ),
-          ],
+          );
+        };
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFF1F2F4),
+          width: 1.0,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: cardOnTap,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
             // Top Row: Badges (NEW / -16%) and Heart Icon
             Padding(
               padding: const EdgeInsets.only(left: 8, right: 8, top: 8),
@@ -163,13 +169,34 @@ class GroceryProductCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    item.unit,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF868889),
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        item.unit,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF868889),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F6EB),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'In Stock',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.brandGreenDark,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -265,6 +292,7 @@ class GroceryProductCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

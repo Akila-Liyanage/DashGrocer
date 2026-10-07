@@ -123,12 +123,21 @@ class _DynamicTextFieldState extends State<DynamicTextField> {
               ),
               suffixIcon: widget.isPassword
                   ? IconButton(
-                      icon: Icon(
-                        _obscureText
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        size: 20,
-                        color: AppColors.textSecondary,
+                      tooltip: _obscureText ? 'Show password' : 'Hide password',
+                      icon: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        transitionBuilder: (child, anim) => ScaleTransition(
+                          scale: anim,
+                          child: FadeTransition(opacity: anim, child: child),
+                        ),
+                        child: Icon(
+                          _obscureText
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          key: ValueKey<bool>(_obscureText),
+                          size: 20,
+                          color: _obscureText ? AppColors.textSecondary : AppColors.brandGreen,
+                        ),
                       ),
                       onPressed: () {
                         setState(() {

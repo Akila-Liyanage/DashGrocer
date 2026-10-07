@@ -51,10 +51,15 @@ class GroceryItem {
     this.stockQuantity = 50,
   });
 
-  String get displaySellerShopName =>
-      (sellerShopName != null && sellerShopName!.trim().isNotEmpty)
-          ? sellerShopName!
-          : 'GreenLeaf Fresh Mart';
+  String get displaySellerShopName {
+    if (sellerShopName != null && sellerShopName!.trim().isNotEmpty) {
+      return sellerShopName!;
+    }
+    if (sellerName != null && sellerName!.trim().isNotEmpty) {
+      return sellerName!;
+    }
+    return 'GreenLeaf Fresh Mart';
+  }
 
   String get displaySellerName =>
       (sellerName != null && sellerName!.trim().isNotEmpty)

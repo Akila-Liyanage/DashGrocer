@@ -14,13 +14,14 @@ class InfoCard extends StatelessWidget {
   });
 
   /// Standard "could not load" card.
-  InfoCard.loadError({super.key, required String what})
-      : icon = Icons.cloud_off_outlined,
-        iconColor = ShopColors.error,
-        title = 'Could not load $what',
-        message = 'Check your internet connection. If this Firebase project '
-            'is new, create the Firestore database in the Firebase console.',
-        action = null;
+  const InfoCard.loadError({super.key, required String what})
+    : icon = Icons.cloud_off_outlined,
+      iconColor = ShopColors.error,
+      title = 'Could not load $what',
+      message =
+          'Check your internet connection. If this Firebase project '
+          'is new, create the Firestore database in the Firebase console.',
+      action = null;
 
   final IconData icon;
   final Color iconColor;
@@ -41,10 +42,7 @@ class InfoCard extends StatelessWidget {
           Text(title, style: ShopText.subtitle, textAlign: TextAlign.center),
           const SizedBox(height: 2),
           Text(message, style: ShopText.body, textAlign: TextAlign.center),
-          if (action != null) ...[
-            const SizedBox(height: 4),
-            action!,
-          ],
+          if (action != null) ...[const SizedBox(height: 4), action!],
         ],
       ),
     );

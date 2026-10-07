@@ -65,6 +65,15 @@ void main() {
       await tester.tap(find.text('Continue to Payment'));
       await tester.pumpAndSettle();
 
+      // Payment Method screen: choose Pay at Store and place the order
+      expect(find.text('Payment Method'), findsOneWidget);
+      expect(find.text('Pay at Store'), findsOneWidget);
+      expect(find.text('Credit Card'), findsOneWidget);
+      await tester.tap(find.text('Pay at Store'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Place Order'));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+
       // Verify navigation to Order Confirmation screen
       expect(find.text('Order Confirmed'), findsOneWidget);
       expect(find.text('Thank You!'), findsOneWidget);
