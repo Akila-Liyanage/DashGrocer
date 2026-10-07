@@ -23,9 +23,6 @@ class CustomerHomeTab extends StatefulWidget {
 }
 
 class _CustomerHomeTabState extends State<CustomerHomeTab> {
-  String _selectedCategory = 'All Items';
-  String _selectedDietary = 'All';
-
   static const List<Map<String, dynamic>> _popularShops = [
     {
       'id': 'shop_greenleaf',
@@ -70,17 +67,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
       builder: (context, _) {
         final categories = groceryService.categories;
         final allItems = groceryService.allItems;
-        var featuredProducts = _selectedCategory == 'All Items' || _selectedCategory == 'All'
-            ? allItems
-            : allItems
-                .where((e) => e.category.toLowerCase().contains(_selectedCategory.replaceAll('Fresh ', '').toLowerCase()))
-                .toList();
-
-        if (_selectedDietary == 'Discounted') {
-          featuredProducts = featuredProducts.where((e) => e.discountPercent != null && e.discountPercent! > 0).toList();
-        } else if (_selectedDietary == 'New') {
-          featuredProducts = featuredProducts.where((e) => e.isNew).toList();
-        }
+        final featuredProducts = allItems;
 
         return Scaffold(
           backgroundColor: const Color(0xFFFBFBFB),
@@ -139,69 +126,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                     ],
                   ),
 
-                  // Active Pickup Order Quick Status Alert
-                  if (groceryService.customerOrders.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => TrackOrderScreen(
-                                orderId: groceryService.customerOrders.first.id,
-                              ),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF0FDF4),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFBBF7D0)),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 28,
-                                height: 28,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.brandGreen,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 15),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Active Pickup: ${groceryService.customerOrders.first.id}',
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF166534),
-                                      ),
-                                    ),
-                                    Text(
-                                      'Status: ${groceryService.customerOrders.first.status} • Tap to track live',
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 11,
-                                        color: const Color(0xFF15803D),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF166534), size: 12),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+
 
                   const SizedBox(height: 14),
 
@@ -496,57 +421,6 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                     ],
                   ),
 
-                  const SizedBox(height: 12),
-
-                  // Category quick filter pills row
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: ['All Items', 'Fresh Veggies', 'Fresh Fruits'].map((cat) {
-                        final isSelected = _selectedCategory == cat;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(20),
-                            onTap: () => setState(() => _selectedCategory = cat),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                              decoration: BoxDecoration(
-                                color: isSelected ? AppColors.brandGreen : const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                cat,
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 12,
-                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                  color: isSelected ? Colors.white : const Color(0xFF64748B),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Dietary & Savings Filter Chips
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: [
-                        _buildDietaryFilterChip('All', '🌟 All Fresh'),
-                        _buildDietaryFilterChip('Discounted', '🏷️ Big Savings'),
-                        _buildDietaryFilterChip('New', '✨ New Arrivals'),
-                      ],
-                    ),
-                  ),
-
                   const SizedBox(height: 14),
 
                   // Featured Products Grid (2 columns matching Figma design)
@@ -618,35 +492,6 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
     );
   }
 
-  Widget _buildDietaryFilterChip(String value, String label) {
-    final isSelected = _selectedDietary == value;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => setState(() => _selectedDietary = value),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFE8F6EB) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isSelected ? AppColors.brandGreen : const Color(0xFFE2E8F0),
-            ),
-          ),
-          child: Text(
-            label,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 11.5,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? AppColors.brandGreenDark : const Color(0xFF64748B),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _NearbyShopCard extends StatelessWidget {
