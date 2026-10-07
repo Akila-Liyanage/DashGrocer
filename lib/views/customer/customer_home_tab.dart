@@ -126,69 +126,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                     ],
                   ),
 
-                  // Active Pickup Order Quick Status Alert
-                  if (groceryService.customerOrders.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => TrackOrderScreen(
-                                orderId: groceryService.customerOrders.first.id,
-                              ),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF0FDF4),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFBBF7D0)),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 28,
-                                height: 28,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.brandGreen,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 15),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Active Pickup: ${groceryService.customerOrders.first.id}',
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF166534),
-                                      ),
-                                    ),
-                                    Text(
-                                      'Status: ${groceryService.customerOrders.first.status} • Tap to track live',
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 11,
-                                        color: const Color(0xFF15803D),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF166534), size: 12),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+
 
                   const SizedBox(height: 14),
 
