@@ -205,6 +205,10 @@ class GroceryService extends ChangeNotifier {
 
   final List<StoreOrder> _sellerOrders = [];
   final List<SellerNotification> _sellerNotifications = [];
+  final List<CustomerNotification> _customerNotifications = [];
+
+  List<CustomerNotification> get customerNotifications => List.unmodifiable(_customerNotifications);
+  int get unreadCustomerNotificationsCount => _customerNotifications.where((n) => !n.isRead).length;
 
   List<GroceryCategory> get categories => List.unmodifiable(_categories);
   List<GroceryItem> get allItems => List.unmodifiable(_items);
@@ -698,6 +702,18 @@ class GroceryService extends ChangeNotifier {
     );
 
     _sellerNotifications.insert(0, notification);
+
+    // Confirmation notification for the customer
+    _customerNotifications.insert(
+      0,
+      CustomerNotification(
+        id: 'cnotif_${DateTime.now().microsecondsSinceEpoch}',
+        title: 'Order Placed: $generatedId',
+        message: 'Your order at $shopName was placed successfully. Pickup: $pickupSlot. Total: Rs. ${totalAmount.toStringAsFixed(0)}.',
+        time: DateTime.now(),
+        orderId: generatedId,
+      ),
+    );
     clearCart();
     notifyListeners();
     return generatedId;
@@ -750,6 +766,13 @@ class GroceryService extends ChangeNotifier {
         });
       }
     }
+  }
+
+  void markCustomerNotificationsRead() {
+    for (int i = 0; i < _customerNotifications.length; i++) {
+      _customerNotifications[i] = _customerNotifications[i].copyWith(isRead: true);
+    }
+    notifyListeners();
   }
 
   void markNotificationsRead() {
