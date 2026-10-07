@@ -5,13 +5,11 @@ import '../../core/theme/app_colors.dart';
 class WelcomeScreen extends StatelessWidget {
   final VoidCallback onGoToLogin;
   final VoidCallback onGoToRegister;
-  final VoidCallback onGoogleSignIn;
 
   const WelcomeScreen({
     super.key,
     required this.onGoToLogin,
     required this.onGoToRegister,
-    required this.onGoogleSignIn,
   });
 
   @override
@@ -185,57 +183,6 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 18),
-
-                  // Or continue with Google (Optional at bottom)
-                  Row(
-                    children: [
-                      const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Text(
-                          'Or optional sign in',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 11,
-                            color: const Color(0xFF94A3B8),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Optional Google Button
-                  InkWell(
-                    onTap: onGoogleSignIn,
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildGoogleGLogo(),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Continue with Google',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF475569),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -245,23 +192,4 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGoogleGLogo() {
-    return Container(
-      width: 22,
-      height: 22,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Text(
-          'G',
-          style: GoogleFonts.roboto(
-            fontSize: 17,
-            fontWeight: FontWeight.w900,
-            color: const Color(0xFF4285F4),
-          ),
-        ),
-      ),
-    );
-  }
 }
