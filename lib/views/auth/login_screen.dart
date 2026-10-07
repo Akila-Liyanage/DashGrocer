@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_signin_button/flutter_signin_button.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
@@ -427,41 +425,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 16),
-
-                        // Optional Google Sign in at bottom
-                        Row(
-                          children: [
-                            const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
-                              child: Text(
-                                'Or continue with',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 11,
-                                  color: const Color(0xFF94A3B8),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
-                          ],
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        Center(
-                          child: SizedBox(
-                            height: 44,
-                            child: SignInButton(
-                              Buttons.Google,
-                              text: 'Continue with Google',
-                              onPressed: () async {
-                                await _authService.signInWithGoogle();
-                              },
-                            ),
-                          ),
-                        ),
                           ],
                         ),
                       ),
