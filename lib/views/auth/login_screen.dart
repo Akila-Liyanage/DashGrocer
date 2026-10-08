@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_signin_button/flutter_signin_button.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
@@ -417,12 +415,34 @@ class _LoginScreenState extends State<LoginScreen> {
                         Center(
                           child: SizedBox(
                             height: 44,
-                            child: SignInButton(
-                              Buttons.Google,
-                              text: 'Continue with Google',
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF1E293B),
+                                side: const BorderSide(color: Color(0xFFE2E8F0)),
+                                padding: const EdgeInsets.symmetric(horizontal: 18),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                               onPressed: () async {
                                 await _authService.signInWithGoogle();
                               },
+                              icon: Text(
+                                'G',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF4285F4),
+                                ),
+                              ),
+                              label: Text(
+                                'Continue with Google',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
                           ),
                         ),

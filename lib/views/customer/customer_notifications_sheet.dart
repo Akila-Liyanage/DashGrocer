@@ -71,12 +71,13 @@ class CustomerNotificationsSheet extends StatelessWidget {
                         },
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                        child: Text(
-                          'Mark read',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.brandGreen,
+                          child: Text(
+                            'Mark read',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.brandGreen,
+                            ),
                           ),
                         ),
                       ),
