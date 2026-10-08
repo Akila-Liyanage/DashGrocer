@@ -9,7 +9,7 @@ import '../../models/shop_order.dart';
 import '../../services/chat_service.dart';
 import '../../services/shop_repository.dart';
 import '../../services/shop_store.dart';
-import 'chat/shop_owner_chat_screen.dart';
+import 'chat/shop_owner_conversations_screen.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'notifications/notifications_panel.dart';
 import 'orders/order_details_screen.dart';
@@ -140,7 +140,7 @@ class _ShopOwnerShellState extends State<ShopOwnerShell> {
   void _openChat() {
     Navigator.of(context).push(
       shopRoute<void>(
-        (context) => const ShopOwnerChatScreen(),
+        (context) => const ShopOwnerConversationsScreen(),
       ),
     );
   }

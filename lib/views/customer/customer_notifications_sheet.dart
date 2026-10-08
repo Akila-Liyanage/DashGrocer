@@ -51,7 +51,11 @@ class CustomerNotificationsSheet extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.notifications_active_rounded, color: AppColors.brandGreen, size: 22),
+                        const Icon(
+                          Icons.notifications_active_rounded,
+                          color: AppColors.brandGreen,
+                          size: 22,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Notifications',
@@ -113,98 +117,98 @@ class CustomerNotificationsSheet extends StatelessWidget {
                     ),
                   )
                 else
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: notifications.length,
-                    separatorBuilder: (_, __) => const Divider(
-                      color: Color(0xFFF1F5F9),
-                      height: 18,
-                      thickness: 1,
-                    ),
-                    itemBuilder: (context, index) {
-                      final notif = notifications[index];
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(10),
-                        onTap: () {
-                          if (notif.orderId != null) {
-                            Navigator.pop(context);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => TrackOrderScreen(orderId: notif.orderId!),
-                              ),
-                            );
-                          }
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 3),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Green check circle leading icon
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFE8F6EB),
-                                  shape: BoxShape.circle,
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: notifications.length,
+                      separatorBuilder: (_, _) => const Divider(
+                        color: Color(0xFFF1F5F9),
+                        height: 18,
+                        thickness: 1,
+                      ),
+                      itemBuilder: (context, index) {
+                        final notif = notifications[index];
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () {
+                            if (notif.orderId != null) {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => TrackOrderScreen(orderId: notif.orderId!),
                                 ),
-                                child: const Icon(
-                                  Icons.check_circle_rounded,
-                                  color: AppColors.brandGreen,
-                                  size: 19,
+                              );
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFE8F6EB),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.check_circle_rounded,
+                                    color: AppColors.brandGreen,
+                                    size: 19,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            notif.title,
-                                            style: GoogleFonts.plusJakartaSans(
-                                              fontSize: 13.5,
-                                              fontWeight: FontWeight.w700,
-                                              color: notif.isRead
-                                                  ? const Color(0xFF475569)
-                                                  : const Color(0xFF0F172A),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              notif.title,
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 13.5,
+                                                fontWeight: FontWeight.w700,
+                                                color: notif.isRead
+                                                    ? const Color(0xFF475569)
+                                                    : const Color(0xFF0F172A),
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          notif.timeAgo,
-                                          style: GoogleFonts.plusJakartaSans(
-                                            fontSize: 11.5,
-                                            fontWeight: FontWeight.w500,
-                                            color: const Color(0xFF94A3B8),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            notif.timeAgo,
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w500,
+                                              color: const Color(0xFF94A3B8),
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      notif.message,
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 12,
-                                        height: 1.35,
-                                        color: const Color(0xFF64748B),
+                                        ],
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        notif.message,
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 12,
+                                          height: 1.35,
+                                          color: const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
               ],
             ),

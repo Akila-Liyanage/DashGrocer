@@ -8,7 +8,8 @@ import '../../services/chat_service.dart';
 import '../../services/grocery_service.dart';
 import '../common/app_image_view.dart';
 import 'add_product_screen.dart';
-import 'chat/shop_owner_chat_screen.dart';
+import 'chat/shop_owner_conversations_screen.dart';
+import 'dashboard/widgets/customer_inquiries_section.dart';
 import 'seller_notifications_sheet.dart';
 
 class ShopOwnerDashboard extends StatefulWidget {
@@ -289,6 +290,11 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
             ),
           ],
         ),
+
+        const SizedBox(height: 20),
+
+        // ─── Customer Inquiries Strip ───
+        const CustomerInquiriesSection(),
 
         const SizedBox(height: 20),
 
@@ -1311,7 +1317,7 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const ShopOwnerChatScreen(),
+                          builder: (_) => const ShopOwnerConversationsScreen(),
                         ),
                       );
                     },

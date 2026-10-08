@@ -144,6 +144,7 @@ class OrderActionCard extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => ShopOwnerChatScreen(
+                                  customerId: order.customerId,
                                   customerName: order.customerName,
                                   customerPhone: order.customerPhone,
                                   orderId: '#${order.orderNumber}',

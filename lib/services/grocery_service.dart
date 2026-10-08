@@ -215,7 +215,6 @@ class GroceryService extends ChangeNotifier {
   final List<StoreOrder> _sellerOrders = [];
   final List<SellerNotification> _sellerNotifications = [];
   final List<CustomerNotification> _customerNotifications = [];
-
   List<CustomerNotification> get customerNotifications => List.unmodifiable(_customerNotifications);
   int get unreadCustomerNotificationsCount => _customerNotifications.where((n) => !n.isRead).length;
 

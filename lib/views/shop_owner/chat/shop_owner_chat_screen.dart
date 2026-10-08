@@ -5,8 +5,10 @@ import '../../../core/theme/shop_owner_theme.dart';
 import '../../../models/chat_message_model.dart';
 import '../../../services/chat_service.dart';
 import '../../customer/seller_chat_screen.dart';
+import 'shop_owner_conversations_screen.dart';
 
 class ShopOwnerChatScreen extends StatefulWidget {
+  final String? customerId;
   final String customerName;
   final String customerPhone;
   final String? orderId;
@@ -16,6 +18,7 @@ class ShopOwnerChatScreen extends StatefulWidget {
 
   const ShopOwnerChatScreen({
     super.key,
+    this.customerId,
     this.customerName = 'Kasun Perera',
     this.customerPhone = '+94 77 123 4567',
     this.orderId = '#FP-2028-0142',
@@ -41,19 +44,42 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
     '🙏 Thank you! See you at our store pickup.',
   ];
 
+  String get _effectiveCustomerId {
+    if (widget.customerId != null && widget.customerId!.trim().isNotEmpty) {
+      return widget.customerId!.trim();
+    }
+    // Match by customer name if available
+    final convs = ChatService().getCustomerConversations();
+    for (final c in convs) {
+      if (c.customerName.toLowerCase() == widget.customerName.toLowerCase()) {
+        return c.customerId;
+      }
+    }
+    return 'cust_kasun';
+  }
+
+  String get _customerInitials {
+    final parts = widget.customerName.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts[0].isEmpty) return 'KP';
+    if (parts.length == 1) {
+      return parts[0].substring(0, parts[0].length >= 2 ? 2 : 1).toUpperCase();
+    }
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+
   @override
   void initState() {
     super.initState();
     ChatService().addListener(_onChatUpdated);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ChatService().markAllAsReadBySeller();
+      ChatService().markCustomerMessagesAsReadBySeller(_effectiveCustomerId);
       _scrollToBottom();
     });
   }
 
   void _onChatUpdated() {
     if (!mounted) return;
-    ChatService().markAllAsReadBySeller();
+    ChatService().markCustomerMessagesAsReadBySeller(_effectiveCustomerId);
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
 
@@ -82,6 +108,9 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
 
     ChatService().sendSellerMessage(
       text: text,
+      customerId: _effectiveCustomerId,
+      customerName: widget.customerName,
+      customerPhone: widget.customerPhone,
       sellerName: 'Sunil Weerasinghe (GreenLeaf Mart)',
       orderId: widget.orderId,
     );
@@ -139,7 +168,7 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
               radius: 19,
               backgroundColor: const Color(0xFFE8F6EB),
               child: Text(
-                'KP',
+                _customerInitials,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -154,6 +183,8 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
                 children: [
                   Text(
                     widget.customerName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -188,6 +219,22 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'All Customer Inquiries',
+            icon: const Icon(
+              Icons.forum_outlined,
+              color: ShopColors.primary,
+              size: 22,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ShopOwnerConversationsScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Switch to Customer Chat',
             icon: const Icon(
@@ -293,7 +340,10 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
             child: ListenableBuilder(
               listenable: chatService,
               builder: (context, _) {
-                final messages = chatService.allMessages;
+                final messages = chatService.getMessagesForCustomer(
+                  _effectiveCustomerId,
+                  widget.customerName,
+                );
                 final isTyping = chatService.isCustomerTyping;
 
                 return ListView.builder(
@@ -419,10 +469,10 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isSeller) ...[
-            CircleAvatar(
+            const CircleAvatar(
               radius: 14,
-              backgroundColor: const Color(0xFFE2E8F0),
-              child: const Icon(
+              backgroundColor: Color(0xFFE2E8F0),
+              child: Icon(
                 Icons.person_rounded,
                 size: 16,
                 color: Color(0xFF64748B),
@@ -434,6 +484,19 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
             child: Column(
               crossAxisAlignment: isSeller ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
+                // Prominent Customer Name Header on incoming messages
+                if (!isSeller)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, bottom: 3),
+                    child: Text(
+                      '${msg.effectiveCustomerName} • Customer',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E8A31),
+                      ),
+                    ),
+                  ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
