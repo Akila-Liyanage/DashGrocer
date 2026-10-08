@@ -94,3 +94,43 @@ class SellerNotification {
     );
   }
 }
+
+class CustomerNotification {
+  final String id;
+  final String title;
+  final String message;
+  final String timeAgo;
+  final DateTime time;
+  final String? orderId;
+  final bool isRead;
+
+  const CustomerNotification({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.timeAgo,
+    required this.time,
+    this.orderId,
+    this.isRead = false,
+  });
+
+  CustomerNotification copyWith({
+    String? id,
+    String? title,
+    String? message,
+    String? timeAgo,
+    DateTime? time,
+    String? orderId,
+    bool? isRead,
+  }) {
+    return CustomerNotification(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      message: message ?? this.message,
+      timeAgo: timeAgo ?? this.timeAgo,
+      time: time ?? this.time,
+      orderId: orderId ?? this.orderId,
+      isRead: isRead ?? this.isRead,
+    );
+  }
+}

@@ -121,6 +121,9 @@ class OrderActionCard extends StatelessWidget {
                                   customerName: order.customerName,
                                   customerPhone: order.customerPhone,
                                   orderId: '#${order.orderNumber}',
+                                  orderItemSummary: order.itemCountLabel,
+                                  orderPickupSlot: 'Pickup Slot: ${order.pickupTime}',
+                                  orderStatusLabel: order.status.name.toUpperCase(),
                                 ),
                               ),
                             );

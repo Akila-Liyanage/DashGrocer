@@ -25,15 +25,21 @@ class ChatService extends ChangeNotifier {
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _firestoreSub;
   final List<ChatMessage> _messages = [];
   bool _isSellerTyping = false;
-  bool _isBotAutoReplyEnabled = false;
+  bool _isCustomerTyping = false;
+  bool _isBotAutoReplyEnabled = true;
 
   List<ChatMessage> get allMessages => List.unmodifiable(_messages);
   bool get isSellerTyping => _isSellerTyping;
+  bool get isCustomerTyping => _isCustomerTyping;
   bool get isBotAutoReplyEnabled => _isBotAutoReplyEnabled;
 
   void toggleBotAutoReply([bool? value]) {
     _isBotAutoReplyEnabled = value ?? !_isBotAutoReplyEnabled;
     notifyListeners();
+  }
+
+  void initFirebaseListeners() {
+    _listenToFirestore();
   }
 
   void _listenToFirestore() {
@@ -47,26 +53,24 @@ class ChatService extends ChangeNotifier {
           .snapshots()
           .listen((snapshot) {
         if (snapshot.docs.isNotEmpty) {
-          final firestoreMessages = <ChatMessage>[];
+          final Map<String, ChatMessage> map = {
+            for (final m in _messages) m.id: m,
+          };
           for (final doc in snapshot.docs) {
             try {
               final data = doc.data();
               data['id'] = doc.id;
-              firestoreMessages.add(ChatMessage.fromMap(data));
+              final msg = ChatMessage.fromMap(data);
+              map[msg.id] = msg;
             } catch (e) {
               debugPrint('Error parsing chat message doc ${doc.id}: $e');
             }
           }
-          if (firestoreMessages.isNotEmpty) {
-            _messages.clear();
-            _messages.addAll(firestoreMessages);
-            notifyListeners();
-          }
-        } else {
-          // If empty, seed default messages to Firestore safely
-          for (final msg in _messages) {
-            db.collection('chat_messages').doc(msg.id).set(msg.toMap(), SetOptions(merge: true)).catchError((_) {});
-          }
+          final sorted = map.values.toList()
+            ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+          _messages.clear();
+          _messages.addAll(sorted);
+          notifyListeners();
         }
       }, onError: (err) {
         debugPrint('[ChatService] Firestore listener notice: $err');
@@ -179,6 +183,7 @@ class ChatService extends ChangeNotifier {
     required String text,
     String? sellerName,
     String? attachmentUrl,
+    String? orderId,
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
@@ -192,6 +197,7 @@ class ChatService extends ChangeNotifier {
       timestamp: DateTime.now(),
       isRead: false,
       attachmentUrl: attachmentUrl,
+      orderId: orderId,
     );
 
     _messages.add(sellerMsg);
@@ -204,6 +210,11 @@ class ChatService extends ChangeNotifier {
         await db.collection('chat_messages').doc(sellerMsg.id).set(sellerMsg.toMap());
       }
     } catch (_) {}
+
+    // Interactive customer response simulation
+    if (_isBotAutoReplyEnabled) {
+      _simulateCustomerReply(trimmed);
+    }
   }
 
   Future<void> sendCustomerMessage({
@@ -212,6 +223,7 @@ class ChatService extends ChangeNotifier {
     bool isQuickInquiry = false,
     String? attachmentUrl,
     bool? simulateAutoReply,
+    String? orderId,
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
@@ -226,6 +238,7 @@ class ChatService extends ChangeNotifier {
       productId: product?.id,
       productName: product?.name,
       productImageUrl: product?.imageUrl,
+      orderId: orderId,
       isQuickInquiry: isQuickInquiry,
       attachmentUrl: attachmentUrl,
       isRead: false,
@@ -248,11 +261,11 @@ class ChatService extends ChangeNotifier {
       groceryService.addSellerNotification(
         title: 'New Customer Inquiry',
         message: 'Kasun Perera asked: "$trimmed"${product != null ? " regarding ${product.name}" : ""}',
-        orderId: product?.id ?? '#INQUIRY',
+        orderId: orderId ?? product?.id ?? '#INQUIRY',
       );
     } catch (_) {}
 
-    // Only auto-reply if explicitly requested or if bot mode is turned on
+    // Auto-reply simulation
     final shouldSimulate = simulateAutoReply ?? _isBotAutoReplyEnabled;
     if (shouldSimulate) {
       _simulateSellerReply(trimmed, product);
@@ -261,11 +274,64 @@ class ChatService extends ChangeNotifier {
 
   Timer? _typingTimer;
   Timer? _replyTimer;
+  Timer? _customerTypingTimer;
+  Timer? _customerReplyTimer;
 
   void cancelPendingTimers() {
     _typingTimer?.cancel();
     _replyTimer?.cancel();
+    _customerTypingTimer?.cancel();
+    _customerReplyTimer?.cancel();
     _isSellerTyping = false;
+    _isCustomerTyping = false;
+  }
+
+  void _simulateCustomerReply(String sellerText) {
+    _customerTypingTimer?.cancel();
+    _customerReplyTimer?.cancel();
+
+    final lower = sellerText.toLowerCase();
+    String replyText;
+    if (lower.contains('ready') || lower.contains('prepared') || lower.contains('packing') || lower.contains('start')) {
+      replyText = 'Thank you so much Sunil! 🙏 I am on my way to pick it up.';
+    } else if (lower.contains('fresh') || lower.contains('harvest') || lower.contains('organic')) {
+      replyText = 'Sounds wonderful! Really appreciate the quality farm produce.';
+    } else if (lower.contains('counter') || lower.contains('pickup') || lower.contains('arrive')) {
+      replyText = 'Understood! I will come straight to counter #1 with my order ID.';
+    } else if (lower.contains('bag') || lower.contains('pack')) {
+      replyText = 'Thank you for packing it so carefully!';
+    } else if (lower.contains('call') || lower.contains('phone')) {
+      replyText = 'Noted, thank you for checking with me!';
+    } else {
+      replyText = 'Thank you for the update Sunil! See you at the store soon. 👍';
+    }
+
+    _customerTypingTimer = Timer(const Duration(milliseconds: 650), () {
+      _isCustomerTyping = true;
+      notifyListeners();
+
+      _customerReplyTimer = Timer(const Duration(milliseconds: 1200), () {
+        _isCustomerTyping = false;
+        final custMsg = ChatMessage(
+          id: 'msg_cust_${DateTime.now().millisecondsSinceEpoch}',
+          senderId: 'cust_kasun',
+          senderName: 'Kasun Perera',
+          senderRole: 'customer',
+          text: replyText,
+          timestamp: DateTime.now(),
+          isRead: false,
+        );
+        _messages.add(custMsg);
+        notifyListeners();
+
+        try {
+          final db = _firestore;
+          if (db != null) {
+            db.collection('chat_messages').doc(custMsg.id).set(custMsg.toMap());
+          }
+        } catch (_) {}
+      });
+    });
   }
 
   void _simulateSellerReply(String query, GroceryItem? product) {
@@ -273,16 +339,22 @@ class ChatService extends ChangeNotifier {
     final lower = query.toLowerCase();
 
     String replyText;
-    final pName = product?.name ?? 'vegetables';
+    final pName = product?.name ?? 'produce';
 
-    if (lower.contains('fresh') || lower.contains('harvest') || lower.contains('quality')) {
+    if (lower.contains('ayubowan')) {
+      replyText = 'Ayubowan! 🙏 Welcome to GreenLeaf Fresh Mart. How can we help you with your DashGrocer order or store pickup today?';
+    } else if (lower.contains('kohomada') || lower.contains('saniipen')) {
+      replyText = 'Saniipen innawa, sthuthiyi! Obe grocery pre-order eka sambandawa oneyma deyak ahananna. Api udaw karannam.';
+    } else if (lower.contains('fp-2028-0142') || (lower.contains('order') && (lower.contains('status') || lower.contains('ready') || lower.contains('placed')))) {
+      replyText = 'Yes Kasun! Your pickup order #FP-2028-0142 with highland carrots and fresh tomatoes is verified and ready for pickup at counter #1.';
+    } else if (lower.contains('fresh') || lower.contains('harvest') || lower.contains('quality')) {
       replyText = 'Yes! All our $pName arrived directly from local organic farms at 6:00 AM today. They are crisp, 100% fresh, and pesticide-free.';
-    } else if (lower.contains('pickup') || lower.contains('time') || lower.contains('mins') || lower.contains('hour')) {
-      replyText = 'Yes, you can pick it up today! Orders are packed within 15 minutes of checkout at our Maharagama store. We are open until 9:00 PM.';
-    } else if (lower.contains('portion') || lower.contains('cut') || lower.contains('half') || lower.contains('250g')) {
+    } else if (lower.contains('pickup') || lower.contains('time') || lower.contains('mins') || lower.contains('hour') || lower.contains('counter')) {
+      replyText = 'Yes, you can pick it up today! Orders are packed within 15 minutes of checkout at our Maharagama store. We are open until 9:30 PM.';
+    } else if (lower.contains('portion') || lower.contains('cut') || lower.contains('half') || lower.contains('250g') || lower.contains('500g') || lower.contains('1kg')) {
       replyText = 'Certainly! We gladly pack smaller portions or custom sizes for you. Just leave a note at checkout or let us know here.';
-    } else if (lower.contains('discount') || lower.contains('price') || lower.contains('bulk')) {
-      replyText = 'We provide an extra 5% discount for bulk orders over 3kg! Plus you can use your loyalty points at pickup.';
+    } else if (lower.contains('discount') || lower.contains('price') || lower.contains('bulk') || lower.contains('keeyada') || lower.contains('mila')) {
+      replyText = 'We provide farm-direct prices plus an extra 5% discount for bulk orders over 3kg! Plus you can use your loyalty points at pickup.';
     } else if (lower.contains('organic') || lower.contains('pesticide') || lower.contains('chemical')) {
       replyText = 'Absolutely! Our $pName is grown by certified eco-partner farmers without synthetic pesticides or harmful chemical sprays.';
     } else if (lower.contains('deliver') || lower.contains('shipping') || lower.contains('rider')) {
@@ -293,21 +365,23 @@ class ChatService extends ChangeNotifier {
       replyText = 'We accept all Visa/Mastercard payments online, as well as Cash or Card on Store Pickup. We also support Koko installment checkouts!';
     } else if (lower.contains('bag') || lower.contains('pack') || lower.contains('paper') || lower.contains('plastic')) {
       replyText = 'Yes! We pack all produce in eco-friendly biodegradable craft paper bags and recyclable containers with zero plastic waste.';
-    } else if (lower.contains('hour') || lower.contains('open') || lower.contains('close') || lower.contains('time')) {
+    } else if (lower.contains('hour') || lower.contains('open') || lower.contains('close')) {
       replyText = 'GreenLeaf Fresh Mart is open daily from 7:30 AM until 9:30 PM. Curbside pickup counters are staffed throughout open hours.';
+    } else if (lower.contains('thanks') || lower.contains('thank') || lower.contains('sthuti')) {
+      replyText = 'You are most welcome! 🙏 Looking forward to seeing you at GreenLeaf Fresh Mart.';
     } else {
-      // Show initial Thank You acknowledgement only ONCE; do not repeat for every subsequent message
-      if (_hasSentInitialThankYou) {
-        return;
+      if (!_hasSentInitialThankYou) {
+        replyText = 'Thank you for your message! Our team at GreenLeaf Fresh Mart has noted your inquiry about $pName. We have plenty in stock and ready for your order!';
+      } else {
+        replyText = 'Our team at GreenLeaf Fresh Mart has noted this. We are packing orders actively and ready to assist you at pickup counter #1!';
       }
-      replyText = 'Thank you for your message! Our team at GreenLeaf Fresh Mart has noted your inquiry about $pName. We have plenty in stock and ready for your order!';
     }
 
-    _typingTimer = Timer(const Duration(milliseconds: 600), () {
+    _typingTimer = Timer(const Duration(milliseconds: 500), () {
       _isSellerTyping = true;
       notifyListeners();
 
-      _replyTimer = Timer(const Duration(milliseconds: 1000), () {
+      _replyTimer = Timer(const Duration(milliseconds: 800), () {
         _isSellerTyping = false;
         final sellerMsg = ChatMessage(
           id: 'msg_rep_${DateTime.now().millisecondsSinceEpoch}',

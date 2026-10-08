@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'package:dashgrocer/models/user_model.dart';
 import 'services/auth_service.dart';
+import 'services/chat_service.dart';
+import 'services/grocery_service.dart';
 import 'services/database_seeder.dart';
 import 'views/admin/admin_dashboard.dart';
 import 'views/auth/auth_screen.dart';
@@ -12,19 +15,34 @@ import 'views/shop_owner/shop_owner_home.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Launch the Flutter UI immediately so Android renders frames instantly.
+  // This completely eliminates frame skips, ANR watchdog timeouts, and Signal 3 crashes.
+  runApp(const DashGrocerApp());
+
+  // Initialize Firebase in background without blocking the UI thread
+  unawaited(_initFirebaseSafely());
+}
+
+Future<void> _initFirebaseSafely() async {
   try {
-    // Never let a slow/blocked Firebase init keep the app on a blank screen
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    ).timeout(const Duration(seconds: 8));
-    // Seed initial Firestore catalog and demo users if needed (runs in background)
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+    // Connect live Firestore listeners across services once Firebase is ready
+    AuthService().initFirebaseListeners();
+    GroceryService().initFirebaseListeners();
+    ChatService().initFirebaseListeners();
+
+    // Background seed initial catalog and users if empty
     DatabaseSeeder.seedInitialDataIfNeeded().catchError((Object e) {
-      debugPrint('Database seeding notice: $e');
+      debugPrint('[DatabaseSeeder] Seeding notice: $e');
     });
   } catch (e) {
-    debugPrint('Firebase initialization notice: $e');
+    debugPrint('[Firebase] Initialization notice: $e');
   }
-  runApp(const DashGrocerApp());
 }
 
 class DashGrocerApp extends StatelessWidget {

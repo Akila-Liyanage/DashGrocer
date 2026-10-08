@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -95,10 +96,17 @@ class AuthService extends ChangeNotifier {
 
   static Duration simulatedDelay = const Duration(milliseconds: 700);
 
+  StreamSubscription<User?>? _authSub;
+
+  void initFirebaseListeners() {
+    _initAuthState();
+  }
+
   void _initAuthState() {
     final auth = _firebaseAuth;
     if (auth == null) return;
-    auth.authStateChanges().listen((User? user) async {
+    _authSub?.cancel();
+    _authSub = auth.authStateChanges().listen((User? user) async {
       if (user != null) {
         if (_currentUser == null || _currentUser!.id != user.uid) {
           await _loadUserProfile(user.uid, fallbackEmail: user.email);
