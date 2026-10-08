@@ -413,35 +413,35 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 10),
 
                         Center(
-                          child: InkWell(
-                            onTap: () {
-                              _authService.login(
-                                email: 'customer@dashgrocer.com',
-                                password: 'Password123!',
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                          child: SizedBox(
+                            height: 44,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF1E293B),
+                                side: const BorderSide(color: Color(0xFFE2E8F0)),
+                                padding: const EdgeInsets.symmetric(horizontal: 18),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _buildGoogleGLogo(),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Google',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF475569),
-                                    ),
-                                  ),
-                                ],
+                              onPressed: () async {
+                                await _authService.signInWithGoogle();
+                              },
+                              icon: Text(
+                                'G',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF4285F4),
+                                ),
+                              ),
+                              label: Text(
+                                'Continue with Google',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
@@ -457,24 +457,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         );
         },
-      ),
-    );
-  }
-
-  Widget _buildGoogleGLogo() {
-    return Container(
-      width: 18,
-      height: 18,
-      decoration: const BoxDecoration(shape: BoxShape.circle),
-      child: Center(
-        child: Text(
-          'G',
-          style: GoogleFonts.roboto(
-            fontSize: 14,
-            fontWeight: FontWeight.w900,
-            color: const Color(0xFF4285F4),
-          ),
-        ),
       ),
     );
   }
