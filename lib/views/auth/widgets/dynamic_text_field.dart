@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 
 class DynamicTextField extends StatefulWidget {
@@ -6,8 +7,10 @@ class DynamicTextField extends StatefulWidget {
   final String label;
   final String? hint;
   final IconData prefixIcon;
+  final Widget? prefixWidget;
   final bool isPassword;
   final TextInputType keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final String? Function(String?)? validator;
   final VoidCallback? onChanged;
   final TextInputAction textInputAction;
@@ -18,8 +21,10 @@ class DynamicTextField extends StatefulWidget {
     required this.label,
     this.hint,
     required this.prefixIcon,
+    this.prefixWidget,
     this.isPassword = false,
     this.keyboardType = TextInputType.text,
+    this.inputFormatters,
     this.validator,
     this.onChanged,
     this.textInputAction = TextInputAction.next,
@@ -89,6 +94,7 @@ class _DynamicTextFieldState extends State<DynamicTextField> {
             focusNode: _focusNode,
             obscureText: widget.isPassword ? _obscureText : false,
             keyboardType: widget.keyboardType,
+            inputFormatters: widget.inputFormatters,
             textInputAction: widget.textInputAction,
             onChanged: (val) {
               if (hasError) {
@@ -112,15 +118,16 @@ class _DynamicTextFieldState extends State<DynamicTextField> {
               labelText: widget.label,
               hintText: widget.hint,
               errorStyle: const TextStyle(height: 0, fontSize: 0),
-              prefixIcon: Icon(
-                widget.prefixIcon,
-                color: hasError
-                    ? AppColors.error
-                    : _isFocused
-                        ? AppColors.primary
-                        : AppColors.textSecondary,
-                size: 20,
-              ),
+              prefixIcon: widget.prefixWidget ??
+                  Icon(
+                    widget.prefixIcon,
+                    color: hasError
+                        ? AppColors.error
+                        : _isFocused
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                    size: 20,
+                  ),
               suffixIcon: widget.isPassword
                   ? IconButton(
                       tooltip: _obscureText ? 'Show password' : 'Hide password',

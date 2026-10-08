@@ -64,6 +64,38 @@ class _AddProductScreenState extends State<AddProductScreen> {
       'label': 'Green Beans',
       'url': 'assets/images/beans.png',
     },
+    {
+      'label': 'Ripe Banana',
+      'url': 'assets/images/banana.jpg',
+    },
+    {
+      'label': 'Gala Apple',
+      'url': 'assets/images/apple.jpg',
+    },
+    {
+      'label': 'Ceylon Mango',
+      'url': 'assets/images/mango.jpg',
+    },
+    {
+      'label': 'Dairy Milk',
+      'url': 'assets/images/milk.jpg',
+    },
+    {
+      'label': 'Ceylon Tea',
+      'url': 'assets/images/tea.jpg',
+    },
+    {
+      'label': 'Cooking Oil',
+      'url': 'assets/images/cooking_oil.jpg',
+    },
+    {
+      'label': 'Samba Rice',
+      'url': 'assets/images/rice.jpg',
+    },
+    {
+      'label': 'Dishwash Soap',
+      'url': 'assets/images/dishwash.jpg',
+    },
   ];
 
   @override
@@ -259,6 +291,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
             _buildInputCard(
               label: 'Category *',
               child: DropdownButtonFormField<String>(
+                isExpanded: true,
                 initialValue: _selectedCategory,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 14,
@@ -370,7 +403,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
             const SizedBox(height: 8),
 
             SizedBox(
-              height: 72,
+              height: 98,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: _presetImages.length,
@@ -386,34 +419,55 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         _imageUrlController.text = preset['url']!;
                       });
                     },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      width: 72,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected ? AppColors.brandGreen : const Color(0xFFE2E8F0),
-                          width: isSelected ? 2.5 : 1.0,
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            AppImageView(
-                              imageUrl: preset['url']!,
-                              fit: BoxFit.contain,
-                            ),
-                            if (isSelected)
-                              Container(
-                                color: AppColors.brandGreen.withValues(alpha: 0.35),
-                                child: const Center(
-                                  child: Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
-                                ),
+                    child: SizedBox(
+                      width: 74,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            width: 70,
+                            height: 68,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected ? AppColors.brandGreen : const Color(0xFFE2E8F0),
+                                width: isSelected ? 2.5 : 1.0,
                               ),
-                          ],
-                        ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  AppImageView(
+                                    imageUrl: preset['url']!,
+                                    fit: BoxFit.contain,
+                                  ),
+                                  if (isSelected)
+                                    Container(
+                                      color: AppColors.brandGreen.withValues(alpha: 0.35),
+                                      child: const Center(
+                                        child: Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            preset['label'] ?? '',
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 10,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              color: isSelected ? AppColors.brandGreenDark : const Color(0xFF475569),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );

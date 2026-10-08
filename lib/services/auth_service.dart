@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:dashgrocer/models/user_model.dart';
+import 'package:dashgrocer/models/shop_profile.dart';
 import 'database_seeder.dart';
 
 class AuthService extends ChangeNotifier {
@@ -11,6 +12,7 @@ class AuthService extends ChangeNotifier {
   factory AuthService() => _instance;
   AuthService._internal() {
     _initAuthState();
+    _initDefaultShops();
   }
 
   FirebaseAuth? get _firebaseAuth {
@@ -64,6 +66,7 @@ class AuthService extends ChangeNotifier {
       role: UserRole.shopOwner,
       shopName: 'GreenLeaf Fresh Mart',
       shopAddress: 'No. 42, High Level Road, Maharagama',
+      shopStatus: 'approved',
     ),
     const UserModel(
       id: 'owner_02',
@@ -73,6 +76,27 @@ class AuthService extends ChangeNotifier {
       role: UserRole.shopOwner,
       shopName: 'GreenLeaf Fresh Mart',
       shopAddress: 'No. 42, High Level Road, Maharagama',
+      shopStatus: 'approved',
+    ),
+    const UserModel(
+      id: 'owner_kandy',
+      email: 'kandyfresh@dashgrocer.com',
+      fullName: 'Mahesh Jayawardena',
+      phoneNumber: '+94 81 234 5678',
+      role: UserRole.shopOwner,
+      shopName: 'Fresh Express Kandy',
+      shopAddress: 'No. 12, Dalada Veediya, Kandy',
+      shopStatus: 'pending',
+    ),
+    const UserModel(
+      id: 'owner_sunrise',
+      email: 'sunrise@dashgrocer.com',
+      fullName: 'Anura Wickramasinghe',
+      phoneNumber: '+94 11 456 7890',
+      role: UserRole.shopOwner,
+      shopName: 'Sunrise Organics',
+      shopAddress: 'No. 88, Galle Road, Colombo 03',
+      shopStatus: 'approved',
     ),
     const UserModel(
       id: 'admin_01',
@@ -86,6 +110,55 @@ class AuthService extends ChangeNotifier {
   /// Runtime registry for accounts registered in app session
   final Map<String, UserModel> _registeredUsers = {};
   final Map<String, String> _registeredPasswords = {};
+  final Map<String, ShopProfile> _registeredShops = {};
+
+  void _initDefaultShops() {
+    _registeredShops['owner_01'] = const ShopProfile(
+      id: 'owner_01',
+      name: 'GreenLeaf Fresh Mart',
+      address: 'No. 42, High Level Road, Maharagama',
+      phone: '+94 71 987 6543',
+      status: 'approved',
+      ownerName: 'Sunil Weerasinghe',
+      ownerEmail: 'seller@dashgrocer.com',
+    );
+    _registeredShops['owner_02'] = const ShopProfile(
+      id: 'owner_02',
+      name: 'GreenLeaf Fresh Mart',
+      address: 'No. 42, High Level Road, Maharagama',
+      phone: '+94 71 987 6543',
+      status: 'approved',
+      ownerName: 'Sunil Weerasinghe',
+      ownerEmail: 'owner@dashgrocer.com',
+    );
+    _registeredShops['shop_dailysuperette'] = const ShopProfile(
+      id: 'shop_dailysuperette',
+      name: 'Daily Superette',
+      address: 'No. 18, Station Road, Maharagama',
+      phone: '+94 77 234 5678',
+      status: 'approved',
+      ownerName: 'Kamal Perera',
+      ownerEmail: 'kamal@dashgrocer.com',
+    );
+    _registeredShops['owner_kandy'] = const ShopProfile(
+      id: 'owner_kandy',
+      name: 'Fresh Express Kandy',
+      address: 'No. 12, Dalada Veediya, Kandy',
+      phone: '+94 81 234 5678',
+      status: 'pending',
+      ownerName: 'Mahesh Jayawardena',
+      ownerEmail: 'kandyfresh@dashgrocer.com',
+    );
+    _registeredShops['owner_sunrise'] = const ShopProfile(
+      id: 'owner_sunrise',
+      name: 'Sunrise Organics',
+      address: 'No. 88, Galle Road, Colombo 03',
+      phone: '+94 11 456 7890',
+      status: 'approved',
+      ownerName: 'Anura Wickramasinghe',
+      ownerEmail: 'sunrise@dashgrocer.com',
+    );
+  }
 
   static bool _isValidDemoPassword(String password) {
     return password == 'Password123!' ||
@@ -457,7 +530,24 @@ class AuthService extends ChangeNotifier {
           role: role,
           shopName: role == UserRole.shopOwner ? shopName?.trim() : null,
           shopAddress: role == UserRole.shopOwner ? shopAddress?.trim() : null,
+          shopStatus: role == UserRole.shopOwner ? 'pending' : null,
+          createdAt: DateTime.now(),
         );
+
+        if (role == UserRole.shopOwner) {
+          final newShop = ShopProfile(
+            id: newUser.id,
+            name: shopName?.trim() ?? 'My Grocery Shop',
+            address: shopAddress?.trim() ?? '',
+            phone: phoneNumber.trim(),
+            status: 'pending',
+            ownerName: fullName.trim(),
+            ownerEmail: normalizedEmail,
+            createdAt: DateTime.now(),
+          );
+          _registeredShops[newUser.id] = newShop;
+        }
+
         _registeredUsers[normalizedEmail] = newUser;
         _registeredPasswords[normalizedEmail] = password;
         _currentUser = newUser;
@@ -488,11 +578,31 @@ class AuthService extends ChangeNotifier {
         role: role,
         shopName: role == UserRole.shopOwner ? shopName?.trim() : null,
         shopAddress: role == UserRole.shopOwner ? shopAddress?.trim() : null,
+        shopStatus: role == UserRole.shopOwner ? 'pending' : null,
+        createdAt: DateTime.now(),
       );
 
-      // Save user profile in Firestore
+      ShopProfile? newShop;
+      if (role == UserRole.shopOwner) {
+        newShop = ShopProfile(
+          id: user.uid,
+          name: shopName?.trim() ?? 'My Grocery Shop',
+          address: shopAddress?.trim() ?? '',
+          phone: phoneNumber.trim(),
+          status: 'pending',
+          ownerName: fullName.trim(),
+          ownerEmail: normalizedEmail,
+          createdAt: DateTime.now(),
+        );
+        _registeredShops[user.uid] = newShop;
+      }
+
+      // Save user profile and shop in Firestore
       if (firestore != null) {
         await firestore.collection('users').doc(user.uid).set(newUser.toMap());
+        if (newShop != null) {
+          await firestore.collection('shops').doc(user.uid).set(newShop.toMap());
+        }
       }
 
       _registeredUsers[normalizedEmail] = newUser;
@@ -601,6 +711,315 @@ class AuthService extends ChangeNotifier {
     _lastLoginTime = null;
     notifyListeners();
   }
+
+  // =============================================================
+  // ADMIN & DATABASE MANAGEMENT
+  // =============================================================
+
+  /// Watch all registered accounts from Firestore & local registry
+  Stream<List<UserModel>> watchAllUsers() {
+    final firestore = _firestore;
+    if (firestore != null) {
+      return firestore.collection('users').snapshots().map((snapshot) {
+        final Map<String, UserModel> merged = {};
+        for (final u in demoUsers) {
+          merged[u.id] = u;
+        }
+        for (final u in _registeredUsers.values) {
+          merged[u.id] = u;
+        }
+        for (final doc in snapshot.docs) {
+          final u = UserModel.fromMap(doc.data(), doc.id);
+          merged[u.id] = u;
+        }
+        final list = merged.values.toList();
+        list.sort((a, b) {
+          if (a.createdAt != null && b.createdAt != null) {
+            return b.createdAt!.compareTo(a.createdAt!);
+          }
+          return a.fullName.compareTo(b.fullName);
+        });
+        return list;
+      });
+    }
+
+    // Local / Offline Stream
+    late StreamController<List<UserModel>> controller;
+    void emit() {
+      if (!controller.isClosed) {
+        final Map<String, UserModel> merged = {};
+        for (final u in demoUsers) {
+          merged[u.id] = u;
+        }
+        for (final u in _registeredUsers.values) {
+          merged[u.id] = u;
+        }
+        final list = merged.values.toList();
+        list.sort((a, b) {
+          if (a.createdAt != null && b.createdAt != null) {
+            return b.createdAt!.compareTo(a.createdAt!);
+          }
+          return a.fullName.compareTo(b.fullName);
+        });
+        controller.add(list);
+      }
+    }
+
+    controller = StreamController<List<UserModel>>(
+      onListen: () {
+        emit();
+        addListener(emit);
+      },
+      onCancel: () {
+        removeListener(emit);
+      },
+    );
+    return controller.stream;
+  }
+
+  /// Watch all registered grocery shops from Firestore & local registry
+  Stream<List<ShopProfile>> watchAllShops() {
+    final firestore = _firestore;
+    if (firestore != null) {
+      return firestore.collection('shops').snapshots().map((snapshot) {
+        final Map<String, ShopProfile> merged = Map.from(_registeredShops);
+        for (final doc in snapshot.docs) {
+          final s = ShopProfile.fromMap(doc.id, doc.data());
+          merged[s.id] = s;
+        }
+        final list = merged.values.toList();
+        list.sort((a, b) {
+          // Put pending approvals first
+          if (a.isPending && !b.isPending) return -1;
+          if (!a.isPending && b.isPending) return 1;
+          return a.name.compareTo(b.name);
+        });
+        return list;
+      });
+    }
+
+    // Local / Offline Stream
+    late StreamController<List<ShopProfile>> controller;
+    void emit() {
+      if (!controller.isClosed) {
+        final list = _registeredShops.values.toList();
+        list.sort((a, b) {
+          if (a.isPending && !b.isPending) return -1;
+          if (!a.isPending && b.isPending) return 1;
+          return a.name.compareTo(b.name);
+        });
+        controller.add(list);
+      }
+    }
+
+    controller = StreamController<List<ShopProfile>>(
+      onListen: () {
+        emit();
+        addListener(emit);
+      },
+      onCancel: () {
+        removeListener(emit);
+      },
+    );
+    return controller.stream;
+  }
+
+  /// Admin approves a registered shop so it can be listed and sell to customers
+  Future<void> approveShop(String shopId, {String? userId}) async {
+    final effectiveUserId = userId ?? shopId;
+
+    // 1. Update in-memory shop
+    if (_registeredShops.containsKey(shopId)) {
+      _registeredShops[shopId] = _registeredShops[shopId]!.copyWith(
+        status: 'approved',
+        rejectionReason: '',
+      );
+    } else {
+      _registeredShops[shopId] = ShopProfile(
+        id: shopId,
+        name: 'Grocery Shop',
+        status: 'approved',
+      );
+    }
+
+    // 2. Update in-memory user
+    for (final entry in _registeredUsers.entries) {
+      if (entry.value.id == effectiveUserId || entry.value.shopName == _registeredShops[shopId]?.name) {
+        _registeredUsers[entry.key] = entry.value.copyWith(
+          shopStatus: 'approved',
+          rejectionReason: '',
+        );
+      }
+    }
+    for (int i = 0; i < demoUsers.length; i++) {
+      if (demoUsers[i].id == effectiveUserId) {
+        demoUsers[i] = demoUsers[i].copyWith(
+          shopStatus: 'approved',
+          rejectionReason: '',
+        );
+      }
+    }
+
+    if (_currentUser != null && _currentUser!.id == effectiveUserId) {
+      _currentUser = _currentUser!.copyWith(
+        shopStatus: 'approved',
+        rejectionReason: '',
+      );
+    }
+
+    // 3. Update Cloud Firestore
+    try {
+      final firestore = _firestore;
+      if (firestore != null) {
+        final batch = firestore.batch();
+        batch.set(
+          firestore.collection('shops').doc(shopId),
+          {
+            'status': 'approved',
+            'rejectionReason': '',
+            'approvedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+        batch.set(
+          firestore.collection('users').doc(effectiveUserId),
+          {
+            'shopStatus': 'approved',
+            'rejectionReason': '',
+          },
+          SetOptions(merge: true),
+        );
+        await batch.commit();
+      }
+    } catch (e) {
+      debugPrint('Error updating approval in Firestore: $e');
+    }
+
+    notifyListeners();
+  }
+
+  /// Admin rejects a shop registration with a specified reason
+  Future<void> rejectShop(String shopId, {String? userId, required String reason}) async {
+    final effectiveUserId = userId ?? shopId;
+
+    // 1. Update in-memory shop
+    if (_registeredShops.containsKey(shopId)) {
+      _registeredShops[shopId] = _registeredShops[shopId]!.copyWith(
+        status: 'rejected',
+        rejectionReason: reason,
+      );
+    }
+
+    // 2. Update in-memory user
+    for (final entry in _registeredUsers.entries) {
+      if (entry.value.id == effectiveUserId || entry.value.shopName == _registeredShops[shopId]?.name) {
+        _registeredUsers[entry.key] = entry.value.copyWith(
+          shopStatus: 'rejected',
+          rejectionReason: reason,
+        );
+      }
+    }
+    for (int i = 0; i < demoUsers.length; i++) {
+      if (demoUsers[i].id == effectiveUserId) {
+        demoUsers[i] = demoUsers[i].copyWith(
+          shopStatus: 'rejected',
+          rejectionReason: reason,
+        );
+      }
+    }
+
+    if (_currentUser != null && _currentUser!.id == effectiveUserId) {
+      _currentUser = _currentUser!.copyWith(
+        shopStatus: 'rejected',
+        rejectionReason: reason,
+      );
+    }
+
+    // 3. Update Cloud Firestore
+    try {
+      final firestore = _firestore;
+      if (firestore != null) {
+        final batch = firestore.batch();
+        batch.set(
+          firestore.collection('shops').doc(shopId),
+          {
+            'status': 'rejected',
+            'rejectionReason': reason,
+            'rejectedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+        batch.set(
+          firestore.collection('users').doc(effectiveUserId),
+          {
+            'shopStatus': 'rejected',
+            'rejectionReason': reason,
+          },
+          SetOptions(merge: true),
+        );
+        await batch.commit();
+      }
+    } catch (e) {
+      debugPrint('Error updating rejection in Firestore: $e');
+    }
+
+    notifyListeners();
+  }
+
+  /// Admin suspends an approved shop
+  Future<void> suspendShop(String shopId, {String? userId}) async {
+    final effectiveUserId = userId ?? shopId;
+
+    if (_registeredShops.containsKey(shopId)) {
+      _registeredShops[shopId] = _registeredShops[shopId]!.copyWith(
+        status: 'pending',
+      );
+    }
+
+    for (final entry in _registeredUsers.entries) {
+      if (entry.value.id == effectiveUserId) {
+        _registeredUsers[entry.key] = entry.value.copyWith(
+          shopStatus: 'pending',
+        );
+      }
+    }
+    for (int i = 0; i < demoUsers.length; i++) {
+      if (demoUsers[i].id == effectiveUserId) {
+        demoUsers[i] = demoUsers[i].copyWith(
+          shopStatus: 'pending',
+        );
+      }
+    }
+
+    if (_currentUser != null && _currentUser!.id == effectiveUserId) {
+      _currentUser = _currentUser!.copyWith(
+        shopStatus: 'pending',
+      );
+    }
+
+    try {
+      final firestore = _firestore;
+      if (firestore != null) {
+        final batch = firestore.batch();
+        batch.set(
+          firestore.collection('shops').doc(shopId),
+          {'status': 'pending'},
+          SetOptions(merge: true),
+        );
+        batch.set(
+          firestore.collection('users').doc(effectiveUserId),
+          {'shopStatus': 'pending'},
+          SetOptions(merge: true),
+        );
+        await batch.commit();
+      }
+    } catch (e) {
+      debugPrint('Error suspending shop in Firestore: $e');
+    }
+
+    notifyListeners();
+  }
+
 
   String _mapFirebaseAuthError(FirebaseAuthException e) {
     switch (e.code) {

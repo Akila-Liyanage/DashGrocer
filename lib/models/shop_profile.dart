@@ -20,6 +20,11 @@ class ShopProfile {
     this.slotMinutes = 30,
     this.maxOrdersPerSlot = 5,
     this.notificationsReadAt,
+    this.status = 'approved',
+    this.ownerName = '',
+    this.ownerEmail = '',
+    this.rejectionReason = '',
+    this.createdAt,
   });
 
   final String id;
@@ -51,6 +56,17 @@ class ShopProfile {
 
   /// Alerts older than this are shown as read.
   final DateTime? notificationsReadAt;
+
+  /// Shop approval state: 'pending', 'approved', or 'rejected'.
+  final String status;
+  final String ownerName;
+  final String ownerEmail;
+  final String rejectionReason;
+  final DateTime? createdAt;
+
+  bool get isPending => status == 'pending';
+  bool get isApproved => status == 'approved';
+  bool get isRejected => status == 'rejected';
 
   String get weekdayHoursLabel =>
       '${formatMinutesOfDay(weekdayOpen)} – ${formatMinutesOfDay(weekdayClose)}';
@@ -86,6 +102,11 @@ class ShopProfile {
     int? slotMinutes,
     int? maxOrdersPerSlot,
     DateTime? notificationsReadAt,
+    String? status,
+    String? ownerName,
+    String? ownerEmail,
+    String? rejectionReason,
+    DateTime? createdAt,
   }) {
     return ShopProfile(
       id: id,
@@ -103,6 +124,11 @@ class ShopProfile {
       slotMinutes: slotMinutes ?? this.slotMinutes,
       maxOrdersPerSlot: maxOrdersPerSlot ?? this.maxOrdersPerSlot,
       notificationsReadAt: notificationsReadAt ?? this.notificationsReadAt,
+      status: status ?? this.status,
+      ownerName: ownerName ?? this.ownerName,
+      ownerEmail: ownerEmail ?? this.ownerEmail,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -127,6 +153,11 @@ class ShopProfile {
       slotMinutes: number('slotMinutes', 30),
       maxOrdersPerSlot: number('maxOrdersPerSlot', 5),
       notificationsReadAt: readDate(map['notificationsReadAt']),
+      status: map['status'] as String? ?? 'approved',
+      ownerName: map['ownerName'] as String? ?? '',
+      ownerEmail: map['ownerEmail'] as String? ?? '',
+      rejectionReason: map['rejectionReason'] as String? ?? '',
+      createdAt: readDate(map['createdAt']),
     );
   }
 
@@ -146,6 +177,11 @@ class ShopProfile {
       'slotMinutes': slotMinutes,
       'maxOrdersPerSlot': maxOrdersPerSlot,
       'notificationsReadAt': writeDate(notificationsReadAt),
+      'status': status,
+      'ownerName': ownerName,
+      'ownerEmail': ownerEmail,
+      'rejectionReason': rejectionReason,
+      'createdAt': writeDate(createdAt),
     };
   }
 }

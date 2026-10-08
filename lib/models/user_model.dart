@@ -36,6 +36,9 @@ class UserModel {
   final UserRole role;
   final String? shopName;
   final String? shopAddress;
+  final String? shopStatus;
+  final String? rejectionReason;
+  final DateTime? createdAt;
 
   const UserModel({
     required this.id,
@@ -45,11 +48,18 @@ class UserModel {
     required this.role,
     this.shopName,
     this.shopAddress,
+    this.shopStatus,
+    this.rejectionReason,
+    this.createdAt,
   });
 
   bool get isCustomer => role == UserRole.customer;
   bool get isShopOwner => role == UserRole.shopOwner;
   bool get isAdmin => role == UserRole.admin;
+
+  bool get isShopPending => role == UserRole.shopOwner && (shopStatus == 'pending' || shopStatus == null);
+  bool get isShopApproved => role == UserRole.shopOwner && shopStatus == 'approved';
+  bool get isShopRejected => role == UserRole.shopOwner && shopStatus == 'rejected';
 
   UserModel copyWith({
     String? id,
@@ -59,6 +69,9 @@ class UserModel {
     UserRole? role,
     String? shopName,
     String? shopAddress,
+    String? shopStatus,
+    String? rejectionReason,
+    DateTime? createdAt,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -68,6 +81,9 @@ class UserModel {
       role: role ?? this.role,
       shopName: shopName ?? this.shopName,
       shopAddress: shopAddress ?? this.shopAddress,
+      shopStatus: shopStatus ?? this.shopStatus,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -80,6 +96,9 @@ class UserModel {
       'role': role.name,
       'shopName': shopName,
       'shopAddress': shopAddress,
+      'shopStatus': shopStatus,
+      'rejectionReason': rejectionReason,
+      'createdAt': createdAt?.toIso8601String(),
     };
   }
 
@@ -94,6 +113,15 @@ class UserModel {
       role = UserRole.customer;
     }
 
+    DateTime? parsedCreatedAt;
+    if (map['createdAt'] != null) {
+      if (map['createdAt'] is DateTime) {
+        parsedCreatedAt = map['createdAt'] as DateTime;
+      } else {
+        parsedCreatedAt = DateTime.tryParse(map['createdAt'].toString());
+      }
+    }
+
     return UserModel(
       id: id ?? (map['id'] as String? ?? 'user_${DateTime.now().millisecondsSinceEpoch}'),
       email: map['email'] as String? ?? '',
@@ -102,6 +130,9 @@ class UserModel {
       role: role,
       shopName: map['shopName'] as String?,
       shopAddress: map['shopAddress'] as String?,
+      shopStatus: map['shopStatus'] as String? ?? (role == UserRole.shopOwner ? 'approved' : null),
+      rejectionReason: map['rejectionReason'] as String?,
+      createdAt: parsedCreatedAt,
     );
   }
 }

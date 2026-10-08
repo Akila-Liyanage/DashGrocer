@@ -27,6 +27,7 @@ class DatabaseSeeder {
       'role': 'shopOwner',
       'shopName': 'GreenLeaf Fresh Mart',
       'shopAddress': 'No. 42, High Level Road, Maharagama',
+      'shopStatus': 'approved',
     },
     {
       'email': 'owner@dashgrocer.com',
@@ -36,6 +37,17 @@ class DatabaseSeeder {
       'role': 'shopOwner',
       'shopName': 'GreenLeaf Fresh Mart',
       'shopAddress': 'No. 42, High Level Road, Maharagama',
+      'shopStatus': 'approved',
+    },
+    {
+      'email': 'kandyfresh@dashgrocer.com',
+      'password': seedPassword,
+      'fullName': 'Mahesh Jayawardena',
+      'phoneNumber': '+94 81 234 5678',
+      'role': 'shopOwner',
+      'shopName': 'Fresh Express Kandy',
+      'shopAddress': 'No. 12, Dalada Veediya, Kandy',
+      'shopStatus': 'pending',
     },
     {
       'email': 'admin@dashgrocer.com',
@@ -87,6 +99,7 @@ class DatabaseSeeder {
                 : (seed['role'] == 'admin' ? UserRole.admin : UserRole.customer),
             shopName: seed['shopName'] as String?,
             shopAddress: seed['shopAddress'] as String?,
+            shopStatus: seed['shopStatus'] as String?,
           );
           await docRef.set(userModel.toMap());
           debugPrint('[DatabaseSeeder] Seed user created in Firestore: $email (${seed['role']})');
@@ -128,6 +141,7 @@ class DatabaseSeeder {
           role: role,
           shopName: seed['shopName'] as String?,
           shopAddress: seed['shopAddress'] as String?,
+          shopStatus: seed['shopStatus'] as String?,
         );
 
         await _firestore.collection('users').doc(user.uid).set(userModel.toMap());

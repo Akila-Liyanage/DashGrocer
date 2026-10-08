@@ -20,8 +20,6 @@ class ForgotPasswordFlow extends StatefulWidget {
 }
 
 class _ForgotPasswordFlowState extends State<ForgotPasswordFlow> {
-  RecoveryStep _step = RecoveryStep.enterEmail;
-
   final TextEditingController _emailController = TextEditingController();
 
   bool _isLoading = false;

@@ -82,7 +82,9 @@ class ChatService extends ChangeNotifier {
   }
 
   void _initDefaultChat() {
+    final now = DateTime.now();
     _messages.addAll([
+      // Thread 1: Kasun Perera (Active Order #FP-2028-0142)
       ChatMessage(
         id: 'msg_welcome',
         senderId: 'seller_sunil',
@@ -92,7 +94,7 @@ class ChatService extends ChangeNotifier {
         customerName: 'Kasun Perera',
         customerPhone: '+94 77 123 4567',
         text: 'Ayubowan! 🙏 Welcome to GreenLeaf Fresh Mart. Let us know if you have any questions about today\'s harvest or store pickup.',
-        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
+        timestamp: now.subtract(const Duration(hours: 3)),
       ),
       ChatMessage(
         id: 'msg_kasun_inquiry',
@@ -104,9 +106,26 @@ class ChatService extends ChangeNotifier {
         customerPhone: '+94 77 123 4567',
         orderId: '#FP-2028-0142',
         text: 'Hello! I placed pickup order #FP-2028-0142. Are the highland carrots and tomatoes ready?',
-        timestamp: DateTime.now().subtract(const Duration(minutes: 12)),
-        isRead: false,
+        timestamp: now.subtract(const Duration(minutes: 45)),
+        isRead: true,
       ),
+      ChatMessage(
+        id: 'msg_seller_kasun_reply',
+        senderId: 'seller_sunil',
+        senderName: 'Sunil Weerasinghe',
+        senderRole: 'seller',
+        customerId: 'cust_kasun',
+        customerName: 'Kasun Perera',
+        customerPhone: '+94 77 123 4567',
+        orderId: '#FP-2028-0142',
+        productName: 'Highland Carrots',
+        productImageUrl: 'assets/images/carrot.png',
+        text: 'Ayubowan Kasun! Yes, your order is ready with fresh highland harvest. Packed at Counter 1 for pickup.',
+        timestamp: now.subtract(const Duration(minutes: 20)),
+        isRead: true,
+      ),
+
+      // Thread 2: Nimalka Senanayake (Product Inquiry)
       ChatMessage(
         id: 'msg_nimalka_inquiry',
         senderId: 'cust_nimalka',
@@ -115,10 +134,39 @@ class ChatService extends ChangeNotifier {
         customerId: 'cust_nimalka',
         customerName: 'Nimalka Senanayake',
         customerPhone: '+94 71 888 2345',
-        productName: 'Organic Strawberries',
-        text: 'Are the organic strawberries and avocados in stock today?',
-        timestamp: DateTime.now().subtract(const Duration(minutes: 35)),
+        productName: 'Cavendish Sweet Bananas',
+        productImageUrl: 'assets/images/banana.jpg',
+        text: 'Are the sweet Cavendish bananas and fresh Ceylon tea in stock today?',
+        timestamp: now.subtract(const Duration(minutes: 35)),
         isRead: false,
+      ),
+      ChatMessage(
+        id: 'msg_seller_nimalka_reply',
+        senderId: 'seller_sunil',
+        senderName: 'Sunil Weerasinghe',
+        senderRole: 'seller',
+        customerId: 'cust_nimalka',
+        customerName: 'Nimalka Senanayake',
+        customerPhone: '+94 71 888 2345',
+        text: 'Yes Mrs. Senanayake! We received fresh Cavendish bananas this morning, and Ceylon BOPF tea is fully stocked.',
+        timestamp: now.subtract(const Duration(minutes: 15)),
+        isRead: false,
+      ),
+
+      // Thread 3: Amal Silva (Pickup Scheduling)
+      ChatMessage(
+        id: 'msg_amal_inquiry_1',
+        senderId: 'cust_amal',
+        senderName: 'Amal Silva',
+        senderRole: 'customer',
+        customerId: 'cust_amal',
+        customerName: 'Amal Silva',
+        customerPhone: '+94 77 444 9876',
+        productName: 'Ceylon Keeri Samba White Rice',
+        productImageUrl: 'assets/images/rice.jpg',
+        text: 'Do you have 5kg packs of SLS certified Keeri Samba rice available?',
+        timestamp: now.subtract(const Duration(hours: 1, minutes: 30)),
+        isRead: true,
       ),
       ChatMessage(
         id: 'msg_amal_inquiry',
@@ -129,8 +177,36 @@ class ChatService extends ChangeNotifier {
         customerName: 'Amal Silva',
         customerPhone: '+94 77 444 9876',
         text: 'Thank you Sunil, I will collect the avocado pack at 5:30 PM.',
-        timestamp: DateTime.now().subtract(const Duration(hours: 1, minutes: 10)),
+        timestamp: now.subtract(const Duration(hours: 1, minutes: 10)),
         isRead: true,
+      ),
+
+      // Thread 4: Chathura Fernando (Delivery Inquiry)
+      ChatMessage(
+        id: 'msg_chathura_inquiry',
+        senderId: 'cust_chathura',
+        senderName: 'Chathura Fernando',
+        senderRole: 'customer',
+        customerId: 'cust_chathura',
+        customerName: 'Chathura Fernando',
+        customerPhone: '+94 72 333 4455',
+        productName: 'Pure Coconut Cooking Oil',
+        productImageUrl: 'assets/images/cooking_oil.jpg',
+        text: 'Hello, do you deliver pure coconut cooking oil and groceries around Nugegoda?',
+        timestamp: now.subtract(const Duration(minutes: 50)),
+        isRead: false,
+      ),
+      ChatMessage(
+        id: 'msg_seller_chathura_reply',
+        senderId: 'seller_sunil',
+        senderName: 'Sunil Weerasinghe',
+        senderRole: 'seller',
+        customerId: 'cust_chathura',
+        customerName: 'Chathura Fernando',
+        customerPhone: '+94 72 333 4455',
+        text: 'Yes Chathura! We provide express delivery to Nugegoda within 45 minutes.',
+        timestamp: now.subtract(const Duration(minutes: 25)),
+        isRead: false,
       ),
     ]);
   }
