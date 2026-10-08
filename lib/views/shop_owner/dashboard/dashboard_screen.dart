@@ -9,6 +9,7 @@ import '../shop_actions.dart';
 import '../widgets/dialogs.dart';
 import '../widgets/info_card.dart';
 import '../widgets/shop_owner_app_bar.dart';
+import 'widgets/customer_inquiries_section.dart';
 import 'widgets/low_stock_list.dart';
 import 'widgets/order_action_card.dart';
 import 'widgets/overview_grid.dart';
@@ -146,6 +147,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onManageStock: widget.onOpenProducts,
                 onOpenSales: widget.onOpenSales,
               ),
+              const SizedBox(height: 32),
+              const CustomerInquiriesSection(),
               const SizedBox(height: 32),
               SectionHeader(
                 title: 'Orders to Handle',
