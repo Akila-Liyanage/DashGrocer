@@ -73,6 +73,32 @@ class OrderActionCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          const SizedBox(height: 2),
+                          // How the order is paid: "Paid Online" or
+                          // "Pay at Store".
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                order.isPaidOnline
+                                    ? Icons.credit_card
+                                    : Icons.payments_outlined,
+                                size: 12,
+                                color: order.isPaidOnline
+                                    ? ShopColors.primary
+                                    : ShopColors.textSecondary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                order.paymentLabel,
+                                style: ShopText.label.copyWith(
+                                  color: order.isPaidOnline
+                                      ? ShopColors.primary
+                                      : ShopColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),

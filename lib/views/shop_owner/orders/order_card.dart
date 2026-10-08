@@ -276,7 +276,9 @@ class _PickupTile extends StatelessWidget {
             : 'Cancelled: $reason';
     }
 
-    final paidOnline = order.paymentMethod.toLowerCase().contains('online');
+    // Always show how the order is paid, so the shop knows whether to take
+    // money at pickup. Wording differs as well as colour.
+    final paidOnline = order.isPaidOnline;
 
     return Container(
       padding: const EdgeInsets.all(10),
@@ -316,20 +318,37 @@ class _PickupTile extends StatelessWidget {
               ],
             ),
           ),
-          if (paidOnline) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: ShopColors.surfaceHighest,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                'Paid Online',
-                style: ShopText.label.copyWith(color: ShopColors.textPrimary),
-              ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: paidOnline
+                  ? ShopColors.greenContainer
+                  : ShopColors.surfaceHighest,
+              borderRadius: BorderRadius.circular(4),
             ),
-          ],
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  paidOnline ? Icons.credit_card : Icons.payments_outlined,
+                  size: 12,
+                  color: paidOnline
+                      ? ShopColors.onGreenContainer
+                      : ShopColors.textPrimary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  order.paymentLabel,
+                  style: ShopText.label.copyWith(
+                    color: paidOnline
+                        ? ShopColors.onGreenContainer
+                        : ShopColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

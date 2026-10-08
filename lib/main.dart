@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -17,26 +16,18 @@ import 'views/auth/auth_screen.dart';
 import 'views/customer/customer_dashboard.dart';
 import 'views/shop_owner/shop_owner_home.dart';
 
-void
-main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Launch the Flutter UI immediately so Android renders frames instantly.
   // This completely eliminates frame skips, ANR watchdog timeouts, and Signal 3 crashes.
-  runApp(
-    const DashGrocerApp(),
-  );
+  runApp(const DashGrocerApp());
 
   // Initialize Firebase in background without blocking the UI thread
-  unawaited(
-    _initFirebaseSafely(),
-  );
+  unawaited(_initFirebaseSafely());
 }
 
-Future<
-  void
->
-_initFirebaseSafely() async {
+Future<void> _initFirebaseSafely() async {
   try {
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp(
@@ -49,19 +40,11 @@ _initFirebaseSafely() async {
     ChatService().initFirebaseListeners();
 
     // Background seed initial catalog and users if empty
-    DatabaseSeeder.seedInitialDataIfNeeded().catchError((
-      Object e,
-    ) {
-      debugPrint(
-        '[DatabaseSeeder] Seeding notice: $e',
-      );
+    DatabaseSeeder.seedInitialDataIfNeeded().catchError((Object e) {
+      debugPrint('[DatabaseSeeder] Seeding notice: $e');
     });
-  } catch (
-    e
-  ) {
-    debugPrint(
-      '[Firebase] Initialization notice: $e',
-    );
+  } catch (e) {
+    debugPrint('[Firebase] Initialization notice: $e');
   }
 }
 

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
-import '../../models/grocery_item_model.dart';
 import '../../services/grocery_service.dart';
 import 'cart_screen.dart';
-import 'product_detail_screen.dart';
 import 'seller_chat_screen.dart';
 import 'widgets/grocery_product_card.dart';
 

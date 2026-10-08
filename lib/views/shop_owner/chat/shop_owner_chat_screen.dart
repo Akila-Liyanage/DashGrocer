@@ -627,16 +627,13 @@ class _ShopOwnerChatScreenState extends State<ShopOwnerChatScreen> {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          CircleAvatar(
+          const CircleAvatar(
             radius: 14,
-            backgroundColor: const Color(0xFFE8F6EB),
-            child: Text(
-              _customerInitials,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: AppColors.brandGreenDark,
-              ),
+            backgroundColor: Color(0xFFE2E8F0),
+            child: Icon(
+              Icons.person_rounded,
+              size: 16,
+              color: Color(0xFF64748B),
             ),
           ),
           const SizedBox(width: 8),
