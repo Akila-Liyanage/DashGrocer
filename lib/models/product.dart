@@ -185,8 +185,18 @@ class Product {
       name: map['name'] as String? ?? 'Product',
       category: map['category'] as String? ?? '',
       unit: map['unit'] as String? ?? '',
-      price: (map['price'] as num?)?.toDouble() ?? 0,
-      stock: (map['stock'] as num?)?.toInt() ?? ((map['stockQuantity'] as num?)?.toInt() ?? 0),
+      stock: () {
+        final s = (map['stock'] as num?)?.toInt();
+        final sq = (map['stockQuantity'] as num?)?.toInt();
+        if (s != null && sq != null) {
+          if (s == 0 || sq == 0) return 0;
+          if (s > 0) return s;
+          if (sq > 0) return sq;
+        }
+        if (s != null) return s;
+        if (sq != null) return sq;
+        return 0;
+      }(),
       code: map['code'] as String? ?? '',
       barcode: map['barcode'] as String? ?? '',
       lowStockThreshold: (map['lowStockThreshold'] as num?)?.toInt() ?? 10,
