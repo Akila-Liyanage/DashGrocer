@@ -167,6 +167,7 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
                   controller: _commentController,
                   minLines: 5,
                   maxLines: 8,
+                  maxLength: 500, // keeps one review from filling the whole page
                   textInputAction: TextInputAction.newline,
                   style: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFF1E293B)),
                   decoration: InputDecoration(

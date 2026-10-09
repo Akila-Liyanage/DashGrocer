@@ -279,6 +279,14 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     return '$count ${count == 1 ? 'Item' : 'Items'} , $pay';
   }
 
+  /// "Rice 11, Carrots..." from "3 items (Rice 11, Carrots...)": the product
+  /// names, so an order is still recognisable when a product has no photo or
+  /// is no longer sold.
+  static String _itemNames(StoreOrder o) {
+    final match = RegExp(r'\(([^)]*)\)').firstMatch(o.itemsSummary);
+    return match == null ? '' : match.group(1)!.trim();
+  }
+
   static int? _itemCount(StoreOrder o) {
     final match = RegExp(r'^\s*(\d+)\s+item').firstMatch(o.itemsSummary);
     return match == null ? null : int.tryParse(match.group(1)!);
@@ -286,6 +294,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
   /// Catalog products named in "3 items (Carrots, Milk, Bread)", for the pictures.
   static List<GroceryItem> _productsOf(StoreOrder o) {
+    // Orders remember which products (by id) they took from stock. Those ids
+    // are exact, so use them first and only fall back to the names.
+    final byId = <GroceryItem>[];
+    for (final id in o.itemQuantities.keys) {
+      final item = GroceryService().getItemById(id);
+      if (item != null && !byId.any((f) => f.id == item.id)) byId.add(item);
+    }
+    if (byId.isNotEmpty) return byId;
+
     final match = RegExp(r'\(([^)]*)\)').firstMatch(o.itemsSummary);
     if (match == null) return const [];
     final names = match
@@ -444,7 +461,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Ready for pickup • ${readyOrder.first.pickupSlot}',
+                            'Ready for pickup • ${readyOrder.first.pickupLabel()}',
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 12,
                               color: const Color(0xFF868889),
@@ -935,6 +952,21 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             ],
           ),
 
+          // What was ordered, in words (helps when a product has no photo)
+          if (_itemNames(order).isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              _itemNames(order),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+          ],
+
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(color: Color(0xFFF1F5F9), height: 1),
@@ -981,10 +1013,16 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
+                        // The shop owner of the products in this order (when they are
+                        // still sold); otherwise the default shop contact.
                         builder: (_) => SellerChatScreen(
                           shopName: order.shopName,
-                          sellerName: 'Sunil Weerasinghe',
-                          sellerPhone: '+94 71 987 6543',
+                          sellerName: products.isNotEmpty && (products.first.sellerName ?? '').isNotEmpty
+                              ? products.first.sellerName
+                              : 'Sunil Weerasinghe',
+                          sellerPhone: products.isNotEmpty && (products.first.sellerPhone ?? '').isNotEmpty
+                              ? products.first.sellerPhone
+                              : '+94 71 987 6543',
                         ),
                       ),
                     );

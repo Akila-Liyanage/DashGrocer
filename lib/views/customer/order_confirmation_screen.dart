@@ -27,8 +27,24 @@ class OrderConfirmationScreen extends StatelessWidget {
     this.paidNow = true,
   });
 
+  /// The order is already placed, so "back" goes home. It must not go back to
+  /// the pickup/payment screens, where the customer could pay a second time.
+  void _goHome(BuildContext context) {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
   @override
   Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _goHome(context);
+      },
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -36,7 +52,7 @@ class OrderConfirmationScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF1E293B)),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => _goHome(context),
         ),
         centerTitle: true,
         title: Text(

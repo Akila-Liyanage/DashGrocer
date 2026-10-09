@@ -75,6 +75,43 @@ class StoreOrder {
   }
 
   String get formattedTotal => 'Rs. ${totalAmount.toStringAsFixed(0)}';
+
+  /// The pickup time with a day that is right today. The slot is saved as
+  /// "Today, 4.00 PM", but "Today" meant the day the order was placed, so this
+  /// works out the real date: "Today, 4.00 PM", "Tomorrow, 9.00 AM",
+  /// "Yesterday, 4.00 PM" or "Mon 12 Oct, 4.00 PM".
+  String pickupLabel({DateTime? now}) {
+    final timeMatch = RegExp(r'(\d{1,2}[.:]\d{2}\s*[AaPp][Mm])').firstMatch(pickupSlot);
+    if (timeMatch == null) return pickupSlot;
+    final time = timeMatch.group(1)!.replaceAll(RegExp(r'\s+'), ' ').toUpperCase();
+
+    final slot = pickupSlot.toLowerCase();
+    final offsetFromPlaced = slot.contains('tomorrow')
+        ? 1
+        : slot.contains('yesterday')
+            ? -1
+            : 0;
+    final placedDay = DateTime(createdAt.year, createdAt.month, createdAt.day);
+    final pickupDay = DateTime(placedDay.year, placedDay.month, placedDay.day + offsetFromPlaced);
+
+    final today = now ?? DateTime.now();
+    final todayDay = DateTime(today.year, today.month, today.day);
+    final daysAway = pickupDay.difference(todayDay).inDays;
+
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final String day;
+    if (daysAway == 0) {
+      day = 'Today';
+    } else if (daysAway == 1) {
+      day = 'Tomorrow';
+    } else if (daysAway == -1) {
+      day = 'Yesterday';
+    } else {
+      day = '${weekdays[pickupDay.weekday - 1]} ${pickupDay.day} ${months[pickupDay.month - 1]}';
+    }
+    return '$day, $time';
+  }
 }
 
 class SellerNotification {

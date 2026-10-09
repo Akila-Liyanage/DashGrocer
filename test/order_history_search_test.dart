@@ -32,6 +32,7 @@ Future<void> _search(WidgetTester tester, String text) async {
 }
 
 void main() {
+  productPictureTests();
   filterButtonTests();
   cancelledSectionTests();
   bannerTests();
@@ -371,5 +372,52 @@ void filterButtonTests() {
     await tester.tap(find.text('Reset filters'));
     await tester.pumpAndSettle();
     expect(_idText(id), findsOneWidget);
+  });
+}
+
+void productPictureTests() {
+  testWidgets('An order shows its product pictures (found by product id) and the product names', (tester) async {
+    final service = GroceryService();
+    service.clearCart();
+    service.addToCart('carrot', 1);
+    service.addToCart('tomato', 1);
+    final id = service.placeOrder(
+      customerName: 'Kasun Perera',
+      customerPhone: '+94 77 123 4567',
+      pickupSlot: 'Today, 4.00 PM',
+      totalAmount: 620,
+      shopName: 'GreenLeaf Fresh Mart',
+    );
+    service.updateOrderStatus(id, 'Completed');
+
+    await _openHistory(tester);
+    await _search(tester, id);
+
+    // One picture for each product, and the names in words
+    expect(find.byType(Image), findsNWidgets(2));
+    expect(find.textContaining('Highland Carrots'), findsOneWidget);
+    expect(find.textContaining('Ripe Tomatoes'), findsOneWidget);
+  });
+
+  testWidgets('A product that is no longer sold still shows by name, with a plain placeholder', (tester) async {
+    final service = GroceryService();
+    service.clearCart();
+    service.addToCart('beans', 1);
+    final id = service.placeOrder(
+      customerName: 'Kasun Perera',
+      customerPhone: '+94 77 123 4567',
+      pickupSlot: 'Today, 5.00 PM',
+      totalAmount: 240,
+      shopName: 'GreenLeaf Fresh Mart',
+    );
+    service.updateOrderStatus(id, 'Completed');
+    service.deleteProduct('beans'); // the shop stops selling it
+
+    await _openHistory(tester);
+    await _search(tester, id);
+
+    expect(find.byType(Image), findsNothing);
+    expect(find.byIcon(Icons.shopping_bag_outlined), findsOneWidget);
+    expect(find.textContaining('Fresh Green Beans'), findsOneWidget);
   });
 }

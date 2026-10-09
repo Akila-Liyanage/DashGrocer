@@ -242,6 +242,14 @@ class GroceryService extends ChangeNotifier {
   List<SellerNotification> get sellerNotifications => List.unmodifiable(_sellerNotifications);
   int get unreadNotificationsCount => _sellerNotifications.where((n) => !n.isRead).length;
 
+  /// Marks one notification as read (when the customer taps it).
+  void markCustomerNotificationRead(String id) {
+    final index = _customerNotifications.indexWhere((n) => n.id == id);
+    if (index == -1 || _customerNotifications[index].isRead) return;
+    _customerNotifications[index] = _customerNotifications[index].copyWith(isRead: true);
+    notifyListeners();
+  }
+
   void markAllCustomerNotificationsAsRead() {
     for (int i = 0; i < _customerNotifications.length; i++) {
       _customerNotifications[i] = _customerNotifications[i].copyWith(isRead: true);
@@ -1742,14 +1750,28 @@ class GroceryService extends ChangeNotifier {
     }
   }
 
-  void updateOrderStatus(String orderId, String newStatus) {
+  /// Changes an order's status. When the shop does this, the customer gets a
+  /// notification ("Order Accepted", "Order Ready"...). Pass
+  /// [notifyCustomer] = false when the customer made the change themselves.
+  void updateOrderStatus(
+    String orderId,
+    String newStatus, {
+    String? cancelReason,
+    bool notifyCustomer = true,
+  }) {
     final index = _sellerOrders.indexWhere((o) => o.id == orderId);
     if (index != -1) {
       final previous = _sellerOrders[index];
-      _sellerOrders[index] = previous.copyWith(status: newStatus);
+      _sellerOrders[index] = previous.copyWith(
+        status: newStatus,
+        cancelReason: newStatus == 'Cancelled' ? cancelReason : null,
+      );
       // A cancelled order gives its products back to the stock.
       if (newStatus == 'Cancelled' && previous.status != 'Cancelled') {
         _changeStock(previous.itemQuantities, takeOut: false);
+      }
+      if (notifyCustomer && previous.status != newStatus) {
+        _tellCustomerAboutStatus(_sellerOrders[index], cancelReason);
       }
       notifyListeners();
 
@@ -1761,6 +1783,45 @@ class GroceryService extends ChangeNotifier {
       }
     }
   }
+
+  /// Adds the notification the customer sees when the shop moves their order on.
+  void _tellCustomerAboutStatus(StoreOrder order, String? cancelReason) {
+    final String title;
+    final String message;
+    switch (order.status) {
+      case 'Preparing':
+        title = 'Order Accepted: ${order.id}';
+        message = '${order.shopName} accepted your order and is preparing it now.';
+      case 'Ready for Pickup':
+        title = 'Order Ready: ${order.id}';
+        message = 'Your order is ready. Collect it at ${order.shopName} (${order.pickupLabel()}).';
+      case 'Completed':
+        title = 'Order Completed: ${order.id}';
+        message = 'Thank you for shopping at ${order.shopName}! We hope you enjoy your groceries.';
+      case 'Cancelled':
+        final reason = (cancelReason ?? '').trim();
+        title = 'Order Cancelled: ${order.id}';
+        message = '${order.shopName} could not prepare your order.'
+            '${reason.isEmpty ? '' : ' Reason: $reason.'} '
+            '${order.paymentMethod.toLowerCase().contains('online') ? 'Your card payment will be refunded.' : 'Nothing was charged.'}';
+      default:
+        return;
+    }
+    _customerNotifications.insert(
+      0,
+      CustomerNotification(
+        id: 'cust_notif_${DateTime.now().microsecondsSinceEpoch}_${_notificationSequence++}',
+        title: title,
+        message: message,
+        timeAgo: 'Just now',
+        time: DateTime.now(),
+        orderId: order.id,
+        isRead: false,
+      ),
+    );
+  }
+
+  int _notificationSequence = 0;
 
   /// The customer can confirm they collected the order once the shop says it is
   /// ready for pickup.
@@ -1775,7 +1836,9 @@ class GroceryService extends ChangeNotifier {
     final order = orderById(orderId);
     if (!canCustomerConfirmPickup(order)) return false;
 
-    updateOrderStatus(orderId, 'Completed');
+    // This method adds the customer's own thank-you below, so the shop-style
+    // "Order Completed" notification is switched off here.
+    updateOrderStatus(orderId, 'Completed', notifyCustomer: false);
 
     _sellerNotifications.insert(
       0,

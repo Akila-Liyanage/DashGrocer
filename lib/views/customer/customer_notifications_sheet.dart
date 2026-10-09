@@ -2,7 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/grocery_service.dart';
+import '../../services/review_service.dart';
 import 'track_order_screen.dart';
+
+class _NotificationStyle {
+  final IconData icon;
+  final Color color;
+  final Color background;
+
+  const _NotificationStyle(this.icon, this.color, this.background);
+}
+
+/// Icon and colour that say what kind of notification this is.
+_NotificationStyle _styleFor(String title) {
+  if (title.startsWith('Order Cancelled')) {
+    return const _NotificationStyle(Icons.cancel_rounded, Color(0xFFDC2626), Color(0xFFFEE2E2));
+  }
+  if (title.startsWith('Order Ready')) {
+    return const _NotificationStyle(Icons.storefront_rounded, AppColors.brandGreenDark, Color(0xFFE8F6EB));
+  }
+  if (title.startsWith('Order Accepted')) {
+    return const _NotificationStyle(Icons.inventory_2_rounded, Color(0xFF0284C7), Color(0xFFE0F2FE));
+  }
+  if (title.startsWith('Order Completed') || title.startsWith('Order Collected')) {
+    return const _NotificationStyle(Icons.done_all_rounded, Color(0xFF475569), Color(0xFFF1F5F9));
+  }
+  return const _NotificationStyle(Icons.check_circle_rounded, AppColors.brandGreen, Color(0xFFE8F6EB));
+}
 
 class CustomerNotificationsSheet extends StatelessWidget {
   const CustomerNotificationsSheet({super.key});
@@ -131,6 +157,8 @@ class CustomerNotificationsSheet extends StatelessWidget {
                         return InkWell(
                           borderRadius: BorderRadius.circular(10),
                           onTap: () {
+                            // Opening a notification marks it as read
+                            groceryService.markCustomerNotificationRead(notif.id);
                             if (notif.orderId != null) {
                               Navigator.pop(context);
                               Navigator.push(
@@ -149,13 +177,13 @@ class CustomerNotificationsSheet extends StatelessWidget {
                                 Container(
                                   width: 32,
                                   height: 32,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFE8F6EB),
+                                  decoration: BoxDecoration(
+                                    color: _styleFor(notif.title).background,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(
-                                    Icons.check_circle_rounded,
-                                    color: AppColors.brandGreen,
+                                  child: Icon(
+                                    _styleFor(notif.title).icon,
+                                    color: _styleFor(notif.title).color,
                                     size: 19,
                                   ),
                                 ),
@@ -182,7 +210,8 @@ class CustomerNotificationsSheet extends StatelessWidget {
                                           ),
                                           const SizedBox(width: 8),
                                           Text(
-                                            notif.timeAgo,
+                                            // Worked out from the time it was sent, so it keeps moving on
+                                            ReviewService.timeAgo(notif.time),
                                             style: GoogleFonts.plusJakartaSans(
                                               fontSize: 11.5,
                                               fontWeight: FontWeight.w500,
