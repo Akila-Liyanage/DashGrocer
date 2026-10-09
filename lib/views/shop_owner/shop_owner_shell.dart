@@ -9,7 +9,7 @@ import '../../models/shop_order.dart';
 import '../../services/chat_service.dart';
 import '../../services/shop_repository.dart';
 import '../../services/shop_store.dart';
-import 'chat/shop_owner_conversations_screen.dart';
+import 'chat/messages_panel.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'notifications/notifications_panel.dart';
 import 'orders/order_details_screen.dart';
@@ -137,13 +137,8 @@ class _ShopOwnerShellState extends State<ShopOwnerShell> {
     );
   }
 
-  void _openChat() {
-    Navigator.of(context).push(
-      shopRoute<void>(
-        (context) => const ShopOwnerConversationsScreen(),
-      ),
-    );
-  }
+  /// Opened by the round chat button above the bottom navigation.
+  void _openChat() => showMessagesPanel(context);
 
   Widget _buildChatCircleButton() {
     final chatService = ChatService();

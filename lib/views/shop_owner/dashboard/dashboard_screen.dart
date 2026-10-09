@@ -10,7 +10,6 @@ import '../shop_actions.dart';
 import '../widgets/dialogs.dart';
 import '../widgets/info_card.dart';
 import '../widgets/shop_owner_app_bar.dart';
-import 'widgets/customer_inquiries_section.dart';
 import 'widgets/low_stock_list.dart';
 import 'widgets/order_action_card.dart';
 import 'widgets/overview_grid.dart';
@@ -149,8 +148,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onManageStock: widget.onOpenProducts,
                 onOpenSales: widget.onOpenSales,
               ),
-              const SizedBox(height: 32),
-              const CustomerInquiriesSection(),
               const SizedBox(height: 32),
               SectionHeader(
                 title: 'Orders to Handle',
@@ -366,32 +363,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    // Approved: verified partner badge
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFDCFCE7)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.verified_rounded, color: ShopColors.primary, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Verified Partner Store • Listed on DashGrocer Marketplace',
-              style: ShopText.body.copyWith(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF166534),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    // Approved shops need no banner.
+    return const SizedBox.shrink();
   }
 }
 
