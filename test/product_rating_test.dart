@@ -10,20 +10,24 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: ProductDetailScreen(item: item)));
     await tester.pumpAndSettle();
 
-    // Not the old fixed "4.9 (110 reviews)": only the 3 starter reviews exist (5, 4, 5)
-    expect(find.text('4.7'), findsOneWidget);
-    expect(find.text('(3 reviews)'), findsOneWidget);
+    // No reviews yet: not the old fixed "4.9 (110 reviews)", and no "0.0" either
+    expect(find.text('No reviews yet • Be the first to review'), findsOneWidget);
     expect(find.textContaining('110'), findsNothing);
-
-    // Same numbers as the Reviews screen
-    final stats = ReviewService().statsFor(item.name);
-    expect(stats.count, 3);
+    expect(find.text('0.0'), findsNothing);
+    expect(ReviewService().statsFor(item.name).count, 0);
 
     // A 1-star review arrives while the page is open
     ReviewService().addReview(productName: item.name, name: 'Nimali', rating: 1, comment: 'Not fresh');
     await tester.pump();
-    expect(find.text('(4 reviews)'), findsOneWidget);
-    expect(find.text('3.8'), findsOneWidget); // (5 + 4 + 5 + 1) / 4 = 3.75
+    expect(find.text('(1 review)'), findsOneWidget);
+    expect(find.text('1.0'), findsOneWidget);
+
+    // A 4-star review follows: average (1 + 4) / 2 = 2.5, same numbers as the Reviews screen
+    ReviewService().addReview(productName: item.name, name: 'Kasun', rating: 4, comment: 'Fresh');
+    await tester.pump();
+    expect(find.text('(2 reviews)'), findsOneWidget);
+    expect(find.text('2.5'), findsOneWidget);
+    expect(ReviewService().statsFor(item.name).count, 2);
   });
 
   test('Review stats: count, average and star counts', () {

@@ -236,35 +236,58 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                             );
                           },
-                          child: Row(
-                            children: [
-                              Text(
-                                reviewStats.average.toStringAsFixed(1),
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF1A1A1A),
+                          child: reviewStats.count == 0
+                              // No reviews yet: no made-up "0.0" rating
+                              ? Row(
+                                  children: [
+                                    ...List.generate(
+                                      5,
+                                      (_) => const Icon(
+                                        Icons.star_outline_rounded,
+                                        size: 16,
+                                        color: Color(0xFFCBD5E1),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'No reviews yet • Be the first to review',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF8E8E93),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Row(
+                                  children: [
+                                    Text(
+                                      reviewStats.average.toStringAsFixed(1),
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF1A1A1A),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 5),
+                                    ...List.generate(5, (index) {
+                                      return Icon(
+                                        ReviewService.starIcon(index, reviewStats.average),
+                                        size: 16,
+                                        color: const Color(0xFFFFA000),
+                                      );
+                                    }),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '(${reviewStats.countLabel})',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF8E8E93),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(width: 5),
-                              ...List.generate(5, (index) {
-                                return Icon(
-                                  ReviewService.starIcon(index, reviewStats.average),
-                                  size: 16,
-                                  color: const Color(0xFFFFA000),
-                                );
-                              }),
-                              const SizedBox(width: 6),
-                              Text(
-                                '(${reviewStats.countLabel})',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: const Color(0xFF8E8E93),
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
 
                         const SizedBox(height: 14),

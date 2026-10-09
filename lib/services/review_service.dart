@@ -75,51 +75,13 @@ class ReviewService extends ChangeNotifier {
     return list;
   }
 
-  /// Every review shown for a product, newest first: the reviews customers
-  /// wrote plus a few starter reviews. The Reviews screen and the product page
-  /// both use this, so the numbers they show always agree.
-  List<Map<String, dynamic>> allReviewsFor(String productName) {
-    final all = [...reviewsFor(productName), ...starterReviews()];
-    all.sort((a, b) => timestampOf(b).compareTo(timestampOf(a)));
-    return all;
-  }
+  /// Every review shown for a product, newest first. Only reviews customers
+  /// really wrote for that product are counted. The Reviews screen and the
+  /// product page both use this, so the numbers they show always agree.
+  List<Map<String, dynamic>> allReviewsFor(String productName) => reviewsFor(productName);
 
   /// How many reviews a product has, its average rating and the count per star.
   ReviewStats statsFor(String productName) => ReviewStats.from(allReviewsFor(productName));
-
-  /// A few starter reviews every product starts with.
-  static List<Map<String, dynamic>> starterReviews({DateTime? now}) {
-    final base = now ?? DateTime.now();
-    return [
-      {
-        'id': 'rev_init_1',
-        'initial': 'O',
-        'name': 'Olivia',
-        'timestamp': base.subtract(const Duration(days: 2)).toIso8601String(),
-        'rating': 5,
-        'comment':
-            'These apples are incredibly fresh and crisp! Picked up my order within 10 minutes at Green Mart.',
-      },
-      {
-        'id': 'rev_init_2',
-        'initial': 'D',
-        'name': 'Da Silva',
-        'timestamp': base.subtract(const Duration(days: 4)).toIso8601String(),
-        'rating': 4,
-        'comment':
-            'These melons are incredibly fresh and juicy! Picked up my order within 10 minutes at Green Mart.',
-      },
-      {
-        'id': 'rev_init_3',
-        'initial': 'K',
-        'name': 'Kasun Perera',
-        'timestamp': base.subtract(const Duration(days: 7)).toIso8601String(),
-        'rating': 5,
-        'comment':
-            'Super fast pickup service, completely zero waiting time. Vegetables were fresh and nicely packed.',
-      },
-    ];
-  }
 
   /// Full, half or empty star for star number [index] (0-4), with the average
   /// rounded to the nearest half.
