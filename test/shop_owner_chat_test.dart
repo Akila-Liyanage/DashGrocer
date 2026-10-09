@@ -4,7 +4,6 @@ import 'package:dashgrocer/models/owner_profile.dart';
 import 'package:dashgrocer/services/chat_service.dart';
 import 'package:dashgrocer/services/mock_shop_repository.dart';
 import 'package:dashgrocer/views/shop_owner/chat/shop_owner_chat_screen.dart';
-import 'package:dashgrocer/views/shop_owner/chat/shop_owner_conversations_screen.dart';
 import 'package:dashgrocer/views/shop_owner/shop_owner_shell.dart';
 import 'package:dashgrocer/views/shop_owner/widgets/shop_owner_app_bar.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -125,11 +124,11 @@ void main() {
       // Verify floating circular chat button
       expect(find.byIcon(Icons.chat_bubble_rounded), findsOneWidget);
 
-      // Tap floating circular chat button opens WhatsApp-style Customer Inbox
+      // Tapping the floating circular chat button opens the Messages popup
       await tester.tap(find.byIcon(Icons.chat_bubble_rounded));
       await tester.pumpAndSettle();
 
-      expect(find.byType(ShopOwnerConversationsScreen), findsOneWidget);
+      expect(find.text('Messages'), findsOneWidget);
     });
 
     test('5. ChatService: Thank you acknowledgment is only sent once and does not repeat', () async {
