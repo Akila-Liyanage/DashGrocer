@@ -33,6 +33,197 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
 
+  // Options of the filter button (the icon at the end of the search bar)
+  static const List<String> _sortOptions = ['Newest first', 'Oldest first', 'Highest total', 'Lowest total'];
+  static const List<String> _paymentOptions = ['Any', 'Pay at Store', 'Paid online'];
+  static const List<String> _periodOptions = ['Any time', 'Today', 'Last 7 days', 'Last 30 days'];
+
+  String _sort = _sortOptions.first;
+  String _payment = _paymentOptions.first;
+  String _period = _periodOptions.first;
+
+  /// How many filter options differ from the defaults (shown on the icon).
+  int get _activeFilterCount =>
+      (_sort != _sortOptions.first ? 1 : 0) +
+      (_payment != _paymentOptions.first ? 1 : 0) +
+      (_period != _periodOptions.first ? 1 : 0);
+
+  bool _passesFilters(StoreOrder o) {
+    final online = o.paymentMethod.toLowerCase().contains('online');
+    if (_payment == 'Pay at Store' && online) return false;
+    if (_payment == 'Paid online' && !online) return false;
+
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    switch (_period) {
+      case 'Today':
+        if (o.createdAt.isBefore(startOfToday)) return false;
+      case 'Last 7 days':
+        if (o.createdAt.isBefore(startOfToday.subtract(const Duration(days: 6)))) return false;
+      case 'Last 30 days':
+        if (o.createdAt.isBefore(startOfToday.subtract(const Duration(days: 29)))) return false;
+    }
+    return true;
+  }
+
+  void _resetFilters() {
+    setState(() {
+      _sort = _sortOptions.first;
+      _payment = _paymentOptions.first;
+      _period = _periodOptions.first;
+    });
+  }
+
+  Future<void> _openFilters() async {
+    var sort = _sort;
+    var payment = _payment;
+    var period = _period;
+
+    final applied = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          Widget group(String title, List<String> options, String selected, ValueChanged<String> onSelect) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final option in options)
+                      InkWell(
+                        borderRadius: BorderRadius.circular(18),
+                        onTap: () => setSheetState(() => onSelect(option)),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: selected == option ? AppColors.brandGreenSoft : Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: selected == option ? AppColors.brandGreen : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          child: Text(
+                            option,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: selected == option ? FontWeight.w700 : FontWeight.w500,
+                              color: selected == option
+                                  ? AppColors.brandGreenDark
+                                  : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            );
+          }
+
+          return Container(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Filter orders',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF1E293B),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => setSheetState(() {
+                          sort = _sortOptions.first;
+                          payment = _paymentOptions.first;
+                          period = _periodOptions.first;
+                        }),
+                        child: Text(
+                          'Reset',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.brandGreenDark,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  group('Sort by', _sortOptions, sort, (v) => sort = v),
+                  const SizedBox(height: 16),
+                  group('Payment', _paymentOptions, payment, (v) => payment = v),
+                  const SizedBox(height: 16),
+                  group('Placed', _periodOptions, period, (v) => period = v),
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.brandGreen,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () => Navigator.pop(sheetContext, true),
+                      child: Text(
+                        'Apply filters',
+                        style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    if (applied == true && mounted) {
+      setState(() {
+        _sort = sort;
+        _payment = payment;
+        _period = period;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -129,8 +320,17 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     final user = AuthService().currentUser;
     final name = (user?.fullName.isNotEmpty == true) ? user!.fullName : 'Kasun Perera';
     final phone = (user?.phoneNumber.isNotEmpty == true) ? user!.phoneNumber : '+94 77 123 4567';
-    final orders = GroceryService().ordersForCustomer(name: name, phone: phone);
-    orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final orders = GroceryService().ordersForCustomer(name: name, phone: phone).where(_passesFilters).toList();
+    switch (_sort) {
+      case 'Oldest first':
+        orders.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      case 'Highest total':
+        orders.sort((a, b) => b.totalAmount.compareTo(a.totalAmount));
+      case 'Lowest total':
+        orders.sort((a, b) => a.totalAmount.compareTo(b.totalAmount));
+      default:
+        orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }
     return orders;
   }
 
@@ -303,10 +503,34 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         _searchController.clear();
                         setState(() => _query = '');
                       },
-                      child: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF94A3B8)),
-                    )
-                  else
-                    const Icon(Icons.tune_rounded, size: 18, color: Color(0xFF94A3B8)),
+                      child: const Padding(
+                        padding: EdgeInsets.only(right: 10),
+                        child: Icon(Icons.close_rounded, size: 18, color: Color(0xFF94A3B8)),
+                      ),
+                    ),
+                  // Filter button: opens the sort / payment / date options
+                  Tooltip(
+                    message: 'Filter orders',
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _openFilters,
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Badge(
+                          isLabelVisible: _activeFilterCount > 0,
+                          label: Text('$_activeFilterCount'),
+                          backgroundColor: AppColors.brandGreen,
+                          child: Icon(
+                            Icons.tune_rounded,
+                            size: 18,
+                            color: _activeFilterCount > 0
+                                ? AppColors.brandGreenDark
+                                : const Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -378,6 +602,18 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                           color: Colors.grey.shade500,
                         ),
                       ),
+                      if (_activeFilterCount > 0)
+                        TextButton(
+                          onPressed: _resetFilters,
+                          child: Text(
+                            'Reset filters',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.brandGreenDark,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
