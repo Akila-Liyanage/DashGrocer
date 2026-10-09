@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/seller_order_model.dart';
 import '../../services/grocery_service.dart';
 import 'widgets/cancel_order_dialog.dart';
+import 'widgets/collect_order_button.dart';
 
 class TrackOrderScreen extends StatelessWidget {
   final String orderId;
@@ -54,19 +55,90 @@ class TrackOrderScreen extends StatelessWidget {
     );
   }
 
+  /// Shown when the order number is not in the list (for example the order was
+  /// removed), instead of made-up order details.
+  Widget _buildNotFound(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFBFBFB),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF1E293B)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        centerTitle: true,
+        title: Text(
+          'Track Order',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1E293B),
+          ),
+        ),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.search_off_rounded, size: 56, color: Color(0xFFCBD5E1)),
+              const SizedBox(height: 14),
+              Text(
+                'We could not find this order',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Order $orderId is not in your orders. It may have been removed.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12.5,
+                  color: const Color(0xFF868889),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brandGreen,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Back',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildScreen(BuildContext context, StoreOrder? order) {
-    // An order number that is not in the list (for example a sample card)
-    // keeps the original sample look: three steps done.
-    final cancelled = order?.status == 'Cancelled';
-    final stepsDone = order == null ? 3 : _stepsDone(order.status);
-    final placedOn =
-        order == null ? 'October 15 2026' : _formatDate(order.createdAt);
+    if (order == null) return _buildNotFound(context);
+
+    final cancelled = order.status == 'Cancelled';
+    final stepsDone = _stepsDone(order.status);
+    final placedOn = _formatDate(order.createdAt);
 
     // Text under each step: the date for the first, then Done, the step
     // being worked on, and Pending for the rest.
     String stepNote(int index) {
       if (index == 0) return placedOn;
-      if (order == null) return index < stepsDone ? placedOn : 'Pending';
       if (cancelled) return 'Cancelled';
       if (index < stepsDone) return index == 4 ? 'Collected' : 'Done';
       if (index == stepsDone) {
@@ -77,7 +149,7 @@ class TrackOrderScreen extends StatelessWidget {
           case 2:
             return 'The shop is packing your order';
           case 4:
-            return 'Ready now. Collect it at the shop (${order.pickupSlot})';
+            return 'Ready now. Collect it at the shop (${order.pickupLabel()})';
           default:
             return 'In progress';
         }
@@ -158,10 +230,8 @@ class TrackOrderScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  order == null
-                                      ? 'Placed on October 15 2026\nItems: 4   Price: Rs.1000'
-                                      : 'Placed on $placedOn\n${order.itemsSummary}\n'
-                                          '${order.formattedTotal}  •  ${order.paymentMethod}',
+                                  'Placed on $placedOn\n${order.itemsSummary}\n'
+                                  '${order.formattedTotal}  •  ${order.paymentMethod}',
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 12,
                                     color: const Color(0xFF868889),
@@ -197,7 +267,7 @@ class TrackOrderScreen extends StatelessWidget {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                order!.cancelledByCustomer
+                                order.cancelledByCustomer
                                     ? 'You cancelled this order.'
                                     : 'This order was cancelled by the shop.',
                                 style: GoogleFonts.plusJakartaSans(
@@ -272,28 +342,49 @@ class TrackOrderScreen extends StatelessWidget {
                     CancelOrderButton(orderId: orderId),
                     const SizedBox(height: 12),
                   ],
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.brandGreen,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        cancelled ? 'Back' : 'Order Confirmed',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                  // Once the shop says it is ready, the customer confirms they
+                  // collected it, which completes the order.
+                  if (GroceryService().canCustomerConfirmPickup(order)) ...[
+                    CollectOrderButton(orderId: orderId),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          'Back',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF64748B),
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ] else
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.brandGreen,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          cancelled ? 'Back' : 'Order Confirmed',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

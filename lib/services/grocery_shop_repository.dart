@@ -230,7 +230,11 @@ class GroceryShopRepository implements ShopRepository {
     }
     // This is the same call the customer screens watch, so the customer
     // sees the new status straight away.
-    _service.updateOrderStatus(storeId, _wordForStatus(status));
+    _service.updateOrderStatus(
+      storeId,
+      _wordForStatus(status),
+      cancelReason: cancelReason,
+    );
   }
 
   @override
