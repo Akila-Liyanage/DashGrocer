@@ -358,7 +358,9 @@ class GroceryItem {
     final isFavVal = parseBool(map['isFavorite'], false);
 
     final img = (map['imageUrl'] ?? map['image'] ?? map['photoUrl'])?.toString().trim();
-    final effectiveImg = (img != null && img.isNotEmpty) ? img : 'assets/images/pumpkin.png';
+    // A product without a photo stays without one (the image widgets show a
+    // placeholder icon), instead of borrowing another product's picture.
+    final effectiveImg = img ?? '';
 
     final created = parseDate(map['createdAt'] ?? map['timestamp'], effectiveId);
 

@@ -35,6 +35,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (existingQty > 0) {
       _selectedQuantity = existingQty;
     }
+    // Never start above what the shop has in stock.
+    final stock = GroceryService().availableStock(widget.item.id);
+    if (stock > 0 && _selectedQuantity > stock) _selectedQuantity = stock;
     // The rating under the product name follows new reviews as they arrive.
     _reviewService.addListener(_onReviewsChanged);
     _reviewService.startListening();
@@ -544,8 +547,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           // Plus Button
           GestureDetector(
             onTap: () {
-              if (_selectedQuantity < 99) {
+              // No more than the shop has in stock.
+              final stock = GroceryService().availableStock(widget.item.id);
+              if (_selectedQuantity < stock && _selectedQuantity < 99) {
                 setState(() => _selectedQuantity++);
+              } else if (stock > 0 && _selectedQuantity >= stock) {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Only $stock in stock'),
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
               }
             },
             behavior: HitTestBehavior.opaque,
@@ -672,7 +686,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 onPressed: (!item.isAvailable || item.stockQuantity <= 0)
                     ? null
                     : () {
-                        groceryService.addToCart(item.id, _selectedQuantity);
+                        // The stepper shows the quantity wanted in the cart,
+                        // so set it instead of adding on top of what is there.
+                        final inCart = groceryService.setCartQuantity(
+                          item.id,
+                          _selectedQuantity,
+                        );
+                        if (inCart != _selectedQuantity) {
+                          setState(() => _selectedQuantity = inCart);
+                        }
                         ScaffoldMessenger.of(context).hideCurrentSnackBar();
                         ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -686,7 +708,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Added $_selectedQuantity × ${item.name} to cart!',
+                              '$inCart × ${item.name} in your cart',
                               style: GoogleFonts.plusJakartaSans(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 13,

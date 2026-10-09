@@ -17,6 +17,10 @@ class StoreOrder {
   /// True when the customer cancelled it themselves (not the shop).
   final bool cancelledByCustomer;
 
+  /// How many of each product (by product id) the order took from stock.
+  /// Used to put the stock back if the order is cancelled.
+  final Map<String, int> itemQuantities;
+
   const StoreOrder({
     required this.id,
     required this.customerName,
@@ -31,6 +35,7 @@ class StoreOrder {
     this.paymentMethod = 'Pay at Store',
     this.cancelReason,
     this.cancelledByCustomer = false,
+    this.itemQuantities = const <String, int>{},
   });
 
   bool get isReady => status == 'Ready for Pickup';
@@ -65,6 +70,7 @@ class StoreOrder {
       paymentMethod: paymentMethod ?? this.paymentMethod,
       cancelReason: cancelReason ?? this.cancelReason,
       cancelledByCustomer: cancelledByCustomer ?? this.cancelledByCustomer,
+      itemQuantities: itemQuantities,
     );
   }
 
