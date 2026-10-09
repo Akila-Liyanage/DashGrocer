@@ -465,7 +465,17 @@ class GroceryService extends ChangeNotifier {
       ),
     ]);
 
-    _items = [
+    _items = _buildDemoCatalog();
+    // The cart starts empty: it only holds what the customer adds.
+  }
+
+  /// A fresh copy of the demo products (the catalog the app starts with). It is
+  /// used to fill an empty Firestore catalog, so it never depends on `_items`,
+  /// which Firestore replaces.
+  List<GroceryItem> get demoCatalog => _buildDemoCatalog();
+
+  List<GroceryItem> _buildDemoCatalog() {
+    return [
       // =================== VEGETABLES ===================
       const GroceryItem(
         id: 'pumpkin',
@@ -1021,14 +1031,19 @@ class GroceryService extends ChangeNotifier {
         stockQuantity: 50,
       ),
     ];
-
   }
 
   // Cart operations
   int getQuantity(String itemId) => _cartQuantities[itemId] ?? 0;
 
+  /// Number of items in the cart. A product that is no longer in the catalog
+  /// (for example the shop deleted it) is not counted.
   int get totalCartItemCount {
-    return _cartQuantities.values.fold(0, (total, qty) => total + qty);
+    var total = 0;
+    _cartQuantities.forEach((id, qty) {
+      if (qty > 0 && getItemById(id) != null) total += qty;
+    });
+    return total;
   }
 
   List<GroceryItem> get cartItems {
@@ -1154,6 +1169,7 @@ class GroceryService extends ChangeNotifier {
     return _items.where((element) => element.isFavorite && element.isAvailable).toList();
   }
 
+  /// The product with this id, or null when there is none.
   GroceryItem? getItemById(String id) => _itemWithId(id);
 
   List<GroceryItem> getCategoryItems(String category) {

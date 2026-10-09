@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:dashgrocer/models/grocery_item_model.dart';
 import 'package:dashgrocer/models/user_model.dart';
 import 'grocery_service.dart';
 
@@ -66,16 +67,8 @@ class DatabaseSeeder {
     _hasSeeded = true;
 
     try {
-      // 1. Seed Categories & Products to Firestore
-      final productsSnapshot = await _firestore
-          .collection('products')
-          .limit(1)
-          .get()
-          .timeout(const Duration(seconds: 4));
-      if (productsSnapshot.docs.isEmpty) {
-        debugPrint('[DatabaseSeeder] Seeding initial grocery products to Firestore...');
-        await seedProducts();
-      }
+      // 1. Make sure customers always have products they can buy
+      await seedProductsIfNoneForSale();
 
       // 2. Provision seed accounts in Firestore
       for (final seed in seedUsers) {
@@ -155,15 +148,54 @@ class DatabaseSeeder {
 
   /// Seed the complete product catalog into Cloud Firestore
   static Future<void> seedProducts() async {
-    final groceryService = GroceryService();
+    final demoItems = GroceryService().demoCatalog;
     final batch = _firestore.batch();
 
-    for (final item in groceryService.allItems) {
+    for (final item in demoItems) {
       final doc = _firestore.collection('products').doc(item.id);
       batch.set(doc, item.toMap());
     }
 
     await batch.commit();
-    debugPrint('[DatabaseSeeder] Successfully seeded ${groceryService.allItems.length} products to Firestore!');
+    debugPrint('[DatabaseSeeder] Successfully seeded ${demoItems.length} products to Firestore!');
+  }
+
+  /// True when at least one product can be bought: available and in stock.
+  static bool hasProductForSale(Iterable<GroceryItem> items) {
+    return items.any((item) => item.isAvailable && item.stockQuantity > 0);
+  }
+
+  /// When the Firestore catalog has nothing customers can buy (it is empty, or
+  /// only has out-of-stock products), adds the demo products. Products that
+  /// are already there are never overwritten.
+  static Future<void> seedProductsIfNoneForSale() async {
+    final snapshot = await _firestore
+        .collection('products')
+        .get()
+        .timeout(const Duration(seconds: 6));
+
+    final existing = <GroceryItem>[];
+    final existingIds = <String>{};
+    for (final doc in snapshot.docs) {
+      existingIds.add(doc.id);
+      try {
+        final data = doc.data();
+        data['id'] = doc.id;
+        existing.add(GroceryItem.fromMap(data, doc.id));
+      } catch (_) {}
+    }
+    if (hasProductForSale(existing)) return;
+
+    final batch = _firestore.batch();
+    var added = 0;
+    for (final item in GroceryService().demoCatalog) {
+      if (existingIds.contains(item.id)) continue;
+      batch.set(_firestore.collection('products').doc(item.id), item.toMap());
+      added++;
+    }
+    if (added == 0) return;
+
+    await batch.commit();
+    debugPrint('[DatabaseSeeder] No product was for sale: added $added demo products to Firestore.');
   }
 }
