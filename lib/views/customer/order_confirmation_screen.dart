@@ -9,12 +9,22 @@ class OrderConfirmationScreen extends StatelessWidget {
   final String shopName;
   final String totalPaid;
 
+  /// How the customer pays, for example "Visa •••• 4242" or "Pay at Store".
+  /// Nothing is shown when it is null.
+  final String? paymentLabel;
+
+  /// True when the money was taken now (card). False for "Pay at Store", where
+  /// the customer pays at the counter, so the total is not "paid" yet.
+  final bool paidNow;
+
   const OrderConfirmationScreen({
     super.key,
     this.orderId = '#FP-2028-0142',
     this.pickupTime = 'Today, 4-5PM',
     this.shopName = 'Green Mart',
     this.totalPaid = 'Rs. 1000',
+    this.paymentLabel,
+    this.paidNow = true,
   });
 
   @override
@@ -38,10 +48,15 @@ class OrderConfirmationScreen extends StatelessWidget {
           ),
         ),
       ),
+      // Scrolls on small screens; on tall screens the content still fills the height
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Column(
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight - 40),
+              child: IntrinsicHeight(
+                child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -109,11 +124,19 @@ class OrderConfirmationScreen extends StatelessWidget {
                     _buildSummaryRow(label: 'Pickup', value: pickupTime),
                     const SizedBox(height: 12),
                     _buildSummaryRow(label: 'Shop', value: shopName),
+                    if (paymentLabel != null) ...[
+                      const SizedBox(height: 12),
+                      _buildSummaryRow(label: 'Payment', value: paymentLabel!),
+                    ],
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 12),
                       child: Divider(color: Color(0xFFE2E8F0), height: 1),
                     ),
-                    _buildSummaryRow(label: 'Total Paid', value: totalPaid, isBold: true),
+                    _buildSummaryRow(
+                      label: paidNow ? 'Total Paid' : 'To pay at store',
+                      value: totalPaid,
+                      isBold: true,
+                    ),
                   ],
                 ),
               ),
@@ -174,6 +197,9 @@ class OrderConfirmationScreen extends StatelessWidget {
 
               const SizedBox(height: 10),
             ],
+          ),
+              ),
+            ),
           ),
         ),
       ),

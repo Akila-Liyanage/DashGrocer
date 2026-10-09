@@ -8,6 +8,7 @@ import '../../services/grocery_service.dart';
 import 'my_cards_screen.dart';
 import 'order_history_screen.dart';
 import 'track_order_screen.dart';
+import 'widgets/cancel_order_dialog.dart';
 
 class ProfileTab extends StatefulWidget {
   final UserModel? user;
@@ -791,6 +792,12 @@ class _ProfileTabState extends State<ProfileTab> {
               ),
             ],
           ),
+
+          // The customer can cancel until the shop has finished packing
+          if (GroceryService().canCustomerCancel(order)) ...[
+            const SizedBox(height: 12),
+            CancelOrderButton(orderId: order.id, compact: true),
+          ],
         ],
       ),
     );

@@ -84,10 +84,38 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return brand == CardBrand.other ? CardBrand.mastercard : brand;
   }
 
+  /// "Visa •••• 4242" for the receipt, or "Pay at Store".
+  String _paymentLabel(bool isCard) {
+    if (!isCard) return 'Pay at Store';
+    if (_selectedSaved != null) return _selectedSaved!.shortLabel;
+    final digits = _numberController.text.replaceAll(' ', '');
+    if (digits.length < 4) return 'Card';
+    return '${cardBrandName(detectCardBrand(digits))} •••• ${digits.substring(digits.length - 4)}';
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+        backgroundColor: const Color(0xFFEF4444),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
   Future<void> _pay() async {
     final isCard = _method == _PayMethod.card;
     if (isCard && !(_formKey.currentState?.validate() ?? false)) return;
 
+    // Never take payment (or create an order) for nothing.
+    if (GroceryService().cartItems.isEmpty || widget.totalAmount <= 0) {
+      _showMessage('Your cart is empty. Add items before paying.');
+      return;
+    }
+
+    final receiptLabel = _paymentLabel(isCard);
     setState(() => _isProcessing = true);
     // Simulated payment processing (no real payment gateway is connected)
     await Future.delayed(const Duration(milliseconds: 1500));
@@ -120,6 +148,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
           pickupTime: widget.pickupSlot,
           shopName: widget.shopName,
           totalPaid: _total,
+          paymentLabel: receiptLabel,
+          paidNow: isCard,
         ),
       ),
     );
@@ -333,6 +363,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     return Form(
       key: _formKey,
+      // Mistakes show up as soon as the customer leaves a field, not only after paying
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

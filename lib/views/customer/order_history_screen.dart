@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../models/grocery_item_model.dart';
+import '../../models/seller_order_model.dart';
+import '../../services/auth_service.dart';
+import '../../services/grocery_service.dart';
+import '../common/app_image_view.dart';
+import 'seller_chat_screen.dart';
 import 'track_order_screen.dart';
+import 'widgets/cancel_order_dialog.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
   const OrderHistoryScreen({super.key});
@@ -10,36 +17,12 @@ class OrderHistoryScreen extends StatefulWidget {
   State<OrderHistoryScreen> createState() => _OrderHistoryScreenState();
 }
 
-class _HistoryOrder {
-  final String orderId;
-  final String status;
-  final Color statusBgColor;
-  final Color statusTextColor;
-  final String dateTime;
-  final String itemCountLabel;
-  final String price;
-  final List<IconData> foodIcons;
-  final bool isActive;
+class _StatusStyle {
+  final String label;
+  final Color background;
+  final Color foreground;
 
-  const _HistoryOrder({
-    required this.orderId,
-    required this.status,
-    required this.statusBgColor,
-    required this.statusTextColor,
-    required this.dateTime,
-    required this.itemCountLabel,
-    required this.price,
-    required this.foodIcons,
-    required this.isActive,
-  });
-
-  /// True when the typed keywords match the order id, status, date, items or price.
-  bool matches(String query) {
-    final q = query.trim().toLowerCase();
-    if (q.isEmpty) return true;
-    final haystack = '$orderId $status $dateTime $itemCountLabel $price'.toLowerCase();
-    return q.split(RegExp(r'\s+')).every(haystack.contains);
-  }
+  const _StatusStyle(this.label, this.background, this.foreground);
 }
 
 class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
@@ -50,45 +33,132 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
 
-  static const List<_HistoryOrder> _orders = [
-    _HistoryOrder(
-      orderId: '#FP-2028-0142',
-      status: 'PREPARING',
-      statusBgColor: Color(0xFFE0F2FE),
-      statusTextColor: Color(0xFF0284C7),
-      dateTime: 'Today , 2:30 PM',
-      itemCountLabel: '4 Items , Paid',
-      price: 'Rs. 1000',
-      foodIcons: [Icons.eco_rounded, Icons.apple_rounded, Icons.local_drink_rounded],
-      isActive: true,
-    ),
-    _HistoryOrder(
-      orderId: '#FP-2025-8341',
-      status: 'COMPLETED',
-      statusBgColor: Color(0xFFF1F5F9),
-      statusTextColor: Color(0xFF475569),
-      dateTime: 'Yesterday , 4:30 PM',
-      itemCountLabel: '2 Items , Card',
-      price: 'Rs. 500',
-      foodIcons: [Icons.shopping_bag_outlined, Icons.rice_bowl_outlined],
-      isActive: false,
-    ),
-  ];
-
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
+  // ---- order helpers -------------------------------------------------------
+
+  static bool _isActive(StoreOrder o) => o.status != 'Completed' && o.status != 'Cancelled';
+
+  static _StatusStyle _statusStyle(String status) {
+    switch (status) {
+      case 'Preparing':
+        return const _StatusStyle('PREPARING', Color(0xFFE0F2FE), Color(0xFF0284C7));
+      case 'Ready for Pickup':
+        return const _StatusStyle('READY', Color(0xFFE8F6EB), AppColors.brandGreenDark);
+      case 'Completed':
+        return const _StatusStyle('COMPLETED', Color(0xFFF1F5F9), Color(0xFF475569));
+      case 'Cancelled':
+        return const _StatusStyle('CANCELLED', Color(0xFFFEE2E2), Color(0xFFB91C1C));
+      default:
+        return const _StatusStyle('PENDING', Color(0xFFFEF3C7), Color(0xFFB45309));
+    }
+  }
+
+  static String _timeLabel(DateTime t) {
+    final hour12 = t.hour % 12 == 0 ? 12 : t.hour % 12;
+    final minutes = t.minute.toString().padLeft(2, '0');
+    return '$hour12:$minutes ${t.hour < 12 ? 'AM' : 'PM'}';
+  }
+
+  /// "Today , 2:30 PM", "Yesterday , 4:30 PM" or "12 Oct , 4:30 PM".
+  static String _dateLabel(DateTime placed) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(placed.year, placed.month, placed.day);
+    final diff = today.difference(day).inDays;
+    final dayText = diff == 0
+        ? 'Today'
+        : diff == 1
+            ? 'Yesterday'
+            : '${placed.day} ${months[placed.month - 1]}';
+    return '$dayText , ${_timeLabel(placed)}';
+  }
+
+  /// "4 Items , Paid" / "2 Items , Pay at Store".
+  static String _itemCountLabel(StoreOrder o) {
+    final match = RegExp(r'^\s*(\d+)\s+item').firstMatch(o.itemsSummary);
+    final count = match == null ? null : int.tryParse(match.group(1)!);
+    final pay = o.paymentMethod.toLowerCase().contains('online') ? 'Paid' : 'Pay at Store';
+    if (count == null) return pay;
+    return '$count ${count == 1 ? 'Item' : 'Items'} , $pay';
+  }
+
+  static int? _itemCount(StoreOrder o) {
+    final match = RegExp(r'^\s*(\d+)\s+item').firstMatch(o.itemsSummary);
+    return match == null ? null : int.tryParse(match.group(1)!);
+  }
+
+  /// Catalog products named in "3 items (Carrots, Milk, Bread)", for the pictures.
+  static List<GroceryItem> _productsOf(StoreOrder o) {
+    final match = RegExp(r'\(([^)]*)\)').firstMatch(o.itemsSummary);
+    if (match == null) return const [];
+    final names = match
+        .group(1)!
+        .split(',')
+        .map((s) => s.replaceAll('...', '').trim().toLowerCase())
+        .where((s) => s.isNotEmpty);
+    final catalog = GroceryService().allItems;
+    final found = <GroceryItem>[];
+    for (final name in names) {
+      for (final item in catalog) {
+        final itemName = item.name.toLowerCase();
+        if (itemName == name || itemName.contains(name) || name.contains(itemName)) {
+          if (!found.any((f) => f.id == item.id)) found.add(item);
+          break;
+        }
+      }
+    }
+    return found;
+  }
+
+  bool _matches(StoreOrder o) {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    final haystack = '${o.id} ${o.status} ${_statusStyle(o.status).label} ${_dateLabel(o.createdAt)} '
+            '${_itemCountLabel(o)} ${o.formattedTotal} ${o.itemsSummary} ${o.shopName}'
+        .toLowerCase();
+    return q.split(RegExp(r'\s+')).every(haystack.contains);
+  }
+
+  List<StoreOrder> _myOrders() {
+    final user = AuthService().currentUser;
+    final name = (user?.fullName.isNotEmpty == true) ? user!.fullName : 'Kasun Perera';
+    final phone = (user?.phoneNumber.isNotEmpty == true) ? user!.phoneNumber : '+94 77 123 4567';
+    final orders = GroceryService().ordersForCustomer(name: name, phone: phone);
+    orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return orders;
+  }
+
+  // ---- screen --------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
-    final searched = _orders.where((o) => o.matches(_query)).toList();
+    return ListenableBuilder(
+      listenable: GroceryService(),
+      builder: (context, _) => _buildScreen(context),
+    );
+  }
+
+  Widget _buildScreen(BuildContext context) {
+    final myOrders = _myOrders();
+    final searched = myOrders.where(_matches).toList();
     final showActive = _selectedFilterIndex == 0 || _selectedFilterIndex == 1;
+    final activeOrders = showActive ? searched.where(_isActive).toList() : <StoreOrder>[];
+    // Collected orders ("Past Orders") and cancelled orders have their own sections.
     final showPast = _selectedFilterIndex == 0 || _selectedFilterIndex == 2;
-    final activeOrders = showActive ? searched.where((o) => o.isActive).toList() : <_HistoryOrder>[];
-    final pastOrders = showPast ? searched.where((o) => !o.isActive).toList() : <_HistoryOrder>[];
-    final hasResults = activeOrders.isNotEmpty || pastOrders.isNotEmpty;
+    final showCancelled = _selectedFilterIndex == 0 || _selectedFilterIndex == 3;
+    final pastOrders =
+        showPast ? searched.where((o) => o.status == 'Completed').toList() : <StoreOrder>[];
+    final cancelledOrders =
+        showCancelled ? searched.where((o) => o.status == 'Cancelled').toList() : <StoreOrder>[];
+    final hasResults =
+        activeOrders.isNotEmpty || pastOrders.isNotEmpty || cancelledOrders.isNotEmpty;
+    final readyOrder = myOrders.where((o) => o.status == 'Ready for Pickup').toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFFBFBFB),
@@ -117,65 +187,79 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Ready for Pickup Notification Banner
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFF1F5F9)),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x06000000),
-                    blurRadius: 10,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: AppColors.errorSoft,
-                      borderRadius: BorderRadius.circular(10),
+            // Ready for Pickup banner (only when an order is ready)
+            if (readyOrder.isNotEmpty) ...[
+              // Tapping the banner opens that order's tracking screen
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TrackOrderScreen(orderId: readyOrder.first.id),
                     ),
-                    child: const Icon(
-                      Icons.notifications_active_rounded,
-                      color: AppColors.error,
-                      size: 20,
+                  );
+                },
+                child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFF1F5F9)),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x06000000),
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Order #FP-2028-0142',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1E293B),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.errorSoft,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.notifications_active_rounded,
+                        color: AppColors.error,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Order ${readyOrder.first.id}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1E293B),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Ready for pickup at 4:00 PM today',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 12,
-                            color: const Color(0xFF868889),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Ready for pickup • ${readyOrder.first.pickupSlot}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              color: const Color(0xFF868889),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    const Icon(Icons.chevron_right_rounded, size: 22, color: Color(0xFF94A3B8)),
+                  ],
+                ),
+                ),
               ),
-            ),
-
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
+            ],
 
             // Search Bar
             Container(
@@ -209,7 +293,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                     ),
                   ),
@@ -330,8 +414,42 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-
               for (final order in activeOrders) _buildOrderCard(order),
+              const SizedBox(height: 22),
+            ],
+
+            // Cancelled Section (orders the customer or the shop cancelled)
+            if (cancelledOrders.isNotEmpty) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Cancelled',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFB91C1C),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${cancelledOrders.length} ${cancelledOrders.length == 1 ? 'order' : 'orders'}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFFB91C1C),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              for (final order in cancelledOrders) _buildOrderCard(order),
               const SizedBox(height: 22),
             ],
 
@@ -358,7 +476,6 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-
               for (final order in pastOrders) _buildOrderCard(order),
             ],
           ],
@@ -367,15 +484,13 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     );
   }
 
-  Widget _buildOrderCard(_HistoryOrder order) {
-    final orderId = order.orderId;
-    final status = order.status;
-    final statusBgColor = order.statusBgColor;
-    final statusTextColor = order.statusTextColor;
-    final dateTime = order.dateTime;
-    final itemCountLabel = order.itemCountLabel;
-    final price = order.price;
-    final foodIcons = order.foodIcons;
+  Widget _buildOrderCard(StoreOrder order) {
+    final style = _statusStyle(order.status);
+    final products = _productsOf(order);
+    final shownProducts = products.take(3).toList();
+    final count = _itemCount(order);
+    final extraCount = (count ?? 0) - shownProducts.length;
+    final orderId = order.id;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -410,15 +525,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusBgColor,
+                  color: style.background,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  status,
+                  style.label,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
-                    color: statusTextColor,
+                    color: style.foreground,
                   ),
                 ),
               ),
@@ -429,48 +544,154 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
           // Date & Time
           Text(
-            dateTime,
+            _dateLabel(order.createdAt),
             style: GoogleFonts.plusJakartaSans(
               fontSize: 12,
               color: const Color(0xFF868889),
             ),
           ),
 
+          // Who cancelled it, why, and what happens to the payment
+          if (order.status == 'Cancelled') ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFECACA)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 1),
+                    child: Icon(Icons.cancel_outlined, size: 16, color: Color(0xFFDC2626)),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          order.cancelledByCustomer
+                              ? 'You cancelled this order'
+                              : 'The shop cancelled this order',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF991B1B),
+                          ),
+                        ),
+                        if ((order.cancelReason ?? '').isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            'Reason: ${order.cancelReason}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11.5,
+                              color: const Color(0xFF7F1D1D),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 2),
+                        Text(
+                          order.paymentMethod.toLowerCase().contains('online')
+                              ? 'Your card payment will be refunded.'
+                              : 'Nothing was charged.',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11.5,
+                            color: const Color(0xFF7F1D1D),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           const SizedBox(height: 12),
 
-          // Food items icons row
+          // Product pictures row
           Row(
             children: [
-              ...foodIcons.map(
-                (icon) => Container(
-                  width: 32,
-                  height: 32,
+              if (shownProducts.isEmpty)
+                Container(
+                  width: 44,
+                  height: 44,
                   margin: const EdgeInsets.only(right: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
-                  child: Icon(icon, size: 16, color: AppColors.brandGreen),
+                  child: const Icon(Icons.shopping_bag_outlined, size: 20, color: AppColors.brandGreen),
+                ),
+              ...shownProducts.map(
+                (item) => Tooltip(
+                  message: item.name,
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    margin: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: item.circleColor,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: AppImageView(
+                      imageUrl: item.imageUrl,
+                      fit: BoxFit.contain,
+                      width: 36,
+                      height: 36,
+                    ),
+                  ),
                 ),
               ),
+              if (shownProducts.isNotEmpty && extraCount > 0)
+                Container(
+                  width: 44,
+                  height: 44,
+                  margin: const EdgeInsets.only(right: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '+$extraCount',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
+                ),
               const Spacer(),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    itemCountLabel,
+                    _itemCountLabel(order),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 11,
                       color: const Color(0xFF868889),
                     ),
                   ),
                   Text(
-                    price,
+                    order.formattedTotal,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.brandGreenDark,
+                      color: order.status == 'Cancelled'
+                          ? const Color(0xFF94A3B8)
+                          : AppColors.brandGreenDark,
+                      decoration: order.status == 'Cancelled' ? TextDecoration.lineThrough : null,
                     ),
                   ),
                 ],
@@ -521,11 +742,14 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Contacting store regarding $orderId...'),
-                        backgroundColor: const Color(0xFF1E293B),
-                        behavior: SnackBarBehavior.floating,
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SellerChatScreen(
+                          shopName: order.shopName,
+                          sellerName: 'Sunil Weerasinghe',
+                          sellerPhone: '+94 71 987 6543',
+                        ),
                       ),
                     );
                   },
@@ -540,6 +764,23 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               ),
             ],
           ),
+
+          // The customer can cancel until the shop has finished packing
+          if (GroceryService().canCustomerCancel(order)) ...[
+            const SizedBox(height: 10),
+            CancelOrderButton(
+              orderId: orderId,
+              compact: true,
+              // "View" in the message jumps to the Cancel tab, where the order now is
+              onViewCancelled: () {
+                _searchController.clear();
+                setState(() {
+                  _query = '';
+                  _selectedFilterIndex = 3;
+                });
+              },
+            ),
+          ],
         ],
       ),
     );

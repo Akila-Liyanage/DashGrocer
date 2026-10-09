@@ -37,6 +37,8 @@ void main() {
 
   group('Complete End-to-End System & Flow Verification', () {
     testWidgets('Flow 1: Customer Cart Checkout -> Pickup Time Selection -> Order Confirmed -> Track Order', (WidgetTester tester) async {
+      PickupTimeScreen.clock = () => DateTime(2026, 10, 12, 8, 0);
+      addTearDown(() => PickupTimeScreen.clock = DateTime.now);
       final groceryService = GroceryService();
       groceryService.addToCart('pumpkin', 2);
 
@@ -54,11 +56,11 @@ void main() {
       // Verify Pickup screen elements
       expect(find.text('Pickup Time'), findsOneWidget);
       expect(find.text('Green mart'), findsOneWidget);
-      expect(find.text('Today , Mon 10 Aug'), findsOneWidget);
+      expect(find.text('Today , Mon 12 Oct'), findsOneWidget);
       expect(find.text('Continue to Payment'), findsOneWidget);
 
       // Select time slot
-      await tester.tap(find.text('2.00 PM'));
+      await tester.tap(find.text('2.00 PM').first); // today's slot (listed first)
       await tester.pump();
 
       // Tap Continue to Payment
@@ -181,7 +183,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Reviews'), findsOneWidget);
-      expect(find.text('4.8'), findsOneWidget);
+      expect(find.text('4.7'), findsOneWidget); // worked out from the 125 earlier reviews
       expect(find.text('Write a review'), findsOneWidget);
       expect(find.text('Back To Home'), findsOneWidget);
     });

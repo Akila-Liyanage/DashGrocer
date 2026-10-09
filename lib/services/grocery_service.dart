@@ -203,6 +203,8 @@ class GroceryService extends ChangeNotifier {
                     : DateTime.now(),
                 isRead: data['isRead'] as bool? ?? false,
                 paymentMethod: data['paymentMethod'] as String? ?? 'Pay at Store',
+                cancelReason: data['cancelReason'] as String?,
+                cancelledByCustomer: data['cancelledByCustomer'] as bool? ?? false,
               ));
             } catch (e) {
               debugPrint('Error parsing Firestore order doc ${doc.id}: $e');
@@ -1486,6 +1488,8 @@ class GroceryService extends ChangeNotifier {
       'createdAt': order.createdAt.toIso8601String(),
       'isRead': order.isRead,
       'paymentMethod': order.paymentMethod,
+      'cancelReason': order.cancelReason,
+      'cancelledByCustomer': order.cancelledByCustomer,
     };
   }
 
@@ -1652,6 +1656,109 @@ class GroceryService extends ChangeNotifier {
         });
       }
     }
+  }
+
+  /// The customer can confirm they collected the order once the shop says it is
+  /// ready for pickup.
+  bool canCustomerConfirmPickup(StoreOrder? order) {
+    return order != null && order.status == 'Ready for Pickup';
+  }
+
+  /// The customer says they collected the order: it becomes Completed, the
+  /// shop is told and the customer gets a thank-you. Returns false when the
+  /// order is not ready for pickup.
+  bool confirmPickupByCustomer(String orderId) {
+    final order = orderById(orderId);
+    if (!canCustomerConfirmPickup(order)) return false;
+
+    updateOrderStatus(orderId, 'Completed');
+
+    _sellerNotifications.insert(
+      0,
+      SellerNotification(
+        id: 'notif_${DateTime.now().microsecondsSinceEpoch}',
+        title: 'Order Collected: $orderId',
+        message: '${order!.customerName} confirmed they collected this order (${order.formattedTotal}).',
+        time: DateTime.now(),
+        orderId: orderId,
+        isRead: false,
+      ),
+    );
+    _customerNotifications.insert(
+      0,
+      CustomerNotification(
+        id: 'cust_notif_${DateTime.now().microsecondsSinceEpoch}',
+        title: 'Order Collected: $orderId',
+        message: 'Thank you for shopping at ${order.shopName}! We hope you enjoy your groceries.',
+        timeAgo: 'Just now',
+        time: DateTime.now(),
+        orderId: orderId,
+        isRead: false,
+      ),
+    );
+    notifyListeners();
+    return true;
+  }
+
+  /// A customer can still cancel while the shop has not finished packing the
+  /// order, which means it is Pending or Preparing.
+  bool canCustomerCancel(StoreOrder? order) {
+    return order != null && (order.status == 'Pending' || order.status == 'Preparing');
+  }
+
+  /// Cancels an order for the customer. The shop is told and the customer gets
+  /// a confirmation. Returns false when the order can no longer be cancelled
+  /// (already ready for pickup, completed or cancelled).
+  bool cancelOrderByCustomer(String orderId, {String? reason}) {
+    final index = _sellerOrders.indexWhere((o) => o.id == orderId);
+    if (index == -1 || !canCustomerCancel(_sellerOrders[index])) return false;
+
+    final order = _sellerOrders[index];
+    final cleanReason = (reason == null || reason.trim().isEmpty) ? null : reason.trim();
+    _sellerOrders[index] = order.copyWith(
+      status: 'Cancelled',
+      cancelReason: cleanReason,
+      cancelledByCustomer: true,
+    );
+
+    final firestore = _firestore;
+    if (firestore != null) {
+      firestore
+          .collection('orders')
+          .doc(orderId)
+          .set(_orderToMap(_sellerOrders[index]), SetOptions(merge: true))
+          .catchError((e) {
+        debugPrint('Firestore cancel order error: $e');
+      });
+    }
+
+    _sellerNotifications.insert(
+      0,
+      SellerNotification(
+        id: 'notif_${DateTime.now().microsecondsSinceEpoch}',
+        title: 'Order Cancelled: $orderId',
+        message: '${order.customerName} cancelled this order (${order.formattedTotal}).'
+            '${cleanReason == null ? '' : ' Reason: $cleanReason.'}',
+        time: DateTime.now(),
+        orderId: orderId,
+        isRead: false,
+      ),
+    );
+    _customerNotifications.insert(
+      0,
+      CustomerNotification(
+        id: 'cust_notif_${DateTime.now().microsecondsSinceEpoch}',
+        title: 'Order Cancelled: $orderId',
+        message: 'You cancelled your order at ${order.shopName}. '
+            '${order.paymentMethod.toLowerCase().contains('online') ? 'Your card payment will be refunded.' : 'Nothing was charged.'}',
+        timeAgo: 'Just now',
+        time: DateTime.now(),
+        orderId: orderId,
+        isRead: false,
+      ),
+    );
+    notifyListeners();
+    return true;
   }
 
   void markCustomerNotificationsRead() {

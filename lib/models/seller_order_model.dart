@@ -11,6 +11,12 @@ class StoreOrder {
   final bool isRead;
   final String paymentMethod; // 'Pay at Store' or 'Paid Online (Card)'
 
+  /// Why the order was cancelled (only set for cancelled orders).
+  final String? cancelReason;
+
+  /// True when the customer cancelled it themselves (not the shop).
+  final bool cancelledByCustomer;
+
   const StoreOrder({
     required this.id,
     required this.customerName,
@@ -23,6 +29,8 @@ class StoreOrder {
     required this.createdAt,
     this.isRead = false,
     this.paymentMethod = 'Pay at Store',
+    this.cancelReason,
+    this.cancelledByCustomer = false,
   });
 
   bool get isReady => status == 'Ready for Pickup';
@@ -40,6 +48,8 @@ class StoreOrder {
     DateTime? createdAt,
     bool? isRead,
     String? paymentMethod,
+    String? cancelReason,
+    bool? cancelledByCustomer,
   }) {
     return StoreOrder(
       id: id ?? this.id,
@@ -53,6 +63,8 @@ class StoreOrder {
       createdAt: createdAt ?? this.createdAt,
       isRead: isRead ?? this.isRead,
       paymentMethod: paymentMethod ?? this.paymentMethod,
+      cancelReason: cancelReason ?? this.cancelReason,
+      cancelledByCustomer: cancelledByCustomer ?? this.cancelledByCustomer,
     );
   }
 

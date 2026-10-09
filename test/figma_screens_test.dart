@@ -98,6 +98,8 @@ void main() {
     });
 
     testWidgets('6. Pickup Time Screen: renders store info, date slots and Continue to Payment', (tester) async {
+      PickupTimeScreen.clock = () => DateTime(2026, 10, 12, 8, 0);
+      addTearDown(() => PickupTimeScreen.clock = DateTime.now);
       await tester.pumpWidget(
         const MaterialApp(
           home: PickupTimeScreen(shopName: 'Green mart', totalAmount: 1000.0),
@@ -107,8 +109,8 @@ void main() {
 
       expect(find.text('Pickup Time'), findsOneWidget);
       expect(find.text('Green mart'), findsOneWidget);
-      expect(find.text('Today , Mon 10 Aug'), findsOneWidget);
-      expect(find.text('Tomorrow , Tue 11 Aug'), findsOneWidget);
+      expect(find.text('Today , Mon 12 Oct'), findsOneWidget);
+      expect(find.text('Tomorrow , Tue 13 Oct'), findsOneWidget);
       expect(find.text('Continue to Payment'), findsOneWidget);
     });
 
@@ -128,6 +130,18 @@ void main() {
     });
 
     testWidgets('8. Order History Screen: renders notification, search bar, active orders and past orders', (tester) async {
+      // An order that is ready for pickup shows the banner and a card
+      final groceryService = GroceryService();
+      groceryService.addToCart('carrot', 1);
+      final readyId = groceryService.placeOrder(
+        customerName: 'Kasun Perera',
+        customerPhone: '+94 77 123 4567',
+        pickupSlot: 'Today, 4.00 PM',
+        totalAmount: 340,
+        shopName: 'Green mart',
+      );
+      groceryService.updateOrderStatus(readyId, 'Ready for Pickup');
+
       await tester.pumpWidget(
         const MaterialApp(
           home: OrderHistoryScreen(),
@@ -137,8 +151,11 @@ void main() {
 
       expect(find.text('Order History'), findsOneWidget);
       expect(find.text('Search keywords...'), findsOneWidget);
-      expect(find.text('Ready for pickup at 4:00 PM today'), findsOneWidget);
-      expect(find.text('#FP-2028-0142'), findsOneWidget);
+      // Banner for an order that is ready, and the customer's real orders
+      expect(find.textContaining('Ready for pickup •'), findsOneWidget);
+      expect(find.text('Order $readyId'), findsOneWidget);
+      expect(find.text(readyId), findsOneWidget);
+      expect(find.text('READY'), findsWidgets);
       expect(find.text('Track Order'), findsWidgets);
     });
 
@@ -166,8 +183,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Reviews'), findsOneWidget);
-      expect(find.text('4.8'), findsOneWidget);
-      expect(find.text('125 Reviews'), findsOneWidget);
+      expect(find.text('4.7'), findsOneWidget); // average of the 125 earlier reviews
+      expect(find.text('3 Reviews'), findsOneWidget);
       expect(find.text('Write a review'), findsOneWidget);
       expect(find.text('Olivia'), findsOneWidget);
       expect(find.text('Back To Home'), findsOneWidget);
@@ -203,7 +220,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Page closes, review count updates, new review is displayed in list
-      expect(find.text('126 Reviews'), findsOneWidget);
+      expect(find.text('4 Reviews'), findsOneWidget);
       expect(find.text('Excellent crisp apples and very quick pickup!'), findsOneWidget);
     });
 

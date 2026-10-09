@@ -31,7 +31,27 @@ class ExpiryFormatter extends TextInputFormatter {
 class CardValidators {
   static String? cardNumber(String? v) {
     final digits = (v ?? '').replaceAll(' ', '');
-    return digits.length == 16 ? null : 'Enter a valid 16-digit card number';
+    if (digits.length != 16) return 'Enter a valid 16-digit card number';
+    if (!passesLuhn(digits)) return 'This card number is not valid. Please check it.';
+    return null;
+  }
+
+  /// The check every real card number passes (Luhn). It catches typing
+  /// mistakes and made-up numbers such as 1111 1111 1111 1111.
+  static bool passesLuhn(String digits) {
+    var sum = 0;
+    var doubleIt = false;
+    for (var i = digits.length - 1; i >= 0; i--) {
+      var digit = int.tryParse(digits[i]);
+      if (digit == null) return false;
+      if (doubleIt) {
+        digit *= 2;
+        if (digit > 9) digit -= 9;
+      }
+      sum += digit;
+      doubleIt = !doubleIt;
+    }
+    return digits.isNotEmpty && sum % 10 == 0;
   }
 
   static String? name(String? v) =>
