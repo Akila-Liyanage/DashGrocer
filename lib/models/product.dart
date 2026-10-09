@@ -185,6 +185,7 @@ class Product {
       name: map['name'] as String? ?? 'Product',
       category: map['category'] as String? ?? '',
       unit: map['unit'] as String? ?? '',
+      price: (map['price'] as num?)?.toDouble() ?? 0,
       stock: () {
         final s = (map['stock'] as num?)?.toInt();
         final sq = (map['stockQuantity'] as num?)?.toInt();
