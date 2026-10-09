@@ -1,8 +1,12 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/formatters.dart';
 import '../../core/theme/app_colors.dart';
+import '../../models/shop_profile.dart';
 import 'payment_screen.dart';
 
 class PickupTimeScreen extends StatefulWidget {
@@ -10,12 +14,35 @@ class PickupTimeScreen extends StatefulWidget {
   final String shopAddress;
   final double totalAmount;
 
+  /// The shop the order is for. When given, the pickup times offered are the
+  /// ones its owner set (opening hours and slot length).
+  final String? shopId;
+
   const PickupTimeScreen({
     super.key,
     this.shopName = 'Green mart',
     this.shopAddress = '123 Main Street • Open until 9 PM',
     this.totalAmount = 1000.0,
+    this.shopId,
   });
+
+  /// Reads a shop's settings, live. Sends null for a shop that has none
+  /// saved. Tests replace this.
+  @visibleForTesting
+  static Stream<ShopProfile?> Function(String shopId) shopLoader =
+      _loadShopFromFirestore;
+
+  static Stream<ShopProfile?> _loadShopFromFirestore(String shopId) {
+    if (Firebase.apps.isEmpty) return const Stream<ShopProfile?>.empty();
+    return FirebaseFirestore.instance
+        .collection('shops')
+        .doc(shopId)
+        .snapshots()
+        .map((doc) {
+      final data = doc.data();
+      return data == null ? null : ShopProfile.fromMap(doc.id, data);
+    });
+  }
 
   /// Source of "now". Tests replace this so slot availability is predictable.
   @visibleForTesting
@@ -35,22 +62,27 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
   ];
 
-  /// Pickup slots offered every day (label, hour in 24h time). The shop is open until 9 PM.
-  static const List<(String, int)> _slots = [
-    ('9.00 AM', 9),
-    ('10.00 AM', 10),
-    ('11.00 AM', 11),
-    ('12.00 PM', 12),
-    ('2.00 PM', 14),
-    ('4.00 PM', 16),
-    ('5.00 PM', 17),
-    ('6.00 PM', 18),
-    ('7.00 PM', 19),
+  /// Pickup slots (label, minutes since midnight) offered when the shop's
+  /// own settings are not known.
+  static const List<(String, int)> _defaultSlots = [
+    ('9.00 AM', 540),
+    ('10.00 AM', 600),
+    ('11.00 AM', 660),
+    ('12.00 PM', 720),
+    ('2.00 PM', 840),
+    ('4.00 PM', 960),
+    ('5.00 PM', 1020),
+    ('6.00 PM', 1080),
+    ('7.00 PM', 1140),
   ];
 
   late String _selectedSlot;
   late String _selectedDay;
   Timer? _ticker;
+
+  /// The shop's settings, once loaded. Null means the default slots are used.
+  ShopProfile? _shop;
+  StreamSubscription<ShopProfile?>? _shopSub;
 
   DateTime get _now => PickupTimeScreen.clock();
 
@@ -60,12 +92,41 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
     _selectDefaultSlot();
     // Keep the dates and slots in step with the clock while the screen is open.
     _ticker = Timer.periodic(const Duration(seconds: 20), (_) => _onClockTick());
+
+    final shopId = widget.shopId;
+    if (shopId != null && shopId.isNotEmpty) {
+      _shopSub = PickupTimeScreen.shopLoader(shopId).listen(
+        _onShopChanged,
+        onError: (Object error) => debugPrint('Could not load shop hours: $error'),
+      );
+    }
   }
 
   @override
   void dispose() {
     _ticker?.cancel();
+    _shopSub?.cancel();
     super.dispose();
+  }
+
+  /// The shop's settings arrived, or its owner just changed them.
+  void _onShopChanged(ShopProfile? shop) {
+    if (!mounted) return;
+    setState(() {
+      _shop = shop;
+      final offered = _selectedDay == 'Today' ? _todaySlots : _tomorrowSlots;
+      if (!offered.contains(_selectedSlot)) _selectDefaultSlot();
+    });
+  }
+
+  /// The pickup slots (label, minutes since midnight) the shop offers on [day].
+  List<(String, int)> _slotsOn(DateTime day) {
+    final shop = _shop;
+    if (shop == null) return _defaultSlots;
+    return [
+      for (final start in shop.pickupSlotsFor(day))
+        (formatMinutesOfDay(start), start),
+    ];
   }
 
   /// Called every few seconds: hides slots that have started, rolls the dates
@@ -89,7 +150,8 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
     }
   }
 
-  /// Prefer 4.00 PM today, otherwise the first free slot today, otherwise tomorrow morning.
+  /// Prefer 4.00 PM today, otherwise the first free slot today, otherwise
+  /// tomorrow's first slot. The slot is empty when the shop offers none.
   void _selectDefaultSlot() {
     final free = _todaySlots;
     if (free.contains('4.00 PM')) {
@@ -99,8 +161,9 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
       _selectedDay = 'Today';
       _selectedSlot = free.first;
     } else {
+      final tomorrow = _tomorrowSlots;
       _selectedDay = 'Tomorrow';
-      _selectedSlot = _slots.first.$1;
+      _selectedSlot = tomorrow.isEmpty ? '' : tomorrow.first;
     }
   }
 
@@ -109,17 +172,49 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
     final now = _now;
     final earliest = now.add(_leadTime);
     return [
-      for (final (label, hour) in _slots)
-        if (DateTime(now.year, now.month, now.day, hour).isAfter(earliest)) label,
+      for (final (label, start) in _slotsOn(now))
+        if (DateTime(now.year, now.month, now.day, start ~/ 60, start % 60)
+            .isAfter(earliest))
+          label,
     ];
   }
 
-  List<String> get _tomorrowSlots => [for (final (label, _) in _slots) label];
+  List<String> get _tomorrowSlots => [
+        for (final (label, _) in _slotsOn(_now.add(const Duration(days: 1))))
+          label,
+      ];
+
+  /// Shop name and address line, from the shop's own settings once loaded.
+  String get _shopName {
+    final name = _shop?.name ?? '';
+    return name.isEmpty ? widget.shopName : name;
+  }
+
+  String get _shopAddress {
+    final shop = _shop;
+    if (shop == null) return widget.shopAddress;
+    final isSunday = _now.weekday == DateTime.sunday;
+    final hours = isSunday ? shop.sundayHoursLabel : shop.weekdayHoursLabel;
+    final today = hours == 'Closed' ? 'Closed today' : 'Open $hours';
+    return shop.address.isEmpty ? today : '${shop.address} • $today';
+  }
 
   String _dateLabel(DateTime date) =>
       '${_weekdays[date.weekday - 1]} ${date.day} ${_months[date.month - 1]}';
 
   void _continueToPayment() {
+    if (_selectedSlot.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'This shop has no pickup times available right now.',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
     // The time may have moved on while this screen was open.
     if (_selectedDay == 'Today' && !_todaySlots.contains(_selectedSlot)) {
       setState(_selectDefaultSlot);
@@ -138,7 +233,7 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => PaymentScreen(
-          shopName: widget.shopName,
+          shopName: _shopName,
           pickupSlot: '$_selectedDay, $_selectedSlot',
           totalAmount: widget.totalAmount,
         ),
@@ -213,7 +308,7 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  widget.shopName,
+                                  _shopName,
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
@@ -222,7 +317,7 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
-                                  widget.shopAddress,
+                                  _shopAddress,
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 12,
                                     color: const Color(0xFF868889),
@@ -248,21 +343,8 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
                     ),
                     const SizedBox(height: 12),
                     if (_todaySlots.isEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Text(
-                          'No more pickup slots today. Please choose a time tomorrow.',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 12.5,
-                            color: const Color(0xFF64748B),
-                          ),
-                        ),
+                      _buildNoSlotsNote(
+                        'No more pickup slots today. Please choose a time tomorrow.',
                       )
                     else
                       _buildTimeSlotGrid(isToday: true),
@@ -279,7 +361,10 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildTimeSlotGrid(isToday: false),
+                    if (_tomorrowSlots.isEmpty)
+                      _buildNoSlotsNote('The shop is closed tomorrow.')
+                    else
+                      _buildTimeSlotGrid(isToday: false),
                   ],
                 ),
               ),
@@ -323,6 +408,25 @@ class _PickupTimeScreenState extends State<PickupTimeScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoSlotsNote(String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Text(
+        message,
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 12.5,
+          color: const Color(0xFF64748B),
         ),
       ),
     );

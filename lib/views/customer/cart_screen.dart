@@ -220,12 +220,16 @@ class CartScreen extends StatelessWidget {
                                   ),
                                 ),
                                 onPressed: () {
+                                  // The shop the order goes to: the one
+                                  // selling the first product in the cart.
+                                  final seller = cartItems.first;
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => PickupTimeScreen(
-                                        shopName: 'Green mart',
-                                        shopAddress: '123 Main Street • Open until 9 PM',
+                                        shopId: seller.sellerId,
+                                        shopName: seller.displaySellerShopName,
+                                        shopAddress: seller.sellerAddress ?? '',
                                         totalAmount: total,
                                       ),
                                     ),
