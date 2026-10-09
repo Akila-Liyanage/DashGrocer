@@ -90,7 +90,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     final nutrition = _getNutritionInfo(currentItem);
     final relatedItems = groceryService.allItems
-        .where((i) => i.id != currentItem.id)
+        .where((i) => i.id != currentItem.id && i.isAvailable)
         .take(6)
         .toList();
 

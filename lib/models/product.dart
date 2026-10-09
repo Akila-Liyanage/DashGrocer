@@ -90,6 +90,95 @@ class Product {
   }
 
   factory Product.fromMap(String id, Map<String, dynamic> map) {
+    bool determineProductAvailability(Map<String, dynamic> m) {
+      const statusKeys = [
+        'status',
+        'visibility',
+        'state',
+        'productStatus',
+        'catalogStatus',
+        'itemStatus',
+      ];
+      for (final key in statusKeys) {
+        final val = m[key];
+        if (val != null) {
+          final s = val.toString().trim().toLowerCase();
+          if (s == 'inactive' ||
+              s == 'disabled' ||
+              s == 'hidden' ||
+              s == 'hide' ||
+              s == 'draft' ||
+              s == 'archived' ||
+              s == 'off' ||
+              s == 'unavailable' ||
+              s == 'deleted' ||
+              s == 'paused' ||
+              s == 'false' ||
+              s == '0') {
+            return false;
+          }
+        }
+      }
+
+      const boolKeys = [
+        'isAvailable',
+        'isActive',
+        'active',
+        'available',
+        'is_active',
+        'is_available',
+        'enabled',
+        'visible',
+        'online',
+        'isOnline',
+      ];
+      for (final key in boolKeys) {
+        final val = m[key];
+        if (val != null) {
+          if (val is bool && !val) return false;
+          if (val is num && val == 0) return false;
+          if (val is String) {
+            final s = val.trim().toLowerCase();
+            if (s == 'false' ||
+                s == '0' ||
+                s == 'inactive' ||
+                s == 'disabled' ||
+                s == 'hidden' ||
+                s == 'no' ||
+                s == 'off') {
+              return false;
+            }
+          }
+        }
+      }
+
+      for (final key in boolKeys) {
+        final val = m[key];
+        if (val != null) {
+          if (val is bool && val) return true;
+          if (val is num && val > 0) return true;
+          if (val is String) {
+            final s = val.trim().toLowerCase();
+            if (s == 'true' || s == '1' || s == 'active' || s == 'available' || s == 'yes') {
+              return true;
+            }
+          }
+        }
+      }
+
+      for (final key in statusKeys) {
+        final val = m[key];
+        if (val != null) {
+          final s = val.toString().trim().toLowerCase();
+          if (s == 'active' || s == 'available' || s == 'published' || s == 'live' || s == 'enabled') {
+            return true;
+          }
+        }
+      }
+
+      return true;
+    }
+
     return Product(
       id: id,
       shopId: (map['shopId'] as String?) ?? (map['sellerId'] as String? ?? ''),
@@ -101,7 +190,7 @@ class Product {
       code: map['code'] as String? ?? '',
       barcode: map['barcode'] as String? ?? '',
       lowStockThreshold: (map['lowStockThreshold'] as num?)?.toInt() ?? 10,
-      isAvailable: (map['isAvailable'] as bool?) ?? ((map['isActive'] as bool?) ?? true),
+      isAvailable: determineProductAvailability(map),
       imageUrl: map['imageUrl'] as String?,
       updatedAt: readDate(map['updatedAt']),
     );
@@ -123,6 +212,8 @@ class Product {
       'lowStockThreshold': lowStockThreshold,
       'isAvailable': isAvailable,
       'isActive': isAvailable,
+      'status': isAvailable ? 'active' : 'inactive',
+      'productStatus': isAvailable ? 'active' : 'inactive',
       'imageUrl': imageUrl,
     };
   }

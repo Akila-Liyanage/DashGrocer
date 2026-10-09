@@ -146,11 +146,19 @@ class GroceryService extends ChangeNotifier {
           }
         }
         if (firestoreItems.isNotEmpty) {
+          firestoreItems.sort((a, b) {
+            final aTime = a.createdAt?.millisecondsSinceEpoch ?? (a.isNew ? 9999999999999 : 0);
+            final bTime = b.createdAt?.millisecondsSinceEpoch ?? (b.isNew ? 9999999999999 : 0);
+            return bTime.compareTo(aTime);
+          });
           _items = firestoreItems;
           notifyListeners();
         } else if (snapshot.docs.isEmpty && _hasInitialFirestoreProductsSync) {
-          _items = [];
-          notifyListeners();
+          // If Firestore collection is empty, retain local demo catalog or trigger seeder
+          if (_items.isEmpty) {
+            _initializeDefaultData();
+            notifyListeners();
+          }
         }
         _hasInitialFirestoreProductsSync = true;
       }, onError: (e) {
@@ -1092,7 +1100,7 @@ class GroceryService extends ChangeNotifier {
   }
 
   List<GroceryItem> get favoriteItems {
-    return _items.where((element) => element.isFavorite).toList();
+    return _items.where((element) => element.isFavorite && element.isAvailable).toList();
   }
 
   GroceryItem? getItemById(String id) {
@@ -1114,9 +1122,12 @@ class GroceryService extends ChangeNotifier {
   }
 
   /// Returns all products belonging to a specific shop.
-  List<GroceryItem> getItemsByShop(String shopName) {
+  /// When [activeOnly] is true, only products with isAvailable = true are returned.
+  List<GroceryItem> getItemsByShop(String shopName, {bool activeOnly = false}) {
     final target = shopName.trim().toLowerCase();
-    if (target.isEmpty) return _items;
+    if (target.isEmpty) {
+      return activeOnly ? _items.where((it) => it.isAvailable).toList() : _items;
+    }
     final isGreenLeaf = target.contains('greenleaf') ||
         target.contains('green leaf') ||
         target.contains('green mart');
@@ -1141,6 +1152,9 @@ class GroceryService extends ChangeNotifier {
       return false;
     }).toList();
 
+    if (activeOnly) {
+      return matched.where((item) => item.isAvailable).toList();
+    }
     return matched;
   }
 
@@ -1341,17 +1355,18 @@ class GroceryService extends ChangeNotifier {
 
   // Seller Product Management (Adds directly to live catalog for Customers)
   void addProduct(GroceryItem item) {
-    final index = _items.indexWhere((it) => it.id == item.id);
+    final withTime = item.createdAt == null ? item.copyWith(createdAt: DateTime.now()) : item;
+    final index = _items.indexWhere((it) => it.id == withTime.id);
     if (index == -1) {
-      _items.insert(0, item);
+      _items.insert(0, withTime);
     } else {
-      _items[index] = item;
+      _items[index] = withTime;
     }
     notifyListeners();
 
     final firestore = _firestore;
     if (firestore != null) {
-      firestore.collection('products').doc(item.id).set(item.toMap(), SetOptions(merge: true)).catchError((e) {
+      firestore.collection('products').doc(withTime.id).set(withTime.toMap(), SetOptions(merge: true)).catchError((e) {
         debugPrint('Firestore save product error: $e');
       });
     }
@@ -1416,13 +1431,15 @@ class GroceryService extends ChangeNotifier {
     }
   }
 
-  /// Update stock quantity directly (0 marks as out-of-stock)
+  /// Update stock quantity directly (0 marks as out-of-stock / inactive)
   void setProductStock(String id, int stockQuantity) {
     final index = _items.indexWhere((it) => it.id == id);
     if (index != -1) {
       final current = _items[index];
+      final qty = stockQuantity < 0 ? 0 : stockQuantity;
       final updated = current.copyWith(
-        stockQuantity: stockQuantity < 0 ? 0 : stockQuantity,
+        stockQuantity: qty,
+        isAvailable: qty > 0,
       );
       _items[index] = updated;
       notifyListeners();

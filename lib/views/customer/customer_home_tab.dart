@@ -76,7 +76,14 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
       builder: (context, _) {
         final categories = groceryService.categories;
         final allItems = groceryService.allItems;
-        final featuredProducts = allItems.where((it) => it.isAvailable).toList();
+        final featuredProducts = allItems
+            .where((it) => it.isAvailable && it.stockQuantity > 0)
+            .toList()
+          ..sort((a, b) {
+            final aTime = a.createdAt?.millisecondsSinceEpoch ?? (a.isNew ? 9999999999999 : 0);
+            final bTime = b.createdAt?.millisecondsSinceEpoch ?? (b.isNew ? 9999999999999 : 0);
+            return bTime.compareTo(aTime);
+          });
 
         return Scaffold(
           backgroundColor: const Color(0xFFFBFBFB),

@@ -250,8 +250,8 @@ class _StoreDetailsScreenState extends State<StoreDetailsScreen> {
     return ListenableBuilder(
       listenable: groceryService,
       builder: (context, _) {
-        // Fetch all products associated with this store:
-        final allStoreProducts = groceryService.getItemsByShop(shopName);
+        // Fetch all active products associated with this store:
+        final allStoreProducts = groceryService.getItemsByShop(shopName, activeOnly: true);
 
         // Filter by category:
         var filteredProducts = allStoreProducts;

@@ -118,7 +118,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       builder: (context, _) {
         List<GroceryItem> items = groceryService.getCategoryItems(widget.categoryName);
         if (items.isEmpty) {
-          items = groceryService.allItems.take(6).toList();
+          items = groceryService.allItems.where((it) => it.isAvailable).take(6).toList();
         }
 
         // Apply sort

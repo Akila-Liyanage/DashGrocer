@@ -145,14 +145,26 @@ class FirestoreShopRepository implements ShopRepository {
   Future<void> addStock(Product product, int quantity) {
     return _products.doc(product.id).update(<String, dynamic>{
       'stock': FieldValue.increment(quantity),
+      'stockQuantity': FieldValue.increment(quantity),
+      'isAvailable': true,
+      'isActive': true,
+      'status': 'active',
+      'productStatus': 'active',
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
   @override
   Future<void> setStock(Product product, int stock) {
+    final effectiveStock = stock < 0 ? 0 : stock;
+    final isAvail = effectiveStock > 0;
     return _products.doc(product.id).update(<String, dynamic>{
-      'stock': stock,
+      'stock': effectiveStock,
+      'stockQuantity': effectiveStock,
+      'isAvailable': isAvail,
+      'isActive': isAvail,
+      'status': isAvail ? 'active' : 'inactive',
+      'productStatus': isAvail ? 'active' : 'inactive',
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }

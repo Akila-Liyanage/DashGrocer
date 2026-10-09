@@ -27,9 +27,9 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final out = product.isOutOfStock;
+    final out = product.isOutOfStock || !product.isAvailable;
     final stockNote = out
-        ? 'None left'
+        ? (product.isAvailable ? 'None left' : 'Inactive (Hidden)')
         : '${product.stock} in stock';
 
     return Container(

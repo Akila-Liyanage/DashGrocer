@@ -282,7 +282,13 @@ class GroceryShopRepository implements ShopRepository {
   @override
   Future<void> setStock(Product product, int stock) async {
     final item = _requireItem(product);
-    _service.updateProduct(item.copyWith(stockQuantity: stock < 0 ? 0 : stock));
+    final effectiveStock = stock < 0 ? 0 : stock;
+    _service.updateProduct(
+      item.copyWith(
+        stockQuantity: effectiveStock,
+        isAvailable: effectiveStock > 0,
+      ),
+    );
   }
 
   @override
@@ -300,10 +306,12 @@ class GroceryShopRepository implements ShopRepository {
         GroceryItem(
           id: id,
           name: product.name,
-          unit: product.unit,
+          unit: product.unit.isNotEmpty ? product.unit : '1 kg',
           price: product.price,
-          category: product.category,
-          imageUrl: product.imageUrl ?? '',
+          category: product.category.isNotEmpty ? product.category : 'Vegetables',
+          imageUrl: (product.imageUrl != null && product.imageUrl!.trim().isNotEmpty)
+              ? product.imageUrl!
+              : 'assets/images/carrot.png',
           isNew: true,
           sellerId: sellerId,
           sellerName: _fallbackOwner.fullName.isNotEmpty
@@ -313,6 +321,7 @@ class GroceryShopRepository implements ShopRepository {
           sellerPhone: _fallbackOwner.phoneNumber,
           stockQuantity: product.stock,
           isAvailable: product.isAvailable,
+          createdAt: DateTime.now(),
         ),
       );
       return;

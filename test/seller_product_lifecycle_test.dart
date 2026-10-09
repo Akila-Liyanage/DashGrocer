@@ -278,5 +278,109 @@ void main() {
       expect(find.text('Fresh Pumpkin'), findsOneWidget);
       expect(find.text('Inactive'), findsWidgets);
     });
+
+    test('6. Inactive parsing handles all Firestore status variations and conflicts cleanly', () {
+      // Conflicting isAvailable: true with status: inactive
+      final itemA = GroceryItem.fromMap({
+        'id': 'inactive_conflicting_status',
+        'name': 'Ghost Inactive Mango',
+        'price': 200.0,
+        'category': 'Fruits',
+        'isAvailable': true,
+        'status': 'inactive',
+      });
+      expect(itemA.isAvailable, isFalse);
+
+      // Conflicting isAvailable: true with isActive: false
+      final itemB = GroceryItem.fromMap({
+        'id': 'inactive_conflicting_active',
+        'name': 'Ghost Inactive Papaya',
+        'price': 150.0,
+        'category': 'Fruits',
+        'isAvailable': true,
+        'isActive': false,
+      });
+      expect(itemB.isAvailable, isFalse);
+
+      // Status disabled / hidden
+      final itemC = GroceryItem.fromMap({
+        'id': 'inactive_disabled',
+        'name': 'Ghost Disabled Guava',
+        'price': 180.0,
+        'category': 'Fruits',
+        'status': 'disabled',
+      });
+      expect(itemC.isAvailable, isFalse);
+
+      final itemD = GroceryItem.fromMap({
+        'id': 'inactive_hidden',
+        'name': 'Ghost Hidden Banana',
+        'price': 120.0,
+        'category': 'Fruits',
+        'visibility': 'hidden',
+      });
+      expect(itemD.isAvailable, isFalse);
+
+      // Boolean active: false
+      final itemE = GroceryItem.fromMap({
+        'id': 'inactive_active_false',
+        'name': 'Ghost Active False Lime',
+        'price': 50.0,
+        'category': 'Fruits',
+        'active': false,
+      });
+      expect(itemE.isAvailable, isFalse);
+
+      // toMap includes status and productStatus
+      final toMapResult = itemA.toMap();
+      expect(toMapResult['status'], 'inactive');
+      expect(toMapResult['productStatus'], 'inactive');
+      expect(toMapResult['isAvailable'], isFalse);
+    });
+
+    testWidgets('7. Inactive items NEVER show on Customer Home, Store Details, or Category views', (tester) async {
+      final groceryService = GroceryService();
+
+      // Add an item marked inactive via status: inactive
+      final inactiveGhostItem = GroceryItem.fromMap({
+        'id': 'ghost_inactive_product_99',
+        'name': 'Ghost Inactive Coconut',
+        'unit': '1 item',
+        'price': 160.0,
+        'category': 'Fruits',
+        'sellerShopName': 'GreenLeaf Fresh Mart',
+        'isAvailable': true, // Even if legacy isAvailable was true
+        'status': 'inactive',
+      });
+
+      groceryService.addProduct(inactiveGhostItem);
+
+      // 1. Customer Home Tab must NOT show it
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: CustomerHomeTab(user: customerUser),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Ghost Inactive Coconut'), findsNothing);
+
+      // 2. getItemsByShop with activeOnly: true must NOT contain it
+      final shopActiveItems = groceryService.getItemsByShop('GreenLeaf Fresh Mart', activeOnly: true);
+      expect(shopActiveItems.any((i) => i.id == 'ghost_inactive_product_99'), isFalse);
+
+      // 3. Category products must NOT contain it
+      final categoryItems = groceryService.getCategoryItems('Fruits');
+      expect(categoryItems.any((i) => i.id == 'ghost_inactive_product_99'), isFalse);
+
+      // 4. Search must NOT contain it
+      final searchResults = groceryService.search('Coconut');
+      expect(searchResults.any((i) => i.id == 'ghost_inactive_product_99'), isFalse);
+
+      // Cleanup
+      groceryService.deleteProduct('ghost_inactive_product_99');
+    });
   });
 }

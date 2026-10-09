@@ -25,6 +25,7 @@ class GroceryItem {
   final String? sellerResponseTime;
   final int stockQuantity;
   final bool isAvailable;
+  final DateTime? createdAt;
 
   const GroceryItem({
     required this.id,
@@ -51,6 +52,7 @@ class GroceryItem {
     this.sellerResponseTime,
     this.stockQuantity = 50,
     this.isAvailable = true,
+    this.createdAt,
   });
 
   bool get isOutOfStock => stockQuantity <= 0;
@@ -110,6 +112,7 @@ class GroceryItem {
     String? sellerResponseTime,
     int? stockQuantity,
     bool? isAvailable,
+    DateTime? createdAt,
   }) {
     return GroceryItem(
       id: id ?? this.id,
@@ -136,6 +139,7 @@ class GroceryItem {
       sellerResponseTime: sellerResponseTime ?? this.sellerResponseTime,
       stockQuantity: stockQuantity ?? this.stockQuantity,
       isAvailable: isAvailable ?? this.isAvailable,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -143,6 +147,7 @@ class GroceryItem {
     return {
       'id': id,
       'name': name,
+      'title': name,
       'unit': unit,
       'price': price,
       'originalPrice': originalPrice,
@@ -165,44 +170,223 @@ class GroceryItem {
       'stock': stockQuantity,
       'isAvailable': isAvailable,
       'isActive': isAvailable,
+      'status': isAvailable ? 'active' : 'inactive',
+      'productStatus': isAvailable ? 'active' : 'inactive',
+      'createdAt': (createdAt ?? DateTime.now()).toIso8601String(),
     };
   }
 
   factory GroceryItem.fromMap(Map<String, dynamic> map, [String? docId]) {
-    final cat = map['category'] as String? ?? 'Vegetables';
-    final sId = (map['sellerId'] as String?) ?? (map['shopId'] as String?);
-    final sName = (map['sellerName'] as String?) ?? (map['ownerName'] as String?);
-    final sShop = (map['sellerShopName'] as String?) ?? (map['shopName'] as String?);
-    final sStock = (map['stockQuantity'] as num?)?.toInt() ?? ((map['stock'] as num?)?.toInt() ?? 50);
-    final isAvail = map['isAvailable'] as bool? ??
-        (map['isActive'] as bool? ?? (map['status'] != 'inactive'));
+    final effectiveId = docId ?? (map['id'] as String? ?? 'item_${DateTime.now().millisecondsSinceEpoch}');
+
+    final name = (map['name'] ?? map['title'] ?? map['productName'] ?? map['itemName'] ?? '')
+        .toString()
+        .trim();
+
+    final cat = (map['category'] ?? map['cat'] ?? map['categoryName'] ?? 'Vegetables')
+        .toString()
+        .trim();
+
+    final sId = (map['sellerId'] ?? map['shopId'] ?? map['ownerId'])?.toString();
+    final sName = (map['sellerName'] ?? map['ownerName'])?.toString();
+    final sShop = (map['sellerShopName'] ?? map['shopName'] ?? map['storeName'])?.toString();
+
+    double parseDouble(dynamic v, double fallback) {
+      if (v == null) return fallback;
+      if (v is num) return v.toDouble();
+      if (v is String) return double.tryParse(v) ?? fallback;
+      return fallback;
+    }
+
+    int parseInt(dynamic v, int fallback) {
+      if (v == null) return fallback;
+      if (v is num) return v.toInt();
+      if (v is String) return int.tryParse(v) ?? fallback;
+      return fallback;
+    }
+
+    bool parseBool(dynamic v, bool fallback) {
+      if (v == null) return fallback;
+      if (v is bool) return v;
+      if (v is num) return v != 0;
+      if (v is String) {
+        final s = v.trim().toLowerCase();
+        if (s == 'true' || s == '1' || s == 'active' || s == 'available' || s == 'yes') return true;
+        if (s == 'false' || s == '0' || s == 'inactive' || s == 'disabled' || s == 'no' || s == 'hidden') return false;
+      }
+      return fallback;
+    }
+
+    DateTime? parseDate(dynamic v, String id) {
+      if (v != null) {
+        if (v is DateTime) return v;
+        if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+        if (v is String) {
+          final parsed = DateTime.tryParse(v);
+          if (parsed != null) return parsed;
+        }
+        try {
+          final toDate = (v as dynamic).toDate();
+          if (toDate is DateTime) return toDate;
+        } catch (_) {}
+      }
+      // If docId is like prod_1775715900000 or item_1775715900000
+      final match = RegExp(r'\d{12,14}').firstMatch(id);
+      if (match != null) {
+        final ms = int.tryParse(match.group(0)!);
+        if (ms != null) return DateTime.fromMillisecondsSinceEpoch(ms);
+      }
+      return null;
+    }
+
+    final price = parseDouble(map['price'], 0.0);
+    final origPrice = map['originalPrice'] != null ? parseDouble(map['originalPrice'], price) : null;
+    final discount = map['discountPercent'] != null ? parseInt(map['discountPercent'], 0) : null;
+    int parseStock() {
+      final s = map['stock'];
+      final sq = map['stockQuantity'];
+      if (s != null && sq != null) {
+        final parsedS = parseInt(s, -1);
+        final parsedSq = parseInt(sq, -1);
+        if (parsedS == 0 || parsedSq == 0) return 0;
+        if (parsedS > 0) return parsedS;
+        if (parsedSq > 0) return parsedSq;
+      }
+      if (s != null) return parseInt(s, 0);
+      if (sq != null) return parseInt(sq, 0);
+      return 50;
+    }
+
+    final stock = parseStock();
+
+    // Comprehensive check for availability/active status:
+    // If ANY flag or status explicitly indicates inactive, disabled, hidden, or false,
+    // the listing must be treated as inactive (isAvailable = false).
+    bool determineIsAvailable() {
+      const statusKeys = [
+        'status',
+        'visibility',
+        'state',
+        'productStatus',
+        'catalogStatus',
+        'itemStatus',
+      ];
+      for (final key in statusKeys) {
+        final val = map[key];
+        if (val != null) {
+          final s = val.toString().trim().toLowerCase();
+          if (s == 'inactive' ||
+              s == 'disabled' ||
+              s == 'hidden' ||
+              s == 'hide' ||
+              s == 'draft' ||
+              s == 'archived' ||
+              s == 'off' ||
+              s == 'unavailable' ||
+              s == 'deleted' ||
+              s == 'paused' ||
+              s == 'false' ||
+              s == '0') {
+            return false;
+          }
+        }
+      }
+
+      const boolKeys = [
+        'isAvailable',
+        'isActive',
+        'active',
+        'available',
+        'is_active',
+        'is_available',
+        'enabled',
+        'visible',
+        'online',
+        'isOnline',
+      ];
+      for (final key in boolKeys) {
+        final val = map[key];
+        if (val != null) {
+          if (val is bool && !val) return false;
+          if (val is num && val == 0) return false;
+          if (val is String) {
+            final s = val.trim().toLowerCase();
+            if (s == 'false' ||
+                s == '0' ||
+                s == 'inactive' ||
+                s == 'disabled' ||
+                s == 'hidden' ||
+                s == 'no' ||
+                s == 'off') {
+              return false;
+            }
+          }
+        }
+      }
+
+      // If positive indicators exist, it's active
+      for (final key in boolKeys) {
+        final val = map[key];
+        if (val != null) {
+          if (val is bool && val) return true;
+          if (val is num && val > 0) return true;
+          if (val is String) {
+            final s = val.trim().toLowerCase();
+            if (s == 'true' || s == '1' || s == 'active' || s == 'available' || s == 'yes') {
+              return true;
+            }
+          }
+        }
+      }
+
+      for (final key in statusKeys) {
+        final val = map[key];
+        if (val != null) {
+          final s = val.toString().trim().toLowerCase();
+          if (s == 'active' || s == 'available' || s == 'published' || s == 'live' || s == 'enabled') {
+            return true;
+          }
+        }
+      }
+
+      return true;
+    }
+
+    final isAvail = determineIsAvailable();
+
+    final isNewVal = parseBool(map['isNew'], false);
+    final isFavVal = parseBool(map['isFavorite'], false);
+
+    final img = (map['imageUrl'] ?? map['image'] ?? map['photoUrl'])?.toString().trim();
+    final effectiveImg = (img != null && img.isNotEmpty) ? img : 'assets/images/pumpkin.png';
+
+    final created = parseDate(map['createdAt'] ?? map['timestamp'], effectiveId);
 
     return GroceryItem(
-      id: docId ?? (map['id'] as String? ?? 'item_${DateTime.now().millisecondsSinceEpoch}'),
-      name: map['name'] as String? ?? '',
-      unit: map['unit'] as String? ?? '1 kg',
-      price: (map['price'] as num?)?.toDouble() ?? 0.0,
-      originalPrice: (map['originalPrice'] as num?)?.toDouble(),
-      discountPercent: (map['discountPercent'] as num?)?.toInt(),
-      isNew: map['isNew'] as bool? ?? false,
-      isFavorite: map['isFavorite'] as bool? ?? false,
-      rating: (map['rating'] as num?)?.toDouble() ?? 4.5,
-      reviewsCount: (map['reviewsCount'] as num?)?.toInt() ?? 24,
-      description: map['description'] as String? ?? '',
-      category: cat,
-      imageUrl: (map['imageUrl'] as String?)?.isNotEmpty == true
-          ? (map['imageUrl'] as String)
-          : 'assets/images/pumpkin.png',
+      id: effectiveId,
+      name: name.isNotEmpty ? name : 'Grocery Item',
+      unit: (map['unit']?.toString() ?? '1 kg'),
+      price: price,
+      originalPrice: origPrice,
+      discountPercent: discount,
+      isNew: isNewVal,
+      isFavorite: isFavVal,
+      rating: parseDouble(map['rating'], 4.5),
+      reviewsCount: parseInt(map['reviewsCount'], 24),
+      description: (map['description']?.toString() ?? ''),
+      category: cat.isNotEmpty ? cat : 'Vegetables',
+      imageUrl: effectiveImg,
       circleColor: _getCircleColorForCategory(cat),
       sellerId: sId,
       sellerName: sName,
       sellerShopName: sShop,
-      sellerPhone: map['sellerPhone'] as String?,
-      sellerAddress: map['sellerAddress'] as String?,
-      sellerRating: (map['sellerRating'] as num?)?.toDouble(),
-      sellerResponseTime: map['sellerResponseTime'] as String?,
-      stockQuantity: sStock,
+      sellerPhone: map['sellerPhone']?.toString(),
+      sellerAddress: map['sellerAddress']?.toString(),
+      sellerRating: map['sellerRating'] != null ? parseDouble(map['sellerRating'], 4.9) : null,
+      sellerResponseTime: map['sellerResponseTime']?.toString(),
+      stockQuantity: stock,
       isAvailable: isAvail,
+      createdAt: created,
     );
   }
 
