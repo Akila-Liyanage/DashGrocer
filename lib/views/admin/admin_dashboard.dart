@@ -3628,6 +3628,7 @@ class _AdminShopDetailsAndItemsSheetState extends State<_AdminShopDetailsAndItem
                       ),
                     ),
                     const SizedBox(height: 8),
+                    _buildPopupMetaRow('Catalog Status', item.isAvailable ? 'Active (Live on Customer Catalog)' : 'Inactive (Hidden from Customers)'),
                     _buildPopupMetaRow('Stock Available', '${item.stockQuantity} units in shop inventory'),
                     _buildPopupMetaRow('Store Name', item.displaySellerShopName),
                     _buildPopupMetaRow('Seller Operator', item.displaySellerName),
@@ -4398,6 +4399,25 @@ class _AdminShopDetailsAndItemsSheetState extends State<_AdminShopDetailsAndItem
                             ),
                           ],
                           const Spacer(),
+                          if (!item.isAvailable) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEF3C7),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFFDE68A)),
+                              ),
+                              child: Text(
+                                'Inactive',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFFB45309),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                          ],
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                             decoration: BoxDecoration(

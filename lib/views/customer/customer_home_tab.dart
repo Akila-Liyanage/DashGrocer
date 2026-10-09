@@ -76,7 +76,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
       builder: (context, _) {
         final categories = groceryService.categories;
         final allItems = groceryService.allItems;
-        final featuredProducts = allItems;
+        final featuredProducts = allItems.where((it) => it.isAvailable).toList();
 
         return Scaffold(
           backgroundColor: const Color(0xFFFBFBFB),
@@ -489,21 +489,47 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                   const SizedBox(height: 14),
 
                   // Featured Products Grid (2 columns matching Figma design)
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: featuredProducts.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 14,
-                      mainAxisSpacing: 14,
-                      childAspectRatio: 0.72,
+                  if (featuredProducts.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFF1F2F4)),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.inventory_2_outlined, size: 36, color: Colors.grey.shade400),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No items available right now',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: featuredProducts.length,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: 0.72,
+                      ),
+                      itemBuilder: (context, index) {
+                        final item = featuredProducts[index];
+                        return GroceryProductCard(item: item);
+                      },
                     ),
-                    itemBuilder: (context, index) {
-                      final item = featuredProducts[index];
-                      return GroceryProductCard(item: item);
-                    },
-                  ),
 
                   const SizedBox(height: 24),
 

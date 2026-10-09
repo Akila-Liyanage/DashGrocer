@@ -185,22 +185,24 @@ void main() {
       await tester.tap(find.text('Write a review'));
       await tester.pumpAndSettle();
 
-      // Modal should be displayed
-      expect(find.text('Write a Review'), findsOneWidget);
-      expect(find.text('Overall Rating'), findsOneWidget);
-      expect(find.text('Submit Review'), findsOneWidget);
+      // Screen should be displayed
+      expect(find.text('Write Reviews'), findsOneWidget);
+
+      // Select 5 star rating
+      await tester.tap(find.byIcon(Icons.star_rounded).at(4));
+      await tester.pumpAndSettle();
 
       // Enter review comment in text field
       final textFields = find.byType(TextField);
-      expect(textFields, findsNWidgets(2)); // comment field and name field
+      expect(textFields, findsOneWidget);
       await tester.enterText(textFields.first, 'Excellent crisp apples and very quick pickup!');
       await tester.pumpAndSettle();
 
-      // Tap Submit Review button
-      await tester.tap(find.text('Submit Review'));
+      // Tap Submit review button
+      await tester.tap(find.text('Submit review'));
       await tester.pumpAndSettle();
 
-      // Modal closes, review count updates, new review is displayed in list
+      // Screen closes, review count updates, new review is displayed in list
       expect(find.text('126 Reviews'), findsOneWidget);
       expect(find.text('Excellent crisp apples and very quick pickup!'), findsOneWidget);
     });

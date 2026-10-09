@@ -127,28 +127,32 @@ class GroceryService extends ChangeNotifier {
     _listenToFirestoreOrders();
   }
 
+  bool _hasInitialFirestoreProductsSync = false;
+
   void _listenToFirestoreProducts() {
     final firestore = _firestore;
     if (firestore == null) return;
     try {
       _productsSub?.cancel();
       _productsSub = firestore.collection('products').snapshots().listen((snapshot) {
-        if (snapshot.docs.isNotEmpty) {
-          final firestoreItems = <GroceryItem>[];
-          for (final doc in snapshot.docs) {
-            try {
-              final data = doc.data();
-              data['id'] = doc.id;
-              firestoreItems.add(GroceryItem.fromMap(data, doc.id));
-            } catch (e) {
-              debugPrint('Error parsing Firestore product doc ${doc.id}: $e');
-            }
-          }
-          if (firestoreItems.isNotEmpty) {
-            _items = firestoreItems;
-            notifyListeners();
+        final firestoreItems = <GroceryItem>[];
+        for (final doc in snapshot.docs) {
+          try {
+            final data = doc.data();
+            data['id'] = doc.id;
+            firestoreItems.add(GroceryItem.fromMap(data, doc.id));
+          } catch (e) {
+            debugPrint('Error parsing Firestore product doc ${doc.id}: $e');
           }
         }
+        if (firestoreItems.isNotEmpty) {
+          _items = firestoreItems;
+          notifyListeners();
+        } else if (snapshot.docs.isEmpty && _hasInitialFirestoreProductsSync) {
+          _items = [];
+          notifyListeners();
+        }
+        _hasInitialFirestoreProductsSync = true;
       }, onError: (e) {
         debugPrint('[GroceryService] Firestore products listener notice: $e');
       });
@@ -1102,11 +1106,11 @@ class GroceryService extends ChangeNotifier {
 
   List<GroceryItem> getCategoryItems(String category) {
     final cat = category.toLowerCase().trim();
-    if (cat.isEmpty || cat == 'all' || cat == 'vegetables') {
-      return _items;
+    if (cat.isEmpty || cat == 'all') {
+      return _items.where((it) => it.isAvailable).toList();
     }
-    final filtered = _items.where((item) => item.category.toLowerCase() == cat).toList();
-    return filtered.isNotEmpty ? filtered : _items;
+    final filtered = _items.where((item) => item.isAvailable && item.category.toLowerCase() == cat).toList();
+    return filtered;
   }
 
   /// Returns all products belonging to a specific shop.
@@ -1328,6 +1332,7 @@ class GroceryService extends ChangeNotifier {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return [];
     return _items.where((item) {
+      if (!item.isAvailable) return false;
       return item.name.toLowerCase().contains(q) ||
           item.category.toLowerCase().contains(q) ||
           item.description.toLowerCase().contains(q);
@@ -1362,6 +1367,74 @@ class GroceryService extends ChangeNotifier {
       if (firestore != null) {
         firestore.collection('products').doc(updatedItem.id).set(updatedItem.toMap(), SetOptions(merge: true)).catchError((e) {
           debugPrint('Firestore update product error: $e');
+        });
+      }
+    }
+  }
+
+  /// Toggle product availability (Active <-> Inactive / Online Catalog Visibility)
+  void toggleProductAvailability(String id) {
+    final index = _items.indexWhere((it) => it.id == id);
+    if (index != -1) {
+      final current = _items[index];
+      final updated = current.copyWith(isAvailable: !current.isAvailable);
+      _items[index] = updated;
+      notifyListeners();
+
+      final firestore = _firestore;
+      if (firestore != null) {
+        firestore
+            .collection('products')
+            .doc(id)
+            .set(updated.toMap(), SetOptions(merge: true))
+            .catchError((e) {
+          debugPrint('Firestore toggle availability error: $e');
+        });
+      }
+    }
+  }
+
+  /// Explicitly set product active/inactive state
+  void setProductAvailability(String id, bool isAvailable) {
+    final index = _items.indexWhere((it) => it.id == id);
+    if (index != -1) {
+      final current = _items[index];
+      final updated = current.copyWith(isAvailable: isAvailable);
+      _items[index] = updated;
+      notifyListeners();
+
+      final firestore = _firestore;
+      if (firestore != null) {
+        firestore
+            .collection('products')
+            .doc(id)
+            .set(updated.toMap(), SetOptions(merge: true))
+            .catchError((e) {
+          debugPrint('Firestore set availability error: $e');
+        });
+      }
+    }
+  }
+
+  /// Update stock quantity directly (0 marks as out-of-stock)
+  void setProductStock(String id, int stockQuantity) {
+    final index = _items.indexWhere((it) => it.id == id);
+    if (index != -1) {
+      final current = _items[index];
+      final updated = current.copyWith(
+        stockQuantity: stockQuantity < 0 ? 0 : stockQuantity,
+      );
+      _items[index] = updated;
+      notifyListeners();
+
+      final firestore = _firestore;
+      if (firestore != null) {
+        firestore
+            .collection('products')
+            .doc(id)
+            .set(updated.toMap(), SetOptions(merge: true))
+            .catchError((e) {
+          debugPrint('Firestore set stock error: $e');
         });
       }
     }

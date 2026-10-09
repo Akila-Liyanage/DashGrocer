@@ -621,27 +621,46 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFF76C935),
-                    Color(0xFF63B826),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF63B826).withValues(alpha: 0.32),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+                gradient: (item.isAvailable && item.stockQuantity > 0)
+                    ? const LinearGradient(
+                        colors: [
+                          Color(0xFF76C935),
+                          Color(0xFF63B826),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
+                color: (item.isAvailable && item.stockQuantity > 0)
+                    ? null
+                    : const Color(0xFFE5E7EB),
+                boxShadow: (item.isAvailable && item.stockQuantity > 0)
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF63B826).withValues(alpha: 0.32),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ]
+                    : [],
               ),
               child: ElevatedButton(
-                onPressed: () {
-                  groceryService.addToCart(item.id, _selectedQuantity);
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  ScaffoldMessenger.of(context).showSnackBar(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  disabledBackgroundColor: Colors.transparent,
+                  disabledForegroundColor: const Color(0xFF9CA3AF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                ),
+                onPressed: (!item.isAvailable || item.stockQuantity <= 0)
+                    ? null
+                    : () {
+                        groceryService.addToCart(item.id, _selectedQuantity);
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Row(
                         children: [
@@ -684,32 +703,30 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                   );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Add to cart',
+                      !item.isAvailable
+                          ? 'Item Unavailable'
+                          : (item.stockQuantity <= 0 ? 'Out of Stock' : 'Add to cart'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: (!item.isAvailable || item.stockQuantity <= 0)
+                            ? const Color(0xFF9CA3AF)
+                            : Colors.white,
                         letterSpacing: -0.2,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    const Icon(
-                      Icons.shopping_bag_outlined,
-                      size: 20,
-                      color: Colors.white,
-                    ),
+                    if (item.isAvailable && item.stockQuantity > 0) ...[
+                      const SizedBox(width: 12),
+                      const Icon(
+                        Icons.shopping_bag_outlined,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                    ],
                   ],
                 ),
               ),

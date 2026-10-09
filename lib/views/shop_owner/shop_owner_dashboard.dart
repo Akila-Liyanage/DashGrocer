@@ -29,6 +29,7 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
   bool _isOpenForPickup = true;
   String _selectedOrderFilter = 'All';
   String _productSearchQuery = '';
+  String _productStatusFilter = 'All';
 
   void _openAddProduct() {
     Navigator.push(
@@ -291,12 +292,7 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
           ],
         ),
 
-        const SizedBox(height: 20),
-
-        // ─── Customer Inquiries Strip ───
-        const CustomerInquiriesSection(),
-
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
 
         // ─── Filter Pills ───
         Row(
@@ -385,6 +381,11 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
           ...filteredOrders.map((order) {
             return _buildCleanOrderCard(order, groceryService);
           }),
+
+        const SizedBox(height: 20),
+
+        // ─── Customer Inquiries Strip ───
+        const CustomerInquiriesSection(),
       ],
     );
   }
@@ -692,13 +693,70 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
   // ==========================================
   // TAB 2: CLEAN PRODUCTS TAB
   // ==========================================
+  Widget _buildProductFilterChip(String label, int count) {
+    final isSelected = _productStatusFilter == label;
+    return InkWell(
+      onTap: () => setState(() => _productStatusFilter = label),
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF2EB844) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF2EB844) : const Color(0xFFE5E7EB),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? Colors.white : const Color(0xFF4B5563),
+              ),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              '$count',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: isSelected
+                    ? Colors.white.withValues(alpha: 0.85)
+                    : const Color(0xFF9CA3AF),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildProductsTab(GroceryService groceryService) {
     final allItems = groceryService.allItems;
+    final activeCount = allItems.where((it) => it.isAvailable && it.stockQuantity > 0).length;
+    final inactiveCount = allItems.where((it) => !it.isAvailable).length;
+    final outOfStockCount = allItems.where((it) => it.stockQuantity <= 0).length;
+
     final filteredItems = allItems.where((it) {
-      if (_productSearchQuery.isEmpty) return true;
-      final q = _productSearchQuery.toLowerCase();
-      return it.name.toLowerCase().contains(q) ||
-          it.category.toLowerCase().contains(q);
+      if (_productSearchQuery.isNotEmpty) {
+        final q = _productSearchQuery.toLowerCase();
+        final matches = it.name.toLowerCase().contains(q) ||
+            it.category.toLowerCase().contains(q);
+        if (!matches) return false;
+      }
+      if (_productStatusFilter == 'Active') {
+        return it.isAvailable && it.stockQuantity > 0;
+      } else if (_productStatusFilter == 'Inactive') {
+        return !it.isAvailable;
+      } else if (_productStatusFilter == 'Out of Stock') {
+        return it.stockQuantity <= 0;
+      }
+      return true;
     }).toList();
 
     return Column(
@@ -797,6 +855,26 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
           ),
         ),
 
+        // Status Filter Chips
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildProductFilterChip('All', allItems.length),
+                const SizedBox(width: 8),
+                _buildProductFilterChip('Active', activeCount),
+                const SizedBox(width: 8),
+                _buildProductFilterChip('Inactive', inactiveCount),
+                const SizedBox(width: 8),
+                _buildProductFilterChip('Out of Stock', outOfStockCount),
+              ],
+            ),
+          ),
+        ),
+
         const Divider(height: 1, color: Color(0xFFE5E7EB)),
 
         // Product Catalog List
@@ -804,7 +882,7 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
           child: filteredItems.isEmpty
               ? Center(
                   child: Text(
-                    'No products found matching "$_productSearchQuery"',
+                    'No products found matching filters',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 13,
                       color: const Color(0xFF9CA3AF),
@@ -830,84 +908,377 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
     );
   }
 
+  Future<void> _showEditStockDialog(
+    BuildContext context,
+    GroceryItem item,
+    GroceryService service,
+  ) async {
+    final controller = TextEditingController(text: item.stockQuantity.toString());
+    final newStock = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Update Stock',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              item.name,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF4B5563),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'Units in Stock',
+                hintText: 'Enter quantity',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.plusJakartaSans(color: const Color(0xFF6B7280)),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2EB844),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () {
+              final parsed = int.tryParse(controller.text.trim());
+              if (parsed != null && parsed >= 0) {
+                Navigator.pop(ctx, parsed);
+              }
+            },
+            child: Text(
+              'Update',
+              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (newStock != null) {
+      service.setProductStock(item.id, newStock);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Stock for "${item.name}" updated to $newStock'),
+            duration: const Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _confirmDeleteProduct(
+    BuildContext context,
+    GroceryItem item,
+    GroceryService service,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Delete Product?',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to remove "${item.name}" from your catalog and customer store? This cannot be undone.',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            color: const Color(0xFF4B5563),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.plusJakartaSans(color: const Color(0xFF6B7280)),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              'Delete',
+              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      service.deleteProduct(item.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('"${item.name}" removed from catalog'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildCleanProductCard(GroceryItem item, GroceryService service) {
+    final isOut = item.stockQuantity <= 0;
+    final isInactive = !item.isAvailable;
+
+    Color badgeBg;
+    Color badgeColor;
+    String badgeText;
+
+    if (isInactive) {
+      badgeBg = const Color(0xFFFEF3C7);
+      badgeColor = const Color(0xFFD97706);
+      badgeText = 'Inactive';
+    } else if (isOut) {
+      badgeBg = const Color(0xFFFEE2E2);
+      badgeColor = const Color(0xFFDC2626);
+      badgeText = 'Out of Stock';
+    } else {
+      badgeBg = const Color(0xFFDCFCE7);
+      badgeColor = const Color(0xFF16A34A);
+      badgeText = 'Active';
+    }
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isInactive
+              ? const Color(0xFFFDE68A)
+              : const Color(0xFFE5E7EB),
+        ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          // Thumbnail
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              width: 54,
-              height: 54,
-              color: const Color(0xFFF9FAFB),
-              child: AppImageView(
-                imageUrl: item.imageUrl,
-                fit: BoxFit.contain,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Thumbnail
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: 58,
+                  height: 58,
+                  color: const Color(0xFFF9FAFB),
+                  child: AppImageView(
+                    imageUrl: item.imageUrl,
+                    fit: BoxFit.contain,
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 12),
+              const SizedBox(width: 12),
 
-          // Information
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.name,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF111827),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              // Information
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.name,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF111827),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: badgeBg,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            badgeText,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: badgeColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${item.category} • ${item.unit}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        color: const Color(0xFF6B7280),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Text(
+                          item.formattedPrice,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF2EB844),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        // Tap to edit stock
+                        InkWell(
+                          onTap: () => _showEditStockDialog(context, item, service),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Stock: ${item.stockQuantity}',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: isOut ? const Color(0xFFDC2626) : const Color(0xFF374151),
+                                  ),
+                                ),
+                                const SizedBox(width: 3),
+                                const Icon(Icons.edit_outlined, size: 11, color: Color(0xFF6B7280)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${item.category} • ${item.unit} • Stock: ${item.stockQuantity}',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    color: const Color(0xFF6B7280),
-                  ),
+              ),
+
+              // Delete action
+              IconButton(
+                tooltip: 'Remove',
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Color(0xFF9CA3AF),
+                  size: 20,
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  item.formattedPrice,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF2EB844),
-                  ),
-                ),
-              ],
-            ),
+                onPressed: () => _confirmDeleteProduct(context, item, service),
+              ),
+            ],
           ),
 
-          // Delete action
-          IconButton(
-            tooltip: 'Remove',
-            icon: const Icon(
-              Icons.delete_outline_rounded,
-              color: Color(0xFF9CA3AF),
-              size: 20,
-            ),
-            onPressed: () {
-              service.deleteProduct(item.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('"${item.name}" removed from catalog'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: Color(0xFFF3F4F6)),
+          const SizedBox(height: 8),
+
+          // Bottom Quick Controls: Active toggle
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    item.isAvailable ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                    size: 15,
+                    color: item.isAvailable ? const Color(0xFF16A34A) : const Color(0xFF9CA3AF),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    item.isAvailable ? 'Visible to Customers' : 'Hidden from Customers',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: item.isAvailable ? const Color(0xFF16A34A) : const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Text(
+                    item.isAvailable ? 'Active' : 'Inactive',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF4B5563),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  SizedBox(
+                    height: 28,
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child: Switch(
+                        value: item.isAvailable,
+                        activeColor: const Color(0xFF2EB844),
+                        onChanged: (val) {
+                          service.setProductAvailability(item.id, val);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                val
+                                    ? '"${item.name}" is now Active on customer home'
+                                    : '"${item.name}" hidden from customer home',
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),

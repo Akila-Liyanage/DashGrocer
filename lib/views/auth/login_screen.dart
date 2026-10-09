@@ -437,7 +437,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               label: Text(
-                                'Continue with Google',
+                                'Google',
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,

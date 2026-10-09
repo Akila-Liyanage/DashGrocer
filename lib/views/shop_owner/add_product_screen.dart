@@ -30,6 +30,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   String _selectedCategory = 'Vegetables';
   bool _isNewItem = true;
+  bool _isAvailable = true;
   String _selectedPresetImage = 'assets/images/carrot.png';
 
   final List<String> _categories = [
@@ -151,6 +152,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       sellerShopName: widget.seller.shopName ?? 'GreenLeaf Fresh Mart',
       sellerPhone: widget.seller.phoneNumber,
       stockQuantity: stock,
+      isAvailable: _isAvailable,
     );
 
     GroceryService().addProduct(newProduct);
@@ -544,6 +546,49 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     value: _isNewItem,
                     activeTrackColor: AppColors.brandGreen,
                     onChanged: (val) => setState(() => _isNewItem = val),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // Online Availability Toggle
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Active (Catalog Visibility)',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E293B),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _isAvailable ? 'Visible live in customer catalog' : 'Hidden from customers (Inactive)',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          color: _isAvailable ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Switch(
+                    value: _isAvailable,
+                    activeTrackColor: AppColors.brandGreen,
+                    onChanged: (val) => setState(() => _isAvailable = val),
                   ),
                 ],
               ),

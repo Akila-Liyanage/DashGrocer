@@ -92,16 +92,16 @@ class Product {
   factory Product.fromMap(String id, Map<String, dynamic> map) {
     return Product(
       id: id,
-      shopId: map['shopId'] as String? ?? '',
+      shopId: (map['shopId'] as String?) ?? (map['sellerId'] as String? ?? ''),
       name: map['name'] as String? ?? 'Product',
       category: map['category'] as String? ?? '',
       unit: map['unit'] as String? ?? '',
       price: (map['price'] as num?)?.toDouble() ?? 0,
-      stock: (map['stock'] as num?)?.toInt() ?? 0,
+      stock: (map['stock'] as num?)?.toInt() ?? ((map['stockQuantity'] as num?)?.toInt() ?? 0),
       code: map['code'] as String? ?? '',
       barcode: map['barcode'] as String? ?? '',
       lowStockThreshold: (map['lowStockThreshold'] as num?)?.toInt() ?? 10,
-      isAvailable: map['isAvailable'] as bool? ?? true,
+      isAvailable: (map['isAvailable'] as bool?) ?? ((map['isActive'] as bool?) ?? true),
       imageUrl: map['imageUrl'] as String?,
       updatedAt: readDate(map['updatedAt']),
     );
@@ -111,15 +111,18 @@ class Product {
   Map<String, dynamic> toMap() {
     return {
       'shopId': shopId,
+      'sellerId': shopId,
       'name': name,
       'category': category,
       'unit': unit,
       'price': price,
       'stock': stock,
+      'stockQuantity': stock,
       'code': code,
       'barcode': barcode,
       'lowStockThreshold': lowStockThreshold,
       'isAvailable': isAvailable,
+      'isActive': isAvailable,
       'imageUrl': imageUrl,
     };
   }
