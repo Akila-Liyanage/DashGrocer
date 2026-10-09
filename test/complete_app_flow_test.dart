@@ -183,7 +183,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Reviews'), findsOneWidget);
-      expect(find.text('4.7'), findsOneWidget); // worked out from the 125 earlier reviews
+      expect(find.text('No reviews yet'), findsOneWidget); // no reviews for this product yet
       expect(find.text('Write a review'), findsOneWidget);
       expect(find.text('Back To Home'), findsOneWidget);
     });

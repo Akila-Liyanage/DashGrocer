@@ -4,71 +4,99 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Future<void> _open(WidgetTester tester, String product) async {
-  await tester.pumpWidget(MaterialApp(home: ReviewsScreen(productName: product)));
+  await tester.pumpWidget(MaterialApp(home: ReviewsScreen(key: ValueKey(product), productName: product)));
   await tester.pumpAndSettle();
 }
 
+void _add(String product, int rating, String comment, {String name = 'Tester'}) {
+  ReviewService().addReview(productName: product, name: name, rating: rating, comment: comment);
+}
+
 void main() {
+  testWidgets('A product with no reviews shows an empty state, not made-up reviews', (tester) async {
+    await _open(tester, 'Fresh Product');
+
+    expect(find.text('No reviews yet'), findsOneWidget); // under the score
+    expect(find.text('–'), findsOneWidget);
+    expect(find.text('All (0)'), findsOneWidget);
+    expect(find.text('No reviews yet. Be the first to write one!'), findsOneWidget);
+    // The old starter reviews are gone from every product
+    expect(find.text('Olivia'), findsNothing);
+    expect(find.text('Da Silva'), findsNothing);
+    expect(find.text('Kasun Perera'), findsNothing);
+  });
+
   testWidgets('Rating summary counts only the reviews that exist and updates live', (tester) async {
     const product = 'Live Product';
     await _open(tester, product);
 
-    // Only the 3 starter reviews exist: ratings 5, 4 and 5 -> average 4.67
-    expect(find.text('4.7'), findsOneWidget);
-    expect(find.text('3 Reviews'), findsOneWidget);
-    expect(find.text('All (3)'), findsOneWidget);
-    expect(find.text('5 ★ (2)'), findsOneWidget);
-    expect(find.text('4 ★ (1)'), findsOneWidget);
-    expect(find.text('3 ★ (0)'), findsOneWidget);
+    // Two reviews arrive while the screen is open (for example from another phone)
+    _add(product, 5, 'Great');
+    _add(product, 4, 'Good');
+    await tester.pump();
 
-    // Ten 1-star reviews arrive while the screen is open (for example from another phone)
+    expect(find.text('2 Reviews'), findsOneWidget);
+    expect(find.text('4.5'), findsOneWidget); // (5 + 4) / 2
+    expect(find.text('All (2)'), findsOneWidget);
+    expect(find.text('5 ★ (1)'), findsOneWidget);
+    expect(find.text('4 ★ (1)'), findsOneWidget);
+
+    // Ten 1-star reviews arrive
     for (var i = 0; i < 10; i++) {
-      ReviewService().addReview(productName: product, name: 'Tester', rating: 1, comment: 'Bad $i');
+      _add(product, 1, 'Bad $i');
     }
     await tester.pump();
 
-    expect(find.text('13 Reviews'), findsOneWidget);
-    expect(find.text('1.8'), findsOneWidget); // (5 + 4 + 5 + 10) / 13
-    expect(find.text('All (13)'), findsOneWidget);
+    expect(find.text('12 Reviews'), findsOneWidget);
+    expect(find.text('1.6'), findsOneWidget); // (5 + 4 + 10) / 12 = 1.58
     expect(find.text('1 ★ (10)'), findsOneWidget);
   });
 
+  testWidgets('A single review says "1 Review"', (tester) async {
+    const product = 'Single Product';
+    _add(product, 2, 'Meh');
+    await _open(tester, product);
+
+    expect(find.text('1 Review'), findsOneWidget);
+    expect(find.text('2.0'), findsOneWidget);
+  });
+
   testWidgets('Reviews belong to one product and are still there when the screen is opened again', (tester) async {
-    ReviewService().addReview(productName: 'Product A', name: 'Nimali', rating: 5, comment: 'Great carrots');
+    _add('Product A', 5, 'Great carrots');
     await _open(tester, 'Product A');
     expect(find.text('Great carrots'), findsOneWidget);
-    expect(find.text('4 Reviews'), findsOneWidget);
+    expect(find.text('1 Review'), findsOneWidget);
 
-    // Leave and open the same product again: nothing is lost and the counts match
+    // Another product does not show it
     await _open(tester, 'Product B');
     expect(find.text('Great carrots'), findsNothing);
-    expect(find.text('3 Reviews'), findsOneWidget);
+    expect(find.text('No reviews yet'), findsOneWidget);
 
+    // Back on the first product nothing is lost
     await _open(tester, 'Product A');
     expect(find.text('Great carrots'), findsOneWidget);
-    expect(find.text('4 Reviews'), findsOneWidget);
+    expect(find.text('1 Review'), findsOneWidget);
   });
 
   testWidgets('The number on the All chip is the number of reviews listed', (tester) async {
     const product = 'Count Product';
-    ReviewService().addReview(productName: product, name: 'A', rating: 5, comment: 'review one');
-    ReviewService().addReview(productName: product, name: 'B', rating: 3, comment: 'review two');
+    _add(product, 5, 'review one', name: 'A');
+    _add(product, 3, 'review two', name: 'B');
     await _open(tester, product);
 
-    expect(find.text('All (5)'), findsOneWidget);
-    // 3 starter reviews + 2 written ones are all in the list
-    for (final text in ['review one', 'review two', 'Olivia', 'Da Silva']) {
+    expect(find.text('All (2)'), findsOneWidget);
+    for (final text in ['review one', 'review two']) {
       expect(find.text(text), findsOneWidget, reason: '$text should be listed');
     }
-    expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsNWidgets(5));
+    expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsNWidgets(2));
   });
 
   testWidgets('Newest review is shown first', (tester) async {
     const product = 'Order Product';
-    ReviewService().addReview(productName: product, name: 'A', rating: 5, comment: 'first review');
+    _add(product, 5, 'first review', name: 'A');
     // Real (not fake) time passes so the two reviews get different timestamps
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 5)));
-    ReviewService().addReview(productName: product, name: 'B', rating: 5, comment: 'second review');
+    _add(product, 5, 'second review', name: 'B');
     await _open(tester, product);
 
     final firstY = tester.getTopLeft(find.text('first review')).dy;
@@ -79,23 +107,24 @@ void main() {
 
   testWidgets('Every star rating has a filter chip with a live count', (tester) async {
     const product = 'Chip Product';
+    _add(product, 5, 'Excellent', name: 'Olivia');
     await _open(tester, product);
 
-    expect(find.text('All (3)'), findsOneWidget);
-    expect(find.text('5 ★ (2)'), findsOneWidget);
+    expect(find.text('All (1)'), findsOneWidget);
+    expect(find.text('5 ★ (1)'), findsOneWidget);
     expect(find.text('3 ★ (0)'), findsOneWidget);
     expect(find.text('1 ★ (0)'), findsOneWidget);
 
     // A 3-star review comes in: the chip counts change and the review can be found
-    ReviewService().addReview(productName: product, name: 'Kasun Perera', rating: 3, comment: 'Just okay');
+    _add(product, 3, 'Just okay', name: 'Kasun Perera');
     await tester.pump();
-    expect(find.text('All (4)'), findsOneWidget);
+    expect(find.text('All (2)'), findsOneWidget);
     expect(find.text('3 ★ (1)'), findsOneWidget);
 
     await tester.tap(find.text('3 ★ (1)'));
     await tester.pumpAndSettle();
     expect(find.text('Just okay'), findsOneWidget);
-    expect(find.text('Olivia'), findsNothing); // her review is 5 stars
+    expect(find.text('Excellent'), findsNothing); // that review is 5 stars
 
     // A star with no reviews shows a message instead of an empty page
     await tester.tap(find.text('1 ★ (0)'));
@@ -104,10 +133,10 @@ void main() {
     expect(find.text('No 1-star reviews to show yet.'), findsOneWidget);
 
     // All shows everything again
-    await tester.tap(find.text('All (4)'));
+    await tester.tap(find.text('All (2)'));
     await tester.pumpAndSettle();
     expect(find.text('Just okay'), findsOneWidget);
-    expect(find.text('Olivia'), findsOneWidget);
+    expect(find.text('Excellent'), findsOneWidget);
   });
 
   test('Review times are shown as time ago', () {

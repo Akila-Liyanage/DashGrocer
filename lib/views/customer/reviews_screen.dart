@@ -182,7 +182,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                average.toStringAsFixed(1),
+                                total == 0 ? '–' : average.toStringAsFixed(1),
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 36,
                                   fontWeight: FontWeight.w800,
@@ -202,7 +202,9 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                total == 1 ? '1 Review' : '$total Reviews',
+                                total == 0
+                                    ? 'No reviews yet'
+                                    : (total == 1 ? '1 Review' : '$total Reviews'),
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 12,
                                   color: const Color(0xFF868889),

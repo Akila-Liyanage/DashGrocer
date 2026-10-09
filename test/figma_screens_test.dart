@@ -187,10 +187,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Reviews'), findsOneWidget);
-      expect(find.text('4.7'), findsOneWidget); // average of the 125 earlier reviews
-      expect(find.text('3 Reviews'), findsOneWidget);
+      // A product with no reviews yet: an empty state, no made-up reviews
+      expect(find.text('No reviews yet'), findsOneWidget);
       expect(find.text('Write a review'), findsOneWidget);
-      expect(find.text('Olivia'), findsOneWidget);
+      expect(find.text('Olivia'), findsNothing);
       expect(find.text('Back To Home'), findsOneWidget);
     });
 
@@ -224,7 +224,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Page closes, review count updates, new review is displayed in list
-      expect(find.text('4 Reviews'), findsOneWidget);
+      expect(find.text('1 Review'), findsOneWidget);
       expect(find.text('Excellent crisp apples and very quick pickup!'), findsOneWidget);
     });
 
