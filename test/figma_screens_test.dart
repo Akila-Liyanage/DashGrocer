@@ -190,18 +190,12 @@ void main() {
       expect(find.text('What do you think ?'), findsOneWidget);
       expect(find.text('Submit review'), findsOneWidget);
 
-      // Screen should be displayed
-
-      // Select 5 star rating
-      await tester.tap(find.byIcon(Icons.star_rounded).at(4));
-      await tester.pumpAndSettle();
-
       // Select 5 stars and enter the review comment
       await tester.tap(find.byIcon(Icons.star_rounded).at(4));
       await tester.pump();
       final textFields = find.byType(TextField);
       expect(textFields, findsOneWidget);
-      await tester.enterText(textFields.first, 'Excellent crisp apples and very quick pickup!');
+      await tester.enterText(textFields, 'Excellent crisp apples and very quick pickup!');
       await tester.pumpAndSettle();
 
       // Tap Submit review button
