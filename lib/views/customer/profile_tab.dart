@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/seller_order_model.dart';
@@ -878,6 +879,11 @@ class _ProfileTabState extends State<ProfileTab> {
               controller: _phoneController,
               icon: Icons.phone_outlined,
               hint: 'Phone Number',
+              keyboardType: TextInputType.phone,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(10),
+              ],
             ),
             const SizedBox(height: 10),
 
@@ -1056,6 +1062,8 @@ class _ProfileTabState extends State<ProfileTab> {
     required String hint,
     bool obscureText = false,
     Widget? suffixIcon,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -1066,6 +1074,8 @@ class _ProfileTabState extends State<ProfileTab> {
       child: TextField(
         controller: controller,
         obscureText: obscureText,
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
         style: GoogleFonts.plusJakartaSans(
           fontSize: 13,
           color: const Color(0xFF1E293B),

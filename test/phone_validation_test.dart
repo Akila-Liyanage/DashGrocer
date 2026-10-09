@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:dashgrocer/core/phone_validator.dart';
 import 'package:dashgrocer/views/auth/signup_screen.dart';
 import 'package:dashgrocer/views/auth/register_form.dart';
+import 'package:dashgrocer/views/customer/profile_tab.dart';
 
 void main() {
   setUp(() {
@@ -11,6 +12,21 @@ void main() {
   });
 
   group('Sri Lanka Phone Number Validation Unit Tests', () {
+    testWidgets('Customer profile phone field accepts only 10 digits', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: ProfileTab()));
+      await tester.pumpAndSettle();
+
+      final phoneField = find.byWidgetPredicate(
+        (widget) => widget is TextField && widget.decoration?.hintText == 'Phone Number',
+      );
+      await tester.ensureVisible(phoneField);
+      await tester.pumpAndSettle();
+      await tester.enterText(phoneField, '077ab123456789');
+      await tester.pump();
+
+      expect(tester.widget<TextField>(phoneField).controller!.text, '0771234567');
+    });
+
     test('1. Empty phone number returns required error', () {
       expect(SriLankaPhoneUtils.validate(null), 'Enter phone number');
       expect(SriLankaPhoneUtils.validate(''), 'Enter phone number');
