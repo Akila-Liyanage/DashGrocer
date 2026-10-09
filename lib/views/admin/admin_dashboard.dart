@@ -8,6 +8,7 @@ import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../models/grocery_item_model.dart';
 import '../../services/grocery_service.dart';
+import '../../services/review_service.dart';
 import '../../models/seller_order_model.dart';
 import '../common/app_image_view.dart';
 
@@ -3550,7 +3551,7 @@ class _AdminShopDetailsAndItemsSheetState extends State<_AdminShopDetailsAndItem
                         const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
                         const SizedBox(width: 3),
                         Text(
-                          item.rating.toStringAsFixed(1),
+                          ReviewService().statsFor(item.name).average.toStringAsFixed(1),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w700,
@@ -4336,7 +4337,7 @@ class _AdminShopDetailsAndItemsSheetState extends State<_AdminShopDetailsAndItem
                               const Icon(Icons.star_rounded, size: 13, color: Color(0xFFF59E0B)),
                               const SizedBox(width: 2),
                               Text(
-                                item.rating.toStringAsFixed(1),
+                                ReviewService().statsFor(item.name).average.toStringAsFixed(1),
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,

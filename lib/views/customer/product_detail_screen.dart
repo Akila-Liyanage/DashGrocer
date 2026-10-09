@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/grocery_item_model.dart';
 import '../../services/grocery_service.dart';
+import '../../services/review_service.dart';
 import '../common/app_image_view.dart';
 import 'cart_screen.dart';
 import 'reviews_screen.dart';
@@ -25,6 +26,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   bool _isDescriptionExpanded = false;
   bool _isFavorite = false;
 
+  final ReviewService _reviewService = ReviewService();
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +35,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (existingQty > 0) {
       _selectedQuantity = existingQty;
     }
+    // The rating under the product name follows new reviews as they arrive.
+    _reviewService.addListener(_onReviewsChanged);
+    _reviewService.startListening();
+  }
+
+  @override
+  void dispose() {
+    _reviewService.removeListener(_onReviewsChanged);
+    super.dispose();
+  }
+
+  void _onReviewsChanged() {
+    if (mounted) setState(() {});
   }
 
   Map<String, String> _getNutritionInfo(GroceryItem item) {
@@ -87,6 +103,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final currentItem =
         groceryService.getItemById(widget.item.id) ?? widget.item;
     _isFavorite = currentItem.isFavorite;
+    // Worked out from the real reviews, the same numbers the Reviews screen shows.
+    final reviewStats = _reviewService.statsFor(currentItem.name);
 
     final nutrition = _getNutritionInfo(currentItem);
     final relatedItems = groceryService.allItems
@@ -216,7 +234,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           child: Row(
                             children: [
                               Text(
-                                currentItem.rating.toStringAsFixed(1),
+                                reviewStats.average.toStringAsFixed(1),
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w700,
@@ -226,18 +244,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               const SizedBox(width: 5),
                               ...List.generate(5, (index) {
                                 return Icon(
-                                  index < currentItem.rating.floor()
-                                      ? Icons.star_rounded
-                                      : (index < currentItem.rating
-                                          ? Icons.star_half_rounded
-                                          : Icons.star_border_rounded),
+                                  ReviewService.starIcon(index, reviewStats.average),
                                   size: 16,
                                   color: const Color(0xFFFFA000),
                                 );
                               }),
                               const SizedBox(width: 6),
                               Text(
-                                '(${currentItem.reviewsCount} reviews)',
+                                '(${reviewStats.countLabel})',
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,

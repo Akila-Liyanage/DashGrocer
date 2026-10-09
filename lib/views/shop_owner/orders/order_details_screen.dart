@@ -532,16 +532,22 @@ class _CancelledCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Order cancelled',
+                  order.cancelledByCustomer
+                      ? 'Order cancelled by the customer'
+                      : 'Order cancelled',
                   style: ShopText.subtitle.copyWith(
                     color: ShopColors.onErrorContainer,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  (reason == null || reason.isEmpty)
-                      ? 'The customer was told this order was cancelled.'
-                      : 'Reason: $reason. The customer was told.',
+                  order.cancelledByCustomer
+                      ? ((reason == null || reason.isEmpty)
+                          ? '${order.customerName} cancelled this order. No need to prepare it.'
+                          : '${order.customerName} cancelled this order. Reason: $reason.')
+                      : (reason == null || reason.isEmpty)
+                          ? 'The customer was told this order was cancelled.'
+                          : 'Reason: $reason. The customer was told.',
                   style: ShopText.body.copyWith(color: ShopColors.textPrimary),
                 ),
               ],

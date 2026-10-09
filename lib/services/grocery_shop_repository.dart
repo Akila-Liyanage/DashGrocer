@@ -185,7 +185,8 @@ class GroceryShopRepository implements ShopRepository {
       // 'Pay at Store' or 'Paid Online (Card)', chosen by the customer.
       paymentMethod: order.paymentMethod,
       packedIndexes: _packed[key] ?? const <int>[],
-      cancelReason: _cancelReasons[key],
+      cancelReason: _cancelReasons[key] ?? order.cancelReason,
+      cancelledByCustomer: order.cancelledByCustomer,
       completedAt: _completedAt[key],
     );
   }

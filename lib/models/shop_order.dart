@@ -83,6 +83,7 @@ class ShopOrder {
     this.paymentMethod = 'Pay on Counter Pickup',
     this.packedIndexes = const <int>[],
     this.cancelReason,
+    this.cancelledByCustomer = false,
     this.completedAt,
     this.itemsSummary,
     this.itemCountHint,
@@ -109,6 +110,9 @@ class ShopOrder {
 
   /// Why the shop rejected the order. Only set for cancelled orders.
   final String? cancelReason;
+
+  /// True when the customer cancelled the order themselves, not the shop.
+  final bool cancelledByCustomer;
 
   /// When the customer collected the order.
   final DateTime? completedAt;
@@ -169,6 +173,7 @@ class ShopOrder {
       paymentMethod: paymentMethod,
       packedIndexes: packedIndexes ?? this.packedIndexes,
       cancelReason: cancelReason ?? this.cancelReason,
+      cancelledByCustomer: cancelledByCustomer,
       completedAt: completedAt ?? this.completedAt,
       itemsSummary: itemsSummary,
       itemCountHint: itemCountHint,

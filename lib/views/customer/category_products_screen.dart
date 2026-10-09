@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/grocery_item_model.dart';
 import '../../services/grocery_service.dart';
+import '../../services/review_service.dart';
 import 'cart_screen.dart';
 import 'widgets/grocery_product_card.dart';
 
@@ -128,7 +129,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
         } else if (_selectedSort == 'Price: High to Low') {
           sortedItems.sort((a, b) => b.price.compareTo(a.price));
         } else if (_selectedSort == 'Highest Rated') {
-          sortedItems.sort((a, b) => b.rating.compareTo(a.rating));
+          final reviews = ReviewService();
+          sortedItems.sort((a, b) => reviews.statsFor(b.name).average.compareTo(reviews.statsFor(a.name).average));
         } else if (_selectedSort == 'Discounted') {
           sortedItems.sort((a, b) => (b.discountPercent ?? 0).compareTo(a.discountPercent ?? 0));
         } else if (_selectedSort == 'New Arrivals') {

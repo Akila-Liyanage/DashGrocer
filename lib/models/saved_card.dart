@@ -1,5 +1,16 @@
 enum CardBrand { visa, mastercard, other }
 
+String cardBrandName(CardBrand brand) {
+  switch (brand) {
+    case CardBrand.visa:
+      return 'Visa';
+    case CardBrand.mastercard:
+      return 'Mastercard';
+    case CardBrand.other:
+      return 'Card';
+  }
+}
+
 CardBrand detectCardBrand(String digits) {
   if (digits.startsWith('4')) return CardBrand.visa;
   if (digits.startsWith('5') || digits.startsWith('2')) return CardBrand.mastercard;
@@ -37,6 +48,9 @@ class SavedCard {
   }
 
   String get maskedNumber => 'XXXX XXXX XXXX $last4';
+
+  /// "Visa •••• 4242", used on receipts.
+  String get shortLabel => '${cardBrandName(brand)} •••• $last4';
 
   SavedCard copyWith({String? holderName, String? expiry, bool? isDefault}) {
     return SavedCard(

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/seller_order_model.dart';
 import '../../services/grocery_service.dart';
+import 'widgets/cancel_order_dialog.dart';
 
 class TrackOrderScreen extends StatelessWidget {
   final String orderId;
@@ -67,8 +68,21 @@ class TrackOrderScreen extends StatelessWidget {
       if (index == 0) return placedOn;
       if (order == null) return index < stepsDone ? placedOn : 'Pending';
       if (cancelled) return 'Cancelled';
-      if (index < stepsDone) return 'Done';
-      return index == stepsDone ? 'In progress' : 'Pending';
+      if (index < stepsDone) return index == 4 ? 'Collected' : 'Done';
+      if (index == stepsDone) {
+        // The step the order is on right now, in words that say what is happening.
+        switch (index) {
+          case 1:
+            return 'Waiting for the shop to accept';
+          case 2:
+            return 'The shop is packing your order';
+          case 4:
+            return 'Ready now. Collect it at the shop (${order.pickupSlot})';
+          default:
+            return 'In progress';
+        }
+      }
+      return 'Pending';
     }
 
     return Scaffold(
@@ -183,7 +197,9 @@ class TrackOrderScreen extends StatelessWidget {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'This order was cancelled by the shop.',
+                                order!.cancelledByCustomer
+                                    ? 'You cancelled this order.'
+                                    : 'This order was cancelled by the shop.',
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -248,27 +264,37 @@ class TrackOrderScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandGreen,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // The customer can cancel until the shop has finished packing.
+                  if (GroceryService().canCustomerCancel(order)) ...[
+                    CancelOrderButton(orderId: orderId),
+                    const SizedBox(height: 12),
+                  ],
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.brandGreen,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        cancelled ? 'Back' : 'Order Confirmed',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'Order Confirmed',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
+                ],
               ),
             ),
           ],

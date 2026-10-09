@@ -1258,7 +1258,7 @@ class _ShopOwnerDashboardState extends State<ShopOwnerDashboard> {
                       fit: BoxFit.contain,
                       child: Switch(
                         value: item.isAvailable,
-                        activeColor: const Color(0xFF2EB844),
+                        activeThumbColor: const Color(0xFF2EB844),
                         onChanged: (val) {
                           service.setProductAvailability(item.id, val);
                           ScaffoldMessenger.of(context).showSnackBar(

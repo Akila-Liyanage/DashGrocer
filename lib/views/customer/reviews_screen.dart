@@ -1,8 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/auth_service.dart';
+import '../../services/review_service.dart';
 import 'write_review_screen.dart';
 
 class ReviewsScreen extends StatefulWidget {
@@ -19,81 +21,33 @@ class ReviewsScreen extends StatefulWidget {
 
 class _ReviewsScreenState extends State<ReviewsScreen> {
   int _selectedFilterIndex = 0;
-  int _totalReviewCount = 125;
-  int _count5 = 97;
-  int _count4 = 20;
-  int _count3 = 5;
-  int _count2 = 2;
-  int _count1 = 1;
   String _sortOrder = 'Most recent';
 
-  List<String> get _filters => [
-        'All ($_totalReviewCount)',
-        '5 ★ ($_count5)',
-        '4 ★ ($_count4)',
-      ];
-
-  final List<Map<String, dynamic>> _reviews = [
-    {
-      'id': 'rev_init_1',
-      'initial': 'O',
-      'name': 'Olivia',
-      'time': '2 days ago',
-      'rating': 5,
-      'comment':
-          'These apples are incredibly fresh and crisp! Picked up my order within 10 minutes at Green Mart.',
-    },
-    {
-      'id': 'rev_init_2',
-      'initial': 'D',
-      'name': 'Da Silva',
-      'time': '4 days ago',
-      'rating': 4,
-      'comment':
-          'These melons are incredibly fresh and juicy! Picked up my order within 10 minutes at Green Mart.',
-    },
-    {
-      'id': 'rev_init_3',
-      'initial': 'K',
-      'name': 'Kasun Perera',
-      'time': '1 week ago',
-      'rating': 5,
-      'comment':
-          'Super fast pickup service, completely zero waiting time. Vegetables were fresh and nicely packed.',
-    },
-  ];
+  final ReviewService _reviewService = ReviewService();
+  Timer? _clock;
 
   @override
   void initState() {
     super.initState();
-    _listenToFirestoreReviews();
+    _reviewService.addListener(_onReviewsChanged);
+    _reviewService.startListening();
+    // Labels like "5 min ago" keep moving while the screen stays open.
+    _clock = Timer.periodic(const Duration(seconds: 30), (_) => _onReviewsChanged());
   }
 
-  void _listenToFirestoreReviews() {
-    try {
-      final firestore = FirebaseFirestore.instance;
-      firestore
-          .collection('reviews')
-          .orderBy('timestamp', descending: true)
-          .snapshots()
-          .listen((snap) {
-        if (snap.docs.isNotEmpty) {
-          final firestoreRevs = snap.docs.map((doc) => doc.data()).toList();
-          if (mounted) {
-            setState(() {
-              for (final r in firestoreRevs) {
-                if (!_reviews.any((existing) => existing['id'] == r['id'])) {
-                  _reviews.insert(0, r);
-                }
-              }
-            });
-          }
-        }
-      }, onError: (e) {
-        debugPrint('Firestore reviews listen notice: $e');
-      });
-    } catch (_) {}
+  @override
+  void dispose() {
+    _clock?.cancel();
+    _reviewService.removeListener(_onReviewsChanged);
+    super.dispose();
   }
+
+  void _onReviewsChanged() {
+    if (mounted) setState(() {});
+  }
+
+  String _timeLabel(Map<String, dynamic> review) =>
+      ReviewService.timeAgo(ReviewService.timestampOf(review));
 
   Future<void> _showWriteReviewModal() async {
     final result = await Navigator.push<WriteReviewResult>(
@@ -117,37 +71,12 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     required int rating,
     required String comment,
   }) {
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
-    final newReview = <String, dynamic>{
-      'id': 'rev_${DateTime.now().millisecondsSinceEpoch}',
-      'initial': initial,
-      'name': name,
-      'time': 'Just now',
-      'rating': rating,
-      'comment': comment,
-      'productName': widget.productName,
-      'timestamp': DateTime.now().toIso8601String(),
-    };
-
-    setState(() {
-      _reviews.insert(0, newReview);
-      _totalReviewCount++;
-      if (rating == 5) _count5++;
-      if (rating == 4) _count4++;
-      if (rating == 3) _count3++;
-      if (rating == 2) _count2++;
-      if (rating == 1) _count1++;
-    });
-
-    // Persist to Cloud Firestore if connected
-    try {
-      final docId = newReview['id']?.toString() ?? 'rev_${DateTime.now().millisecondsSinceEpoch}';
-      FirebaseFirestore.instance
-          .collection('reviews')
-          .doc(docId)
-          .set(newReview, SetOptions(merge: true))
-          .catchError((_) {});
-    } catch (_) {}
+    _reviewService.addReview(
+      productName: widget.productName,
+      name: name,
+      rating: rating,
+      comment: comment,
+    );
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -178,11 +107,23 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
         ? currentUser!.fullName[0].toUpperCase()
         : 'N';
 
-    var filteredReviews = _reviews;
-    if (_selectedFilterIndex == 1) {
-      filteredReviews = _reviews.where((r) => r['rating'] == 5).toList();
-    } else if (_selectedFilterIndex == 2) {
-      filteredReviews = _reviews.where((r) => r['rating'] == 4).toList();
+    // Everything shown below is worked out from the reviews, so it changes as
+    // soon as a review is added (here, or on another phone).
+    final reviews = _reviewService.allReviewsFor(widget.productName);
+    final stats = _reviewService.statsFor(widget.productName);
+    final counts = stats.starCounts;
+    final total = stats.count;
+    final average = stats.average;
+    // Chip 0 is "All", chips 1-5 are the 5, 4, 3, 2 and 1 star reviews.
+    final filters = [
+      'All ($total)',
+      for (final star in [5, 4, 3, 2, 1]) '$star ★ (${counts[star] ?? 0})',
+    ];
+
+    var filteredReviews = reviews;
+    if (_selectedFilterIndex > 0) {
+      final star = 6 - _selectedFilterIndex;
+      filteredReviews = reviews.where((r) => r['rating'] == star).toList();
     }
 
     if (_sortOrder == 'Highest rating') {
@@ -241,7 +182,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                '4.8',
+                                average.toStringAsFixed(1),
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 36,
                                   fontWeight: FontWeight.w800,
@@ -252,16 +193,16 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                               Row(
                                 children: List.generate(
                                   5,
-                                  (index) => const Icon(
-                                    Icons.star_rounded,
+                                  (index) => Icon(
+                                    ReviewService.starIcon(index, average),
                                     size: 16,
-                                    color: Color(0xFFFFB800),
+                                    color: const Color(0xFFFFB800),
                                   ),
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '$_totalReviewCount Reviews',
+                                total == 1 ? '1 Review' : '$total Reviews',
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 12,
                                   color: const Color(0xFF868889),
@@ -276,31 +217,12 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                           Expanded(
                             child: Column(
                               children: [
-                                _buildRatingBar(
-                                  star: '5',
-                                  count: _count5,
-                                  percentage: _totalReviewCount > 0 ? _count5 / _totalReviewCount : 0.78,
-                                ),
-                                _buildRatingBar(
-                                  star: '4',
-                                  count: _count4,
-                                  percentage: _totalReviewCount > 0 ? _count4 / _totalReviewCount : 0.16,
-                                ),
-                                _buildRatingBar(
-                                  star: '3',
-                                  count: _count3,
-                                  percentage: _totalReviewCount > 0 ? _count3 / _totalReviewCount : 0.04,
-                                ),
-                                _buildRatingBar(
-                                  star: '2',
-                                  count: _count2,
-                                  percentage: _totalReviewCount > 0 ? _count2 / _totalReviewCount : 0.015,
-                                ),
-                                _buildRatingBar(
-                                  star: '1',
-                                  count: _count1,
-                                  percentage: _totalReviewCount > 0 ? _count1 / _totalReviewCount : 0.005,
-                                ),
+                                for (final star in [5, 4, 3, 2, 1])
+                                  _buildRatingBar(
+                                    star: '$star',
+                                    count: counts[star] ?? 0,
+                                    percentage: total > 0 ? (counts[star] ?? 0) / total : 0,
+                                  ),
                               ],
                             ),
                           ),
@@ -380,9 +302,11 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
 
                     const SizedBox(height: 18),
 
-                    // Filter Chips: [All (125)] [5 ★ (97)] [4 ★ (20)]
-                    Row(
-                      children: List.generate(_filters.length, (index) {
+                    // Filter Chips: [All (125)] [5 ★ (97)] [4 ★ (20)] [3 ★] [2 ★] [1 ★]
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                      children: List.generate(filters.length, (index) {
                         final isSelected = _selectedFilterIndex == index;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
@@ -399,7 +323,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                                 ),
                               ),
                               child: Text(
-                                _filters[index],
+                                filters[index],
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 12,
                                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -410,6 +334,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                           ),
                         );
                       }),
+                      ),
                     ),
 
                     const SizedBox(height: 20),
@@ -454,6 +379,22 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                     const SizedBox(height: 14),
 
                     // Reviews List
+                    if (filteredReviews.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 28),
+                        child: Center(
+                          child: Text(
+                            _selectedFilterIndex == 0
+                                ? 'No reviews yet. Be the first to write one!'
+                                : 'No ${6 - _selectedFilterIndex}-star reviews to show yet.',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              color: const Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ),
+                      ),
                     ...filteredReviews.map((rev) => _buildReviewTile(rev)),
                   ],
                 ),
@@ -593,7 +534,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                       ),
                     ),
                     Text(
-                      review['time'] ?? 'Recently',
+                      _timeLabel(review),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         color: const Color(0xFF868889),
