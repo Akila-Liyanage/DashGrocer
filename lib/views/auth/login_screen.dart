@@ -389,63 +389,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 18),
-
-                        // Optional Google Sign in at bottom
-                        Row(
-                          children: [
-                            const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
-                              child: Text(
-                                'Or continue with',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 11,
-                                  color: const Color(0xFF94A3B8),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
-                          ],
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        Center(
-                          child: SizedBox(
-                            height: 44,
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF1E293B),
-                                side: const BorderSide(color: Color(0xFFE2E8F0)),
-                                padding: const EdgeInsets.symmetric(horizontal: 18),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onPressed: () async {
-                                await _authService.signInWithGoogle();
-                              },
-                              icon: Text(
-                                'G',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF4285F4),
-                                ),
-                              ),
-                              label: Text(
-                                'Google',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
                           ],
                         ),
                       ),

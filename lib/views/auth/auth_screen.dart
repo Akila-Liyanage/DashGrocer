@@ -49,14 +49,6 @@ class _AuthScreenState extends State<AuthScreen> {
     _authService.clearError();
   }
 
-  Future<void> _handleGoogleSignIn() async {
-    // Quick Demo / Guest Customer sign-in for seamless experience
-    await _authService.login(
-      email: 'customer@dashgrocer.com',
-      password: 'pass123',
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
@@ -91,7 +83,6 @@ class _AuthScreenState extends State<AuthScreen> {
           key: const ValueKey('welcome_screen'),
           onGoToLogin: () => _goTo(AuthScreenStep.login),
           onGoToRegister: () => _goTo(AuthScreenStep.signup),
-          onGoogleSignIn: _handleGoogleSignIn,
         );
 
       case AuthScreenStep.login:

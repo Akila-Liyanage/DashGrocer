@@ -20,7 +20,6 @@ void main() {
         home: WelcomeScreen(
           onGoToLogin: () {},
           onGoToRegister: () {},
-          onGoogleSignIn: () {},
         ),
       ),
     );
@@ -31,12 +30,11 @@ void main() {
     expect(find.text('Sign In with Email'), findsOneWidget);
     expect(find.text('Create an account'), findsOneWidget);
 
-    // Verify Google sign-in is optional at the bottom
-    expect(find.text('Or optional sign in'), findsOneWidget);
-    expect(find.text('Continue with Google'), findsOneWidget);
+    expect(find.text('Or optional sign in'), findsNothing);
+    expect(find.text('Continue with Google'), findsNothing);
   });
 
-  testWidgets('Login screen asks directly for Email and Password with optional Google button at bottom', (WidgetTester tester) async {
+  testWidgets('Login screen asks directly for Email and Password without Google sign-in', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: LoginScreen(
@@ -57,9 +55,8 @@ void main() {
     expect(find.text('Customer'), findsOneWidget);
     expect(find.text('Shop Owner'), findsOneWidget);
 
-    // Google login is optional at the bottom
-    expect(find.text('Or continue with'), findsOneWidget);
-    expect(find.text('Google'), findsOneWidget);
+    expect(find.text('Or continue with'), findsNothing);
+    expect(find.text('Google'), findsNothing);
   });
 
   testWidgets('Signup screen renders role selector and dynamically shows shop fields for Shop Owner', (WidgetTester tester) async {
