@@ -310,9 +310,7 @@ class GroceryShopRepository implements ShopRepository {
           unit: product.unit.isNotEmpty ? product.unit : '1 kg',
           price: product.price,
           category: product.category.isNotEmpty ? product.category : 'Vegetables',
-          imageUrl: (product.imageUrl != null && product.imageUrl!.trim().isNotEmpty)
-              ? product.imageUrl!
-              : 'assets/images/carrot.png',
+          imageUrl: product.imageUrl?.trim() ?? '',
           isNew: true,
           sellerId: sellerId,
           sellerName: _fallbackOwner.fullName.isNotEmpty

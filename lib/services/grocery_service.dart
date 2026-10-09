@@ -152,6 +152,7 @@ class GroceryService extends ChangeNotifier {
             return bTime.compareTo(aTime);
           });
           _items = firestoreItems;
+          _trimCartToStock();
           notifyListeners();
         } else if (snapshot.docs.isEmpty && _hasInitialFirestoreProductsSync) {
           // If Firestore collection is empty, retain local demo catalog or trigger seeder
@@ -205,6 +206,7 @@ class GroceryService extends ChangeNotifier {
                 paymentMethod: data['paymentMethod'] as String? ?? 'Pay at Store',
                 cancelReason: data['cancelReason'] as String?,
                 cancelledByCustomer: data['cancelledByCustomer'] as bool? ?? false,
+                itemQuantities: _readItemQuantities(data['itemQuantities']),
               ));
             } catch (e) {
               debugPrint('Error parsing Firestore order doc ${doc.id}: $e');
@@ -1020,11 +1022,6 @@ class GroceryService extends ChangeNotifier {
       ),
     ];
 
-    // Seed default cart with the new fresh products:
-    _cartQuantities['carrot'] = 2;
-    _cartQuantities['tomato'] = 3;
-    _cartQuantities['beans'] = 1;
-    _cartQuantities['pumpkin'] = 1;
   }
 
   // Cart operations
@@ -1038,7 +1035,7 @@ class GroceryService extends ChangeNotifier {
     final list = <GroceryItem>[];
     for (final entry in _cartQuantities.entries) {
       if (entry.value > 0) {
-        final item = getItemById(entry.key);
+        final item = _itemWithId(entry.key);
         if (item != null) {
           list.add(item.copyWith(inCartQuantity: entry.value));
         }
@@ -1050,7 +1047,7 @@ class GroceryService extends ChangeNotifier {
   double get subtotal {
     double sum = 0;
     for (final entry in _cartQuantities.entries) {
-      final item = getItemById(entry.key);
+      final item = _itemWithId(entry.key);
       if (item != null) {
         sum += item.price * entry.value;
       }
@@ -1061,10 +1058,62 @@ class GroceryService extends ChangeNotifier {
   double get shippingFee => subtotal > 0 ? 450.0 : 0.0;
   double get totalOrderPrice => subtotal + shippingFee;
 
-  void addToCart(String itemId, [int count = 1]) {
+  /// The catalog item with exactly this id, or null when there is none.
+  GroceryItem? _itemWithId(String id) {
+    for (final item in _items) {
+      if (item.id == id) return item;
+    }
+    return null;
+  }
+
+  /// How many units of a product a customer can have in the cart: the stock
+  /// the shop owner set, or 0 when the product is hidden or gone.
+  int availableStock(String itemId) {
+    final item = _itemWithId(itemId);
+    if (item == null || !item.isAvailable) return 0;
+    return item.stockQuantity < 0 ? 0 : item.stockQuantity;
+  }
+
+  /// True while one more unit of the product can be added to the cart.
+  bool canAddMore(String itemId) => getQuantity(itemId) < availableStock(itemId);
+
+  /// Adds up to [count] units to the cart, never more than the shop has in
+  /// stock. Returns how many were actually added.
+  int addToCart(String itemId, [int count = 1]) {
     final current = _cartQuantities[itemId] ?? 0;
-    _cartQuantities[itemId] = current + count;
+    final room = availableStock(itemId) - current;
+    final added = count > room ? room : count;
+    if (added <= 0) return 0;
+    _cartQuantities[itemId] = current + added;
     notifyListeners();
+    return added;
+  }
+
+  /// Sets the cart quantity of a product (0 removes it), never more than the
+  /// shop has in stock. Returns the quantity now in the cart.
+  int setCartQuantity(String itemId, int quantity) {
+    final stock = availableStock(itemId);
+    final wanted = quantity > stock ? stock : quantity;
+    if (wanted <= 0) {
+      _cartQuantities.remove(itemId);
+    } else {
+      _cartQuantities[itemId] = wanted;
+    }
+    notifyListeners();
+    return wanted < 0 ? 0 : wanted;
+  }
+
+  /// Lowers cart quantities that are now above the stock, and drops products
+  /// that were removed from the catalog. Called when the catalog changes.
+  void _trimCartToStock() {
+    for (final id in _cartQuantities.keys.toList()) {
+      final stock = availableStock(id);
+      if (stock <= 0) {
+        _cartQuantities.remove(id);
+      } else if (_cartQuantities[id]! > stock) {
+        _cartQuantities[id] = stock;
+      }
+    }
   }
 
   void incrementQuantity(String itemId) {
@@ -1105,14 +1154,7 @@ class GroceryService extends ChangeNotifier {
     return _items.where((element) => element.isFavorite && element.isAvailable).toList();
   }
 
-  GroceryItem? getItemById(String id) {
-    try {
-      return _items.firstWhere((element) => element.id == id);
-    } catch (_) {
-      if (_items.isNotEmpty) return _items.first;
-      return null;
-    }
-  }
+  GroceryItem? getItemById(String id) => _itemWithId(id);
 
   List<GroceryItem> getCategoryItems(String category) {
     final cat = category.toLowerCase().trim();
@@ -1378,6 +1420,7 @@ class GroceryService extends ChangeNotifier {
     final index = _items.indexWhere((it) => it.id == updatedItem.id);
     if (index != -1) {
       _items[index] = updatedItem;
+      _trimCartToStock();
       notifyListeners();
 
       final firestore = _firestore;
@@ -1490,7 +1533,40 @@ class GroceryService extends ChangeNotifier {
       'paymentMethod': order.paymentMethod,
       'cancelReason': order.cancelReason,
       'cancelledByCustomer': order.cancelledByCustomer,
+      'itemQuantities': order.itemQuantities,
     };
+  }
+
+  static Map<String, int> _readItemQuantities(Object? raw) {
+    if (raw is! Map) return const <String, int>{};
+    return {
+      for (final entry in raw.entries)
+        if (entry.value is num) entry.key.toString(): (entry.value as num).toInt(),
+    };
+  }
+
+  /// Takes the ordered quantities out of the stock ([takeOut] true, an order
+  /// was placed) or puts them back (false, an order was cancelled), and saves
+  /// the new stock so the shop owner and other customers see it.
+  void _changeStock(Map<String, int> quantities, {required bool takeOut}) {
+    final firestore = _firestore;
+    for (final entry in quantities.entries) {
+      final index = _items.indexWhere((it) => it.id == entry.key);
+      if (index == -1) continue;
+      final current = _items[index].stockQuantity;
+      final stock = takeOut ? current - entry.value : current + entry.value;
+      final updated = _items[index].copyWith(stockQuantity: stock < 0 ? 0 : stock);
+      _items[index] = updated;
+      if (firestore != null) {
+        firestore
+            .collection('products')
+            .doc(updated.id)
+            .set(updated.toMap(), SetOptions(merge: true))
+            .catchError((e) {
+          debugPrint('Firestore stock update error: $e');
+        });
+      }
+    }
   }
 
   /// A new order number that no existing order uses, for example
@@ -1557,6 +1633,11 @@ class GroceryService extends ChangeNotifier {
         ? '$itemsCount items (${cartItems.map((e) => e.name).take(3).join(', ')}${itemsCount > 3 ? '...' : ''})'
         : '3 items (Selected Groceries)';
 
+    // What this order takes off the shelf.
+    final orderedQuantities = <String, int>{
+      for (final item in cartItems) item.id: item.inCartQuantity,
+    };
+
     final order = StoreOrder(
       id: generatedId,
       customerName: customerName,
@@ -1569,9 +1650,11 @@ class GroceryService extends ChangeNotifier {
       createdAt: DateTime.now(),
       isRead: false,
       paymentMethod: paymentMethod,
+      itemQuantities: orderedQuantities,
     );
 
     _sellerOrders.insert(0, order);
+    _changeStock(orderedQuantities, takeOut: true);
 
     final firestore = _firestore;
     if (firestore != null) {
@@ -1646,7 +1729,12 @@ class GroceryService extends ChangeNotifier {
   void updateOrderStatus(String orderId, String newStatus) {
     final index = _sellerOrders.indexWhere((o) => o.id == orderId);
     if (index != -1) {
-      _sellerOrders[index] = _sellerOrders[index].copyWith(status: newStatus);
+      final previous = _sellerOrders[index];
+      _sellerOrders[index] = previous.copyWith(status: newStatus);
+      // A cancelled order gives its products back to the stock.
+      if (newStatus == 'Cancelled' && previous.status != 'Cancelled') {
+        _changeStock(previous.itemQuantities, takeOut: false);
+      }
       notifyListeners();
 
       final firestore = _firestore;
@@ -1720,6 +1808,7 @@ class GroceryService extends ChangeNotifier {
       cancelReason: cleanReason,
       cancelledByCustomer: true,
     );
+    _changeStock(order.itemQuantities, takeOut: false);
 
     final firestore = _firestore;
     if (firestore != null) {

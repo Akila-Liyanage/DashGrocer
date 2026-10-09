@@ -68,6 +68,9 @@ void main() {
     });
 
     testWidgets('4. Cart Screen: renders items, calculations and Checkout button', (tester) async {
+      // The cart starts empty, so put something in it first.
+      GroceryService().addToCart('pumpkin', 2);
+
       await tester.pumpWidget(
         const MaterialApp(
           home: CartScreen(),
