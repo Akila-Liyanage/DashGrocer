@@ -24,6 +24,7 @@ class GroceryItem {
   final double? sellerRating;
   final String? sellerResponseTime;
   final int stockQuantity;
+  final bool isAvailable;
 
   const GroceryItem({
     required this.id,
@@ -49,7 +50,11 @@ class GroceryItem {
     this.sellerRating,
     this.sellerResponseTime,
     this.stockQuantity = 50,
+    this.isAvailable = true,
   });
+
+  bool get isOutOfStock => stockQuantity <= 0;
+  bool get isActive => isAvailable && stockQuantity > 0;
 
   String get displaySellerShopName {
     if (sellerShopName != null && sellerShopName!.trim().isNotEmpty) {
@@ -104,6 +109,7 @@ class GroceryItem {
     double? sellerRating,
     String? sellerResponseTime,
     int? stockQuantity,
+    bool? isAvailable,
   }) {
     return GroceryItem(
       id: id ?? this.id,
@@ -129,6 +135,7 @@ class GroceryItem {
       sellerRating: sellerRating ?? this.sellerRating,
       sellerResponseTime: sellerResponseTime ?? this.sellerResponseTime,
       stockQuantity: stockQuantity ?? this.stockQuantity,
+      isAvailable: isAvailable ?? this.isAvailable,
     );
   }
 
@@ -147,6 +154,7 @@ class GroceryItem {
       'category': category,
       'imageUrl': imageUrl,
       'sellerId': sellerId,
+      'shopId': sellerId,
       'sellerName': sellerName,
       'sellerShopName': sellerShopName,
       'sellerPhone': sellerPhone,
@@ -154,11 +162,21 @@ class GroceryItem {
       'sellerRating': sellerRating,
       'sellerResponseTime': sellerResponseTime,
       'stockQuantity': stockQuantity,
+      'stock': stockQuantity,
+      'isAvailable': isAvailable,
+      'isActive': isAvailable,
     };
   }
 
   factory GroceryItem.fromMap(Map<String, dynamic> map, [String? docId]) {
     final cat = map['category'] as String? ?? 'Vegetables';
+    final sId = (map['sellerId'] as String?) ?? (map['shopId'] as String?);
+    final sName = (map['sellerName'] as String?) ?? (map['ownerName'] as String?);
+    final sShop = (map['sellerShopName'] as String?) ?? (map['shopName'] as String?);
+    final sStock = (map['stockQuantity'] as num?)?.toInt() ?? ((map['stock'] as num?)?.toInt() ?? 50);
+    final isAvail = map['isAvailable'] as bool? ??
+        (map['isActive'] as bool? ?? (map['status'] != 'inactive'));
+
     return GroceryItem(
       id: docId ?? (map['id'] as String? ?? 'item_${DateTime.now().millisecondsSinceEpoch}'),
       name: map['name'] as String? ?? '',
@@ -172,16 +190,19 @@ class GroceryItem {
       reviewsCount: (map['reviewsCount'] as num?)?.toInt() ?? 24,
       description: map['description'] as String? ?? '',
       category: cat,
-      imageUrl: map['imageUrl'] as String? ?? 'assets/images/pumpkin.png',
+      imageUrl: (map['imageUrl'] as String?)?.isNotEmpty == true
+          ? (map['imageUrl'] as String)
+          : 'assets/images/pumpkin.png',
       circleColor: _getCircleColorForCategory(cat),
-      sellerId: map['sellerId'] as String?,
-      sellerName: map['sellerName'] as String?,
-      sellerShopName: map['sellerShopName'] as String?,
+      sellerId: sId,
+      sellerName: sName,
+      sellerShopName: sShop,
       sellerPhone: map['sellerPhone'] as String?,
       sellerAddress: map['sellerAddress'] as String?,
       sellerRating: (map['sellerRating'] as num?)?.toDouble(),
       sellerResponseTime: map['sellerResponseTime'] as String?,
-      stockQuantity: (map['stockQuantity'] as num?)?.toInt() ?? 50,
+      stockQuantity: sStock,
+      isAvailable: isAvail,
     );
   }
 

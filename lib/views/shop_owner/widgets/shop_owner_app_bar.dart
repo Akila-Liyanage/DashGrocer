@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/shop_owner_theme.dart';
 import '../../../models/owner_profile.dart';
-import '../../../services/chat_service.dart';
-import '../chat/shop_owner_chat_screen.dart';
 import 'owner_avatar.dart';
 
 /// Header used on the four main tabs: the profile icon on the left (opens
@@ -59,42 +57,6 @@ class ShopOwnerAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
-        // Circular Chat popup button with live customer messages badge
-        ListenableBuilder(
-          listenable: ChatService(),
-          builder: (context, _) {
-            final unreadChat = ChatService().sellerUnreadCount;
-            return IconButton(
-              tooltip: 'Customer Messages',
-              onPressed: onChat ??
-                  () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const ShopOwnerChatScreen(),
-                      ),
-                    );
-                  },
-              icon: Badge(
-                isLabelVisible: unreadChat > 0,
-                label: Text(unreadChat > 9 ? '9+' : '$unreadChat'),
-                backgroundColor: const Color(0xFFEF4444),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF1F5F9),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    color: ShopColors.textSecondary,
-                    size: 19,
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
         IconButton(
           tooltip: 'Notifications',
           onPressed: onNotifications,

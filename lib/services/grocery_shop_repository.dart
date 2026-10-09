@@ -64,10 +64,9 @@ class GroceryShopRepository implements ShopRepository {
     return List<String>.unmodifiable(names);
   }
 
-  /// The customer catalog lists every product, so there is nothing for an
-  /// "Online Availability" switch to control.
+  /// Catalog visibility (active/inactive) can be controlled by shop owner.
   @override
-  bool get supportsCatalogVisibility => false;
+  bool get supportsCatalogVisibility => true;
 
   /// The email is the login email, which sign-in manages.
   @override
@@ -254,6 +253,7 @@ class GroceryShopRepository implements ShopRepository {
       code: extras?.code ?? '',
       barcode: extras?.barcode ?? '',
       lowStockThreshold: extras?.lowStockThreshold ?? 10,
+      isAvailable: item.isAvailable,
       imageUrl: item.imageUrl.isEmpty ? null : item.imageUrl,
     );
   }
@@ -312,6 +312,7 @@ class GroceryShopRepository implements ShopRepository {
           sellerShopName: sellerName,
           sellerPhone: _fallbackOwner.phoneNumber,
           stockQuantity: product.stock,
+          isAvailable: product.isAvailable,
         ),
       );
       return;
@@ -327,6 +328,7 @@ class GroceryShopRepository implements ShopRepository {
         category: product.category,
         imageUrl: product.imageUrl ?? '',
         stockQuantity: product.stock,
+        isAvailable: product.isAvailable,
       ),
     );
   }

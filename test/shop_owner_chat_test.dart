@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dashgrocer/models/owner_profile.dart';
-import 'package:dashgrocer/models/user_model.dart';
 import 'package:dashgrocer/services/chat_service.dart';
 import 'package:dashgrocer/services/mock_shop_repository.dart';
 import 'package:dashgrocer/views/shop_owner/chat/shop_owner_chat_screen.dart';
+import 'package:dashgrocer/views/shop_owner/chat/shop_owner_conversations_screen.dart';
 import 'package:dashgrocer/views/shop_owner/shop_owner_shell.dart';
 import 'package:dashgrocer/views/shop_owner/widgets/shop_owner_app_bar.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -87,14 +87,7 @@ void main() {
       expect(find.text('Great, I will be there in 10 minutes!'), findsOneWidget);
     });
 
-    testWidgets('3. ShopOwnerAppBar: circular chat button is present with unread badge', (tester) async {
-      final chatService = ChatService();
-      // Add unread customer message
-      await chatService.sendCustomerMessage(
-        text: 'Hello, is the shop open?',
-        simulateAutoReply: false,
-      );
-
+    testWidgets('3. ShopOwnerAppBar: top duplicate chat button removed and notifications bell present', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -109,17 +102,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verify circular chat button icon
-      expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsOneWidget);
-      // Verify notification bell icon
+      // Verify top duplicate chat button was removed from AppBar
+      expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsNothing);
+      // Verify notification bell icon remains
       expect(find.byIcon(Icons.notifications_none), findsOneWidget);
-
-      // Tap circular chat button opens ShopOwnerChatScreen
-      await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(ShopOwnerChatScreen), findsOneWidget);
-      expect(find.text('Kasun Perera'), findsOneWidget);
     });
 
     testWidgets('4. ShopOwnerShell: renders floating circular chat button with badge', (tester) async {
@@ -139,11 +125,11 @@ void main() {
       // Verify floating circular chat button
       expect(find.byIcon(Icons.chat_bubble_rounded), findsOneWidget);
 
-      // Tap floating circular chat button opens ShopOwnerChatScreen
+      // Tap floating circular chat button opens WhatsApp-style Customer Inbox
       await tester.tap(find.byIcon(Icons.chat_bubble_rounded));
       await tester.pumpAndSettle();
 
-      expect(find.byType(ShopOwnerChatScreen), findsOneWidget);
+      expect(find.byType(ShopOwnerConversationsScreen), findsOneWidget);
     });
 
     test('5. ChatService: Thank you acknowledgment is only sent once and does not repeat', () async {

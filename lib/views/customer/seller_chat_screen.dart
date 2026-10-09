@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/chat_message_model.dart';
 import '../../models/grocery_item_model.dart';
+import '../../services/auth_service.dart';
 import '../../services/chat_service.dart';
 import '../../services/grocery_service.dart';
 import '../common/app_image_view.dart';
@@ -46,17 +47,35 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
     '🛍️ Can you pack in paper bags?',
   ];
 
+  String get _currentCustomerId {
+    final user = AuthService().currentUser;
+    return (user?.id.isNotEmpty == true) ? user!.id : 'cust_01';
+  }
+
+  String get _currentCustomerName {
+    final user = AuthService().currentUser;
+    return (user?.fullName.isNotEmpty == true) ? user!.fullName : 'Kasun Perera';
+  }
+
   @override
   void initState() {
     super.initState();
+    ChatService().addListener(_onChatUpdated);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ChatService().markAllAsReadByCustomer();
+      ChatService().markCustomerMessagesAsReadByCustomer(_currentCustomerId);
       _scrollToBottom();
     });
   }
 
+  void _onChatUpdated() {
+    if (!mounted) return;
+    ChatService().markCustomerMessagesAsReadByCustomer(_currentCustomerId);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
   @override
   void dispose() {
+    ChatService().removeListener(_onChatUpdated);
     _messageController.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
@@ -78,8 +97,12 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
     final text = customText ?? _messageController.text;
     if (text.trim().isEmpty) return;
 
+    final user = AuthService().currentUser;
     ChatService().sendCustomerMessage(
       text: text,
+      customerId: _currentCustomerId,
+      customerName: _currentCustomerName,
+      customerPhone: user?.phoneNumber,
       product: widget.product,
       isQuickInquiry: customText != null,
     );
@@ -92,8 +115,12 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
   }
 
   void _sendAttachedMessage(String text, String attachmentUrl) {
+    final user = AuthService().currentUser;
     ChatService().sendCustomerMessage(
       text: text,
+      customerId: _currentCustomerId,
+      customerName: _currentCustomerName,
+      customerPhone: user?.phoneNumber,
       product: widget.product,
       attachmentUrl: attachmentUrl,
     );
@@ -374,7 +401,7 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
     return ListenableBuilder(
       listenable: chatService,
       builder: (context, _) {
-        final rawMessages = chatService.allMessages;
+        final rawMessages = chatService.getMessagesForCustomer(_currentCustomerId, _currentCustomerName);
         final messages = _searchQuery.isEmpty
             ? rawMessages
             : rawMessages
@@ -614,12 +641,14 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
           ),
           tooltip: 'Switch to Shop Owner Chat',
           onPressed: () {
+            final user = AuthService().currentUser;
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const ShopOwnerChatScreen(
-                  customerName: 'Kasun Perera',
-                  customerPhone: '+94 77 123 4567',
+                builder: (_) => ShopOwnerChatScreen(
+                  customerId: _currentCustomerId,
+                  customerName: _currentCustomerName,
+                  customerPhone: user?.phoneNumber ?? '+94 77 123 4567',
                   orderId: '#FP-2028-0142',
                 ),
               ),
@@ -640,12 +669,14 @@ class _SellerChatScreenState extends State<SellerChatScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           onSelected: (value) {
             if (value == 'switch_seller') {
+              final user = AuthService().currentUser;
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const ShopOwnerChatScreen(
-                    customerName: 'Kasun Perera',
-                    customerPhone: '+94 77 123 4567',
+                  builder: (_) => ShopOwnerChatScreen(
+                    customerId: _currentCustomerId,
+                    customerName: _currentCustomerName,
+                    customerPhone: user?.phoneNumber ?? '+94 77 123 4567',
                     orderId: '#FP-2028-0142',
                   ),
                 ),

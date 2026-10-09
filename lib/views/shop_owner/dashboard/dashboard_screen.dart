@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/shop_owner_theme.dart';
 import '../../../core/formatters.dart';
 import '../../../models/shop_order.dart';
+import '../../../models/shop_profile.dart';
 import '../../../services/shop_store.dart';
 import '../shop_actions.dart';
 import '../widgets/dialogs.dart';
 import '../widgets/info_card.dart';
 import '../widgets/shop_owner_app_bar.dart';
+import 'widgets/customer_inquiries_section.dart';
 import 'widgets/low_stock_list.dart';
 import 'widgets/order_action_card.dart';
 import 'widgets/overview_grid.dart';
@@ -123,6 +125,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             children: [
               if (_store.isDemo) const _DemoBanner(),
+              _buildApprovalStatusBanner(_store.shop),
               const SizedBox(height: 16),
               const SectionCaption('Overview'),
               OverviewGrid(
@@ -146,6 +149,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onManageStock: widget.onOpenProducts,
                 onOpenSales: widget.onOpenSales,
               ),
+              const SizedBox(height: 32),
+              const CustomerInquiriesSection(),
               const SizedBox(height: 32),
               SectionHeader(
                 title: 'Orders to Handle',
@@ -257,6 +262,135 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ShopActions.quickAddAmount,
       ),
       onRestock: (product) => _actions.restock(context, product),
+    );
+  }
+
+  Widget _buildApprovalStatusBanner(ShopProfile shop) {
+    if (shop.isPending) {
+      return Container(
+        margin: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFBEB),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFFDE68A)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF59E0B),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.schedule_rounded, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Store Registration Under Review',
+                    style: ShopText.title.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF92400E),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Your grocery shop registration is pending admin approval. Once approved by DashGrocer administrators, your shop will be listed and customers can place orders.',
+                    style: ShopText.body.copyWith(
+                      fontSize: 11,
+                      color: const Color(0xFFB45309),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (shop.isRejected) {
+      return Container(
+        margin: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF2F2),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFFECACA)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: ShopColors.error,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Registration Not Approved',
+                    style: ShopText.title.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF991B1B),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    shop.rejectionReason.isNotEmpty
+                        ? 'Admin notice: ${shop.rejectionReason}. Please contact DashGrocer administration.'
+                        : 'Your shop registration was not approved. Please contact DashGrocer administration for details.',
+                    style: ShopText.body.copyWith(
+                      fontSize: 11,
+                      color: const Color(0xFFB91C1C),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Approved: verified partner badge
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFDCFCE7)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.verified_rounded, color: ShopColors.primary, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Verified Partner Store • Listed on DashGrocer Marketplace',
+              style: ShopText.body.copyWith(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF166534),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

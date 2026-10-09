@@ -30,6 +30,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   String _selectedCategory = 'Vegetables';
   bool _isNewItem = true;
+  bool _isAvailable = true;
   String _selectedPresetImage = 'assets/images/carrot.png';
 
   final List<String> _categories = [
@@ -63,6 +64,38 @@ class _AddProductScreenState extends State<AddProductScreen> {
     {
       'label': 'Green Beans',
       'url': 'assets/images/beans.png',
+    },
+    {
+      'label': 'Ripe Banana',
+      'url': 'assets/images/banana.jpg',
+    },
+    {
+      'label': 'Gala Apple',
+      'url': 'assets/images/apple.jpg',
+    },
+    {
+      'label': 'Ceylon Mango',
+      'url': 'assets/images/mango.jpg',
+    },
+    {
+      'label': 'Dairy Milk',
+      'url': 'assets/images/milk.jpg',
+    },
+    {
+      'label': 'Ceylon Tea',
+      'url': 'assets/images/tea.jpg',
+    },
+    {
+      'label': 'Cooking Oil',
+      'url': 'assets/images/cooking_oil.jpg',
+    },
+    {
+      'label': 'Samba Rice',
+      'url': 'assets/images/rice.jpg',
+    },
+    {
+      'label': 'Dishwash Soap',
+      'url': 'assets/images/dishwash.jpg',
     },
   ];
 
@@ -119,6 +152,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       sellerShopName: widget.seller.shopName ?? 'GreenLeaf Fresh Mart',
       sellerPhone: widget.seller.phoneNumber,
       stockQuantity: stock,
+      isAvailable: _isAvailable,
     );
 
     GroceryService().addProduct(newProduct);
@@ -259,6 +293,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
             _buildInputCard(
               label: 'Category *',
               child: DropdownButtonFormField<String>(
+                isExpanded: true,
                 initialValue: _selectedCategory,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 14,
@@ -370,7 +405,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
             const SizedBox(height: 8),
 
             SizedBox(
-              height: 72,
+              height: 98,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: _presetImages.length,
@@ -386,34 +421,55 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         _imageUrlController.text = preset['url']!;
                       });
                     },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      width: 72,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected ? AppColors.brandGreen : const Color(0xFFE2E8F0),
-                          width: isSelected ? 2.5 : 1.0,
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            AppImageView(
-                              imageUrl: preset['url']!,
-                              fit: BoxFit.contain,
-                            ),
-                            if (isSelected)
-                              Container(
-                                color: AppColors.brandGreen.withValues(alpha: 0.35),
-                                child: const Center(
-                                  child: Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
-                                ),
+                    child: SizedBox(
+                      width: 74,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            width: 70,
+                            height: 68,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected ? AppColors.brandGreen : const Color(0xFFE2E8F0),
+                                width: isSelected ? 2.5 : 1.0,
                               ),
-                          ],
-                        ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  AppImageView(
+                                    imageUrl: preset['url']!,
+                                    fit: BoxFit.contain,
+                                  ),
+                                  if (isSelected)
+                                    Container(
+                                      color: AppColors.brandGreen.withValues(alpha: 0.35),
+                                      child: const Center(
+                                        child: Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            preset['label'] ?? '',
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 10,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              color: isSelected ? AppColors.brandGreenDark : const Color(0xFF475569),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -490,6 +546,49 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     value: _isNewItem,
                     activeTrackColor: AppColors.brandGreen,
                     onChanged: (val) => setState(() => _isNewItem = val),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // Online Availability Toggle
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Active (Catalog Visibility)',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E293B),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _isAvailable ? 'Visible live in customer catalog' : 'Hidden from customers (Inactive)',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          color: _isAvailable ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Switch(
+                    value: _isAvailable,
+                    activeTrackColor: AppColors.brandGreen,
+                    onChanged: (val) => setState(() => _isAvailable = val),
                   ),
                 ],
               ),

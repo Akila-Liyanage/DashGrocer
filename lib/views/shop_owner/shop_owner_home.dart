@@ -50,6 +50,10 @@ class _ShopOwnerHomeState extends State<ShopOwnerHome> {
       name: shopName,
       address: user.shopAddress ?? '',
       phone: user.phoneNumber,
+      status: user.shopStatus ?? 'approved',
+      ownerName: user.fullName,
+      ownerEmail: user.email,
+      rejectionReason: user.rejectionReason ?? '',
     );
     final startingOwner = OwnerProfile(
       id: user.id,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/phone_validator.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import 'widgets/animated_role_selector.dart';
@@ -80,10 +81,11 @@ class _RegisterFormState extends State<RegisterForm> {
 
   Future<void> _submit() async {
     if (_formKey.currentState?.validate() ?? false) {
+      final formattedPhone = SriLankaPhoneUtils.formatWithCountryCode(_phoneController.text);
       await _authService.register(
         fullName: _nameController.text,
         email: _emailController.text,
-        phoneNumber: _phoneController.text,
+        phoneNumber: formattedPhone,
         password: _passwordController.text,
         role: _selectedRole,
         shopName: _selectedRole == UserRole.shopOwner ? _shopNameController.text : null,
@@ -262,16 +264,32 @@ class _RegisterFormState extends State<RegisterForm> {
               // Contact / Phone Number with Phone Icon
               DynamicTextField(
                 controller: _phoneController,
-                label: 'Contact Number',
-                hint: '+94 77 123 4567',
+                label: 'Phone Number',
+                hint: '77 123 4567',
                 prefixIcon: Icons.phone_outlined,
+                prefixWidget: Padding(
+                  padding: const EdgeInsets.only(left: 14, right: 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '🇱🇰 +94',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF334155),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(width: 1, height: 16, color: const Color(0xFFE2E8F0)),
+                    ],
+                  ),
+                ),
                 keyboardType: TextInputType.phone,
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Please enter your contact phone number';
-                  }
-                  return null;
-                },
+                inputFormatters: [
+                  SriLankaPhoneInputFormatter(),
+                ],
+                validator: SriLankaPhoneUtils.validate,
               ),
 
               const SizedBox(height: 14),

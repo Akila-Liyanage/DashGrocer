@@ -184,15 +184,19 @@ class GroceryProductCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE8F6EB),
+                          color: item.stockQuantity <= 0
+                              ? const Color(0xFFFEE2E2)
+                              : const Color(0xFFE8F6EB),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          'In Stock',
+                          item.stockQuantity <= 0 ? 'Out of Stock' : 'In Stock',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.brandGreenDark,
+                            color: item.stockQuantity <= 0
+                                ? const Color(0xFFEF4444)
+                                : AppColors.brandGreenDark,
                           ),
                         ),
                       ),
@@ -215,79 +219,7 @@ class GroceryProductCard extends StatelessWidget {
             Container(
               height: 40,
               alignment: Alignment.center,
-              child: cartQty == 0
-                  ? InkWell(
-                      onTap: () {
-                        groceryService.addToCart(item.id, 1);
-                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '${item.name} added to cart',
-                              style: GoogleFonts.plusJakartaSans(fontSize: 12),
-                            ),
-                            duration: const Duration(seconds: 1),
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: AppColors.textPrimary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        );
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.shopping_bag_outlined,
-                            size: 15,
-                            color: AppColors.brandGreen,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Add to cart',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1A1A1A),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                          icon: const Icon(
-                            Icons.remove,
-                            size: 18,
-                            color: AppColors.brandGreen,
-                          ),
-                          onPressed: () => groceryService.decrementQuantity(item.id),
-                        ),
-                        Text(
-                          '$cartQty',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1A1A1A),
-                          ),
-                        ),
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                          icon: const Icon(
-                            Icons.add,
-                            size: 18,
-                            color: AppColors.brandGreen,
-                          ),
-                          onPressed: () => groceryService.incrementQuantity(item.id),
-                        ),
-                      ],
-                    ),
+              child: _buildBottomAction(context, item, cartQty, groceryService),
             ),
           ],
         ),
@@ -295,4 +227,96 @@ class GroceryProductCard extends StatelessWidget {
     ),
   );
 }
+
+  Widget _buildBottomAction(
+    BuildContext context,
+    GroceryItem item,
+    int cartQty,
+    GroceryService groceryService,
+  ) {
+    if (item.stockQuantity <= 0) {
+      return Text(
+        'Out of stock',
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF9CA3AF),
+        ),
+      );
+    }
+    if (cartQty == 0) {
+      return InkWell(
+        onTap: () {
+          groceryService.addToCart(item.id, 1);
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${item.name} added to cart',
+                style: GoogleFonts.plusJakartaSans(fontSize: 12),
+              ),
+              duration: const Duration(seconds: 1),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: AppColors.textPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+        },
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.shopping_bag_outlined,
+              size: 15,
+              color: AppColors.brandGreen,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Add to cart',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1A1A1A),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        IconButton(
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+          icon: const Icon(
+            Icons.remove,
+            size: 18,
+            color: AppColors.brandGreen,
+          ),
+          onPressed: () => groceryService.decrementQuantity(item.id),
+        ),
+        Text(
+          '$cartQty',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1A1A1A),
+          ),
+        ),
+        IconButton(
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+          icon: const Icon(
+            Icons.add,
+            size: 18,
+            color: AppColors.brandGreen,
+          ),
+          onPressed: () => groceryService.incrementQuantity(item.id),
+        ),
+      ],
+    );
+  }
 }

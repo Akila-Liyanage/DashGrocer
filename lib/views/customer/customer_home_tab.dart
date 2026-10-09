@@ -8,7 +8,6 @@ import 'category_products_screen.dart';
 import 'customer_notifications_sheet.dart';
 import 'search_screen.dart';
 import 'store_details_screen.dart';
-import 'track_order_screen.dart';
 import 'widgets/grocery_product_card.dart';
 
 class CustomerHomeTab extends StatefulWidget {
@@ -24,6 +23,15 @@ class CustomerHomeTab extends StatefulWidget {
 }
 
 class _CustomerHomeTabState extends State<CustomerHomeTab> {
+  void _showCustomerNotificationsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const CustomerNotificationsSheet(),
+    );
+  }
+
   static const List<Map<String, dynamic>> _popularShops = [
     {
       'id': 'shop_greenleaf',
@@ -68,7 +76,7 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
       builder: (context, _) {
         final categories = groceryService.categories;
         final allItems = groceryService.allItems;
-        final featuredProducts = allItems;
+        final featuredProducts = allItems.where((it) => it.isAvailable).toList();
 
         return Scaffold(
           backgroundColor: const Color(0xFFFBFBFB),
@@ -83,60 +91,91 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on_rounded,
-                                color: AppColors.brandGreen,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Maharagama, Colombo',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF868889),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on_rounded,
+                                  color: AppColors.brandGreen,
+                                  size: 14,
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Hi, $userName 👋',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFF1A1A1A),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    'Maharagama, Colombo',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF868889),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 2),
+                            Text(
+                              'Hi, $userName 👋',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF1A1A1A),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(
-                            tooltip: 'Notifications',
-                            icon: Badge(
-                              isLabelVisible: groceryService.unreadCustomerNotificationsCount > 0,
-                              label: Text('${groceryService.unreadCustomerNotificationsCount}'),
-                              backgroundColor: const Color(0xFFFE5858),
-                              child: const Icon(
-                                Icons.notifications_outlined,
-                                color: Color(0xFF868889),
-                                size: 24,
+                          // Notification Bell Button with Unread Badge
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              IconButton(
+                                tooltip: 'Notifications',
+                                icon: const Icon(
+                                  Icons.notifications_none_rounded,
+                                  color: Color(0xFF868889),
+                                  size: 24,
+                                ),
+                                onPressed: () => _showCustomerNotificationsSheet(context),
                               ),
-                            ),
-                            onPressed: () {
-                              showModalBottomSheet(
-                                context: context,
-                                backgroundColor: Colors.transparent,
-                                isScrollControlled: true,
-                                builder: (_) => const CustomerNotificationsSheet(),
-                              );
-                            },
+                              if (groceryService.unreadCustomerNotificationsCount > 0)
+                                Positioned(
+                                  top: 6,
+                                  right: 6,
+                                  child: Container(
+                                    key: const ValueKey('customer_notif_badge'),
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFEF4444),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 16,
+                                      minHeight: 16,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '${groceryService.unreadCustomerNotificationsCount}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w700,
+                                          height: 1,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           IconButton(
                             tooltip: 'Log Out',
@@ -450,21 +489,47 @@ class _CustomerHomeTabState extends State<CustomerHomeTab> {
                   const SizedBox(height: 14),
 
                   // Featured Products Grid (2 columns matching Figma design)
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: featuredProducts.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 14,
-                      mainAxisSpacing: 14,
-                      childAspectRatio: 0.72,
+                  if (featuredProducts.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFF1F2F4)),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.inventory_2_outlined, size: 36, color: Colors.grey.shade400),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No items available right now',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: featuredProducts.length,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: 0.72,
+                      ),
+                      itemBuilder: (context, index) {
+                        final item = featuredProducts[index];
+                        return GroceryProductCard(item: item);
+                      },
                     ),
-                    itemBuilder: (context, index) {
-                      final item = featuredProducts[index];
-                      return GroceryProductCard(item: item);
-                    },
-                  ),
 
                   const SizedBox(height: 24),
 

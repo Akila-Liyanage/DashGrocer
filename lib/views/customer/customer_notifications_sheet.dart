@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
-import '../../models/seller_order_model.dart';
 import '../../services/grocery_service.dart';
+import 'track_order_screen.dart';
 
 class CustomerNotificationsSheet extends StatelessWidget {
   const CustomerNotificationsSheet({super.key});
@@ -20,6 +20,13 @@ class CustomerNotificationsSheet extends StatelessWidget {
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x14000000),
+                blurRadius: 20,
+                offset: Offset(0, -4),
+              ),
+            ],
           ),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: SafeArea(
@@ -38,18 +45,22 @@ class CustomerNotificationsSheet extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.notifications_active_rounded, color: AppColors.brandGreen, size: 22),
+                        const Icon(
+                          Icons.notifications_active_rounded,
+                          color: AppColors.brandGreen,
+                          size: 22,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Notifications',
                           style: GoogleFonts.plusJakartaSans(
-                            fontSize: 17,
+                            fontSize: 18,
                             fontWeight: FontWeight.w800,
                             color: const Color(0xFF1E293B),
                           ),
@@ -57,14 +68,20 @@ class CustomerNotificationsSheet extends StatelessWidget {
                       ],
                     ),
                     if (notifications.any((n) => !n.isRead))
-                      TextButton(
-                        onPressed: () => groceryService.markCustomerNotificationsRead(),
-                        child: Text(
-                          'Mark read',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.brandGreen,
+                      InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () {
+                          groceryService.markAllCustomerNotificationsAsRead();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          child: Text(
+                            'Mark read',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.brandGreen,
+                            ),
                           ),
                         ),
                       ),
@@ -104,91 +121,100 @@ class CustomerNotificationsSheet extends StatelessWidget {
                     child: ListView.separated(
                       shrinkWrap: true,
                       itemCount: notifications.length,
-                      separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                      itemBuilder: (context, index) => _buildNotificationItem(notifications[index]),
+                      separatorBuilder: (_, _) => const Divider(
+                        color: Color(0xFFF1F5F9),
+                        height: 18,
+                        thickness: 1,
+                      ),
+                      itemBuilder: (context, index) {
+                        final notif = notifications[index];
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () {
+                            if (notif.orderId != null) {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => TrackOrderScreen(orderId: notif.orderId!),
+                                ),
+                              );
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFE8F6EB),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.check_circle_rounded,
+                                    color: AppColors.brandGreen,
+                                    size: 19,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              notif.title,
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 13.5,
+                                                fontWeight: FontWeight.w700,
+                                                color: notif.isRead
+                                                    ? const Color(0xFF475569)
+                                                    : const Color(0xFF0F172A),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            notif.timeAgo,
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w500,
+                                              color: const Color(0xFF94A3B8),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        notif.message,
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 12,
+                                          height: 1.35,
+                                          color: const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
-                const SizedBox(height: 10),
               ],
             ),
           ),
         );
       },
     );
-  }
-
-  Widget _buildNotificationItem(CustomerNotification notif) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-      decoration: BoxDecoration(
-        color: notif.isRead ? Colors.transparent : AppColors.brandGreenSoft.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: notif.isRead ? const Color(0xFFF1F5F9) : AppColors.brandGreenSoft,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.check_circle_rounded,
-              size: 18,
-              color: notif.isRead ? const Color(0xFF64748B) : AppColors.brandGreenDark,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        notif.title,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
-                          fontWeight: notif.isRead ? FontWeight.w600 : FontWeight.w800,
-                          color: const Color(0xFF1E293B),
-                        ),
-                      ),
-                    ),
-                    Text(
-                      _formatTimestamp(notif.time),
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        color: const Color(0xFF94A3B8),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  notif.message,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    color: const Color(0xFF64748B),
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatTimestamp(DateTime time) {
-    final diff = DateTime.now().difference(time);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
   }
 }

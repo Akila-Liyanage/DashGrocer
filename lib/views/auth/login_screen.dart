@@ -57,9 +57,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (role == UserRole.shopOwner) {
         _emailController.text = 'seller@dashgrocer.com';
         _passwordController.text = 'Password123!';
-      } else if (role == UserRole.admin) {
-        _emailController.text = 'admin@dashgrocer.com';
-        _passwordController.text = 'Admin123!';
       } else {
         _emailController.text = 'customer@dashgrocer.com';
         _passwordController.text = 'Password123!';
@@ -392,40 +389,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 14),
-
-                        // Quick Demo Accounts Sheet Trigger
-                        Center(
-                          child: InkWell(
-                            onTap: _showDemoAccountsSheet,
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.flash_on_rounded, size: 14, color: Color(0xFFF59E0B)),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '1-Tap Demo Credentials',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF475569),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 18),
 
                         // Optional Google Sign in at bottom
                         Row(
@@ -449,35 +413,35 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 10),
 
                         Center(
-                          child: InkWell(
-                            onTap: () {
-                              _authService.login(
-                                email: 'customer@dashgrocer.com',
-                                password: 'Password123!',
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                          child: SizedBox(
+                            height: 44,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF1E293B),
+                                side: const BorderSide(color: Color(0xFFE2E8F0)),
+                                padding: const EdgeInsets.symmetric(horizontal: 18),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _buildGoogleGLogo(),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Google',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF475569),
-                                    ),
-                                  ),
-                                ],
+                              onPressed: () async {
+                                await _authService.signInWithGoogle();
+                              },
+                              icon: Text(
+                                'G',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF4285F4),
+                                ),
+                              ),
+                              label: Text(
+                                'Google',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
@@ -493,24 +457,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         );
         },
-      ),
-    );
-  }
-
-  Widget _buildGoogleGLogo() {
-    return Container(
-      width: 18,
-      height: 18,
-      decoration: const BoxDecoration(shape: BoxShape.circle),
-      child: Center(
-        child: Text(
-          'G',
-          style: GoogleFonts.roboto(
-            fontSize: 14,
-            fontWeight: FontWeight.w900,
-            color: const Color(0xFF4285F4),
-          ),
-        ),
       ),
     );
   }
@@ -537,13 +483,6 @@ class _LoginScreenState extends State<LoginScreen> {
               title: 'Shop Owner',
               isSelected: _selectedRole == UserRole.shopOwner,
               onTap: () => _onRoleChanged(UserRole.shopOwner),
-            ),
-          ),
-          Expanded(
-            child: _buildRolePill(
-              title: 'Admin',
-              isSelected: _selectedRole == UserRole.admin,
-              onTap: () => _onRoleChanged(UserRole.admin),
             ),
           ),
         ],
@@ -630,162 +569,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        ),
-      ),
-    );
-  }
-
-  void _showDemoAccountsSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Quick Demo Accounts',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF0F172A),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Tap any role below to autofill verified test credentials:',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  color: const Color(0xFF64748B),
-                ),
-              ),
-              const SizedBox(height: 14),
-              _buildDemoAccountCard(
-                ctx: ctx,
-                title: 'Customer (Kasun Perera)',
-                email: 'customer@dashgrocer.com',
-                pass: 'Password123!',
-                role: UserRole.customer,
-                icon: Icons.person_rounded,
-                color: const Color(0xFF10B981),
-              ),
-              const SizedBox(height: 8),
-              _buildDemoAccountCard(
-                ctx: ctx,
-                title: 'Shop Owner (Sunil Weerasinghe)',
-                email: 'seller@dashgrocer.com',
-                pass: 'Password123!',
-                role: UserRole.shopOwner,
-                icon: Icons.storefront_rounded,
-                color: const Color(0xFF3B82F4),
-              ),
-              const SizedBox(height: 8),
-              _buildDemoAccountCard(
-                ctx: ctx,
-                title: 'Platform Admin',
-                email: 'admin@dashgrocer.com',
-                pass: 'Admin123!',
-                role: UserRole.admin,
-                icon: Icons.admin_panel_settings_rounded,
-                color: const Color(0xFF8B5CF6),
-              ),
-              const SizedBox(height: 10),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDemoAccountCard({
-    required BuildContext ctx,
-    required String title,
-    required String email,
-    required String pass,
-    required UserRole role,
-    required IconData icon,
-    required Color color,
-  }) {
-    return InkWell(
-      onTap: () {
-        Navigator.pop(ctx);
-        setState(() {
-          _selectedRole = role;
-          _emailController.text = email;
-          _passwordController.text = pass;
-        });
-        _authService.clearError();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Loaded $title credentials'),
-            backgroundColor: AppColors.brandGreen,
-            duration: const Duration(seconds: 1),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.25)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: Colors.white, size: 18),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF0F172A),
-                    ),
-                  ),
-                  Text(
-                    email,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11,
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFF94A3B8)),
-          ],
         ),
       ),
     );

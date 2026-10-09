@@ -27,6 +27,7 @@ class DatabaseSeeder {
       'role': 'shopOwner',
       'shopName': 'GreenLeaf Fresh Mart',
       'shopAddress': 'No. 42, High Level Road, Maharagama',
+      'shopStatus': 'approved',
     },
     {
       'email': 'owner@dashgrocer.com',
@@ -36,6 +37,17 @@ class DatabaseSeeder {
       'role': 'shopOwner',
       'shopName': 'GreenLeaf Fresh Mart',
       'shopAddress': 'No. 42, High Level Road, Maharagama',
+      'shopStatus': 'approved',
+    },
+    {
+      'email': 'kandyfresh@dashgrocer.com',
+      'password': seedPassword,
+      'fullName': 'Mahesh Jayawardena',
+      'phoneNumber': '+94 81 234 5678',
+      'role': 'shopOwner',
+      'shopName': 'Fresh Express Kandy',
+      'shopAddress': 'No. 12, Dalada Veediya, Kandy',
+      'shopStatus': 'pending',
     },
     {
       'email': 'admin@dashgrocer.com',
@@ -46,11 +58,20 @@ class DatabaseSeeder {
     },
   ];
 
+  static bool _hasSeeded = false;
+
   /// Initialize and seed default Firestore collections if not yet present
   static Future<void> seedInitialDataIfNeeded() async {
+    if (_hasSeeded) return;
+    _hasSeeded = true;
+
     try {
       // 1. Seed Categories & Products to Firestore
-      final productsSnapshot = await _firestore.collection('products').limit(1).get();
+      final productsSnapshot = await _firestore
+          .collection('products')
+          .limit(1)
+          .get()
+          .timeout(const Duration(seconds: 4));
       if (productsSnapshot.docs.isEmpty) {
         debugPrint('[DatabaseSeeder] Seeding initial grocery products to Firestore...');
         await seedProducts();
@@ -63,7 +84,8 @@ class DatabaseSeeder {
             .collection('users')
             .where('email', isEqualTo: email.toLowerCase())
             .limit(1)
-            .get();
+            .get()
+            .timeout(const Duration(seconds: 4));
 
         if (query.docs.isEmpty) {
           final docRef = _firestore.collection('users').doc();
@@ -77,6 +99,7 @@ class DatabaseSeeder {
                 : (seed['role'] == 'admin' ? UserRole.admin : UserRole.customer),
             shopName: seed['shopName'] as String?,
             shopAddress: seed['shopAddress'] as String?,
+            shopStatus: seed['shopStatus'] as String?,
           );
           await docRef.set(userModel.toMap());
           debugPrint('[DatabaseSeeder] Seed user created in Firestore: $email (${seed['role']})');
@@ -118,6 +141,7 @@ class DatabaseSeeder {
           role: role,
           shopName: seed['shopName'] as String?,
           shopAddress: seed['shopAddress'] as String?,
+          shopStatus: seed['shopStatus'] as String?,
         );
 
         await _firestore.collection('users').doc(user.uid).set(userModel.toMap());

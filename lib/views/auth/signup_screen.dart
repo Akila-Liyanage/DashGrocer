@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/phone_validator.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 
@@ -53,10 +55,11 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _submit() async {
     if (_formKey.currentState?.validate() ?? false) {
+      final formattedPhone = SriLankaPhoneUtils.formatWithCountryCode(_phoneController.text);
       await _authService.register(
         fullName: _nameController.text.trim().isEmpty ? 'Shopper' : _nameController.text.trim(),
         email: _emailController.text,
-        phoneNumber: _phoneController.text,
+        phoneNumber: formattedPhone,
         password: _passwordController.text,
         role: _selectedRole,
         shopName: _selectedRole == UserRole.shopOwner ? _shopNameController.text : null,
@@ -270,12 +273,10 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                             ),
                             keyboardType: TextInputType.phone,
-                            validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'Enter phone number';
-                              final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
-                              if (digits.length < 9) return 'Enter valid 9 or 10 digit number';
-                              return null;
-                            },
+                            inputFormatters: [
+                              SriLankaPhoneInputFormatter(),
+                            ],
+                            validator: SriLankaPhoneUtils.validate,
                           ),
 
                           // Additional Shop Owner Fields
@@ -483,6 +484,7 @@ class _SignupScreenState extends State<SignupScreen> {
     Widget? suffixIcon,
     Widget? prefixWidget,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
   }) {
     return Container(
@@ -495,6 +497,7 @@ class _SignupScreenState extends State<SignupScreen> {
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
         validator: validator,
         style: GoogleFonts.plusJakartaSans(
           fontSize: 13,
