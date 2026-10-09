@@ -309,12 +309,13 @@ class GroceryProductCard extends StatelessWidget {
         IconButton(
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-          icon: const Icon(
-            Icons.add,
-            size: 18,
-            color: AppColors.brandGreen,
-          ),
-          onPressed: () => groceryService.incrementQuantity(item.id),
+          icon: const Icon(Icons.add, size: 18),
+          color: AppColors.brandGreen,
+          disabledColor: const Color(0xFFBDBDBD),
+          // No more than the shop has in stock.
+          onPressed: cartQty >= item.stockQuantity
+              ? null
+              : () => groceryService.incrementQuantity(item.id),
         ),
       ],
     );

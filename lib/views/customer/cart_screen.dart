@@ -257,9 +257,24 @@ class _CartItemTile extends StatelessWidget {
 
   const _CartItemTile({required this.item});
 
+  void _showStockLimit(BuildContext context) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Only ${item.stockQuantity} of ${item.name} in stock',
+          style: GoogleFonts.plusJakartaSans(fontSize: 12),
+        ),
+        duration: const Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final groceryService = GroceryService();
+    final atStockLimit = !groceryService.canAddMore(item.id);
 
     return Dismissible(
       key: Key('cart_${item.id}'),
@@ -351,7 +366,9 @@ class _CartItemTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    item.unit,
+                    atStockLimit
+                        ? '${item.unit} • Max ${item.stockQuantity} in stock'
+                        : item.unit,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
@@ -373,13 +390,18 @@ class _CartItemTile extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   InkWell(
-                    onTap: () => groceryService.incrementQuantity(item.id),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    // No more than the shop has in stock.
+                    onTap: atStockLimit
+                        ? () => _showStockLimit(context)
+                        : () => groceryService.incrementQuantity(item.id),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       child: Icon(
                         Icons.add,
                         size: 15,
-                        color: AppColors.brandGreen,
+                        color: atStockLimit
+                            ? const Color(0xFFBDBDBD)
+                            : AppColors.brandGreen,
                       ),
                     ),
                   ),
