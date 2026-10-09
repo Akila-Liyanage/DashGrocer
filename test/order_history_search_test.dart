@@ -32,6 +32,7 @@ Future<void> _search(WidgetTester tester, String text) async {
 }
 
 void main() {
+  filterButtonTests();
   cancelledSectionTests();
   bannerTests();
   testWidgets('Order History shows the customer\'s real orders and search filters them', (tester) async {
@@ -257,5 +258,118 @@ void cancelledSectionTests() {
     await _search(tester, id);
     expect(find.text('Your card payment will be refunded.'), findsOneWidget);
     expect(find.text('Reason: Changed my mind'), findsOneWidget);
+  });
+}
+
+void filterButtonTests() {
+  /// Places an order and returns its number (the total tells orders apart).
+  String place({required double total, String method = 'Pay at Store'}) {
+    final service = GroceryService();
+    service.clearCart();
+    service.addToCart('carrot', 1);
+    return service.placeOrder(
+      customerName: 'Kasun Perera',
+      customerPhone: '+94 77 123 4567',
+      pickupSlot: 'Today, 4.00 PM',
+      totalAmount: total,
+      shopName: 'GreenLeaf Fresh Mart',
+      paymentMethod: method,
+    );
+  }
+
+  testWidgets('The filter button opens the filter sheet and Payment filter works', (tester) async {
+    final storeId = place(total: 4111);
+    final cardId = place(total: 4222, method: 'Paid Online (Card)');
+    await _openHistory(tester);
+
+    // Both orders show at first
+    await _search(tester, '41');
+    await _search(tester, 'Rs. 4');
+    expect(_idText(storeId), findsOneWidget);
+    expect(_idText(cardId), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Filter orders'), findsOneWidget);
+    expect(find.text('Sort by'), findsOneWidget);
+    expect(find.text('Payment'), findsOneWidget);
+    expect(find.text('Placed'), findsOneWidget);
+
+    await tester.tap(find.text('Paid online'));
+    await tester.pump();
+    await tester.tap(find.text('Apply filters'));
+    await tester.pumpAndSettle();
+
+    // Only the card order is left, and the icon shows that 1 filter is on
+    expect(_idText(cardId), findsOneWidget);
+    expect(_idText(storeId), findsNothing);
+    expect(find.text('1'), findsOneWidget);
+
+    // Reset brings the other order back
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reset'));
+    await tester.pump();
+    await tester.tap(find.text('Apply filters'));
+    await tester.pumpAndSettle();
+    expect(_idText(storeId), findsOneWidget);
+    expect(_idText(cardId), findsOneWidget);
+  });
+
+  testWidgets('Sort by Highest total puts the biggest order first', (tester) async {
+    final small = place(total: 5001);
+    final big = place(total: 5999);
+    await _openHistory(tester);
+    await _search(tester, 'Rs. 5');
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Highest total'));
+    await tester.pump();
+    await tester.tap(find.text('Apply filters'));
+    await tester.pumpAndSettle();
+
+    expect(tester.getTopLeft(_idText(big)).dy, lessThan(tester.getTopLeft(_idText(small)).dy));
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lowest total'));
+    await tester.pump();
+    await tester.tap(find.text('Apply filters'));
+    await tester.pumpAndSettle();
+
+    expect(tester.getTopLeft(_idText(small)).dy, lessThan(tester.getTopLeft(_idText(big)).dy));
+  });
+
+  testWidgets('Date filter: old orders are hidden by Today and Reset filters shows them again', (tester) async {
+    // An order placed 3 days ago is only matched by "Last 7 days", not by "Today"
+    final service = GroceryService();
+    final id = place(total: 6123);
+    final order = service.orderById(id)!;
+    expect(order.createdAt.isAfter(DateTime.now().subtract(const Duration(minutes: 1))), isTrue);
+
+    await _openHistory(tester);
+    await _search(tester, id);
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Today'));
+    await tester.pump();
+    await tester.tap(find.text('Apply filters'));
+    await tester.pumpAndSettle();
+    expect(_idText(id), findsOneWidget); // placed just now, so it is "Today"
+
+    // A payment filter that excludes it leaves nothing, with a Reset filters link
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Paid online'));
+    await tester.pump();
+    await tester.tap(find.text('Apply filters'));
+    await tester.pumpAndSettle();
+    expect(find.text('No orders found'), findsOneWidget);
+    expect(find.text('Reset filters'), findsOneWidget);
+
+    await tester.tap(find.text('Reset filters'));
+    await tester.pumpAndSettle();
+    expect(_idText(id), findsOneWidget);
   });
 }

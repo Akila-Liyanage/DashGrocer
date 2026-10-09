@@ -22,7 +22,9 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  int _selectedQuantity = 3;
+  // Every product starts at 1. If it is already in the cart, initState shows
+  // the amount that is in the cart instead.
+  int _selectedQuantity = 1;
   bool _isDescriptionExpanded = false;
   bool _isFavorite = false;
 
